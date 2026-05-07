@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบเบิกจ่ายงวดงาน</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7; --surface: #ffffff; --surface-2: #f5f4ee; --surface-3: #ebeae3;
+    --border: #e3e1d7; --border-strong: #c8c5b6;
+    --text: #1a1a17; --text-2: #5c5b54; --text-3: #8b8a82;
+    --accent: #c8632c; --accent-soft: #f7ebe1; --accent-dark: #8b3f15;
+    --success: #2d6a4f; --success-soft: #d8f0e1;
+    --warning: #b8740a; --warning-soft: #fbeed3;
+    --danger: #b3261e; --danger-soft: #fcdfdc;
+    --info: #1f5582; --info-soft: #d8e8f4;
+    --radius-sm: 6px; --radius: 10px; --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 2px 8px rgba(0,0,0,0.05);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans Thai', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh;
+  }
+  code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* LOGIN */
+  .login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1rem; background: linear-gradient(135deg, #faf8f3 0%, #f0ede2 100%);
+  }
+  .login-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 420px; overflow: hidden; }
+  .login-header { background: var(--text); color: white; padding: 2rem; text-align: center; }
+  .login-logo {
+    width: 56px; height: 56px; background: var(--accent); border-radius: var(--radius);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px;
+  }
+  .login-header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+  .login-header p { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+  .login-body { padding: 2rem; }
+
+  /* STORAGE WARNING */
+  .storage-warning {
+    background: var(--warning-soft); border: 1px solid var(--warning); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 16px; font-size: 12px; color: var(--text-2); display: none;
+  }
+  .storage-warning.show { display: block; }
+  .storage-warning strong { color: var(--warning); }
+
+  /* APP */
+  .app { display: none; }
+  .app.active { display: block; }
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0.875rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow-sm);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 36px; height: 36px; background: var(--text); color: var(--accent);
+    border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+  }
+  .brand-name { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--text-3); margin-top: -2px; }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px;
+    background: var(--surface-2); border-radius: 99px; cursor: pointer; transition: all 0.15s;
+  }
+  .user-chip:hover { background: var(--surface-3); }
+  .user-avatar {
+    width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+  }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--text-3); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; overflow-x: auto; }
+  .tab {
+    padding: 12px 20px; font-family: inherit; font-size: 14px; font-weight: 500;
+    color: var(--text-3); background: transparent; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+    transition: all 0.15s; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab-badge { background: var(--accent); color: white; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; min-width: 18px; text-align: center; }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  /* CARDS */
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem; overflow: hidden; }
+  .card-head { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface-2); display: flex; align-items: center; gap: 8px; }
+  .card-head h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); }
+  .card-head i { color: var(--accent); font-size: 16px; }
+  .card-body { padding: 20px; }
+
+  /* FORM */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+  .req { color: var(--danger); font-size: 14px; }
+  .input, .select, .textarea {
+    width: 100%; font-family: inherit; font-size: 14px; padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); transition: all 0.15s;
+  }
+  .input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .input:disabled, .input[readonly] { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+  .textarea { min-height: 80px; resize: vertical; }
+  .field-hint { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+  /* MONEY TABLE */
+  .money-tbl { width: 100%; border-collapse: collapse; }
+  .money-tbl tr { border-bottom: 1px solid var(--border); }
+  .money-tbl tr:last-child { border-bottom: none; }
+  .money-tbl td { padding: 12px 16px; vertical-align: middle; }
+  .money-tbl td:first-child { color: var(--text-2); font-size: 13px; }
+  .money-tbl td.amount-col { width: 180px; text-align: right; }
+  .money-tbl td.pct-col { width: 80px; text-align: right; color: var(--text-3); font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+  .money-tbl input[type="number"] {
+    text-align: right; width: 100%; padding: 6px 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  }
+  .money-tbl input[type="number"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .money-tbl .readonly { text-align: right; font-weight: 500; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .money-tbl tr.total-row { background: var(--surface-2); }
+  .money-tbl tr.total-row td { font-weight: 600; color: var(--text); }
+  .money-tbl tr.total-row td:first-child { font-size: 14px; }
+  .money-tbl tr.deduction td:first-child::before { content: "−"; margin-right: 6px; color: var(--danger); font-weight: 600; }
+  .money-tbl tr.net-row { background: linear-gradient(90deg, var(--success-soft), transparent); }
+  .money-tbl tr.net-row td { font-weight: 700; color: var(--success); font-size: 16px; padding: 16px; }
+
+  /* CHECKBOXES */
+  .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .check {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 99px;
+    font-size: 13px; cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .check:hover { border-color: var(--border-strong); }
+  .check input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .check:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); font-weight: 500; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: inherit; font-size: 14px; font-weight: 500; padding: 10px 20px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--border-strong); background: var(--surface-2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .btn-success { background: var(--success); color: white; border-color: var(--success); }
+  .btn-success:hover { opacity: 0.9; }
+  .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-soft); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn-sm { font-size: 12px; padding: 6px 12px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; padding-top: 8px; }
+
+  /* HISTORY LIST */
+  .doc-list { display: flex; flex-direction: column; gap: 10px; }
+  .doc-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px; cursor: pointer; transition: all 0.15s;
+  }
+  .doc-item:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-1px); }
+  .doc-item-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .doc-meta { flex: 1; min-width: 220px; }
+  .doc-no { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .doc-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .doc-info { font-size: 12px; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 12px; }
+  .doc-info span { display: inline-flex; align-items: center; gap: 4px; }
+  .doc-amt { text-align: right; min-width: 140px; }
+  .doc-amt-value { font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .doc-amt-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+
+  /* PILLS */
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill-draft { background: var(--surface-3); color: var(--text-2); }
+  .pill-pending { background: var(--warning-soft); color: var(--warning); }
+  .pill-approved { background: var(--success-soft); color: var(--success); }
+  .pill-rejected { background: var(--danger-soft); color: var(--danger); }
+  .pill-info { background: var(--info-soft); color: var(--info); }
+
+  /* TIMELINE */
+  .timeline { display: flex; flex-direction: column; gap: 0; margin: 16px 0; position: relative; }
+  .step { display: flex; gap: 14px; padding: 12px 0; position: relative; }
+  .step:not(:last-child)::after { content: ''; position: absolute; left: 17px; top: 44px; bottom: -4px; width: 2px; background: var(--border); }
+  .step.done:not(:last-child)::after { background: var(--success); }
+  .step-icon {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2);
+    border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--text-3); flex-shrink: 0; z-index: 1; transition: all 0.2s;
+  }
+  .step.done .step-icon { background: var(--success); border-color: var(--success); color: white; }
+  .step.current .step-icon { background: var(--warning-soft); border-color: var(--warning); color: var(--warning); animation: pulse 2s infinite; }
+  .step.rejected .step-icon { background: var(--danger); border-color: var(--danger); color: white; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(184, 116, 10, 0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(184, 116, 10, 0); }
+  }
+  .step-body { flex: 1; padding-top: 4px; }
+  .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .step-meta { font-size: 12px; color: var(--text-2); }
+  .step-note { font-size: 12px; color: var(--text-2); background: var(--surface-2); padding: 6px 10px; border-radius: var(--radius-sm); margin-top: 6px; border-left: 3px solid var(--border-strong); }
+
+  /* MODAL */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(20,18,14,0.6);
+    backdrop-filter: blur(4px); z-index: 100; align-items: flex-start; justify-content: center;
+    padding: 2rem 1rem; overflow-y: auto;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 640px; overflow: hidden; animation: modalIn 0.2s;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(-12px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+  .modal-foot { padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-2); display: flex; justify-content: space-between; gap: 8px; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; position: relative; overflow: hidden; }
+  .stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+  .stat.warn::before { background: var(--warning); }
+  .stat.ok::before { background: var(--success); }
+  .stat.info::before { background: var(--info); }
+  .stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; margin-bottom: 6px; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+  /* FILTER */
+  .filter { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    font-family: inherit; font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 99px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--border-strong); }
+  .filter-btn.active { background: var(--text); color: white; border-color: var(--text); }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--text-3); }
+  .empty i { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.5; }
+  .empty-title { font-size: 14px; color: var(--text-2); margin-bottom: 4px; font-weight: 500; }
+  .empty-sub { font-size: 12px; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 12px; flex-wrap: wrap; }
+  .toolbar h2 { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+  /* DETAIL */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin: 16px 0; }
+  .detail-item .detail-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .detail-item .detail-value { font-size: 14px; font-weight: 500; color: var(--text); }
+  .detail-section { background: var(--surface-2); border-radius: var(--radius); padding: 14px 16px; margin: 12px 0; }
+  .detail-section-title { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600; }
+
+  /* USER LIST */
+  .user-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
+  }
+  .user-row .user-avatar { width: 36px; height: 36px; font-size: 14px; }
+  .user-row-info { flex: 1; }
+  .user-row-name { font-weight: 600; font-size: 14px; }
+  .user-row-meta { font-size: 12px; color: var(--text-3); }
+  .role-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .role-submitter { background: var(--info-soft); color: var(--info); }
+  .role-manager { background: var(--accent-soft); color: var(--accent-dark); }
+  .role-exec { background: #e8d5f0; color: #6b2d85; }
+  .pin-status { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-3); }
+  .pin-status.set { color: var(--success); }
+
+  /* APPROVAL BOX */
+  .approval-box {
+    background: linear-gradient(135deg, var(--warning-soft), #fff5e0); border: 1px solid var(--warning);
+    border-radius: var(--radius); padding: 16px; margin: 16px 0;
+  }
+  .approval-box-title { font-size: 13px; font-weight: 600; color: var(--warning); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  /* PIN INPUT */
+  .pin-grid { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+  .pin-input {
+    width: 44px; height: 52px; text-align: center; font-size: 22px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--surface);
+  }
+  .pin-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .pin-input.filled { background: var(--accent-soft); border-color: var(--accent); }
+  .pin-input.error { border-color: var(--danger); background: var(--danger-soft); animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white;
+    padding: 12px 20px; border-radius: var(--radius); font-size: 13px;
+    box-shadow: var(--shadow-lg); z-index: 200; animation: toastIn 0.3s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+  /* PROJECT VIEW */
+  .project-list { display: flex; flex-direction: column; gap: 12px; }
+  .project-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; transition: all 0.15s;
+  }
+  .project-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .project-card-head { padding: 16px 20px; background: var(--surface-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .project-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .project-contractor { font-size: 12px; color: var(--text-2); }
+  .project-card-body { padding: 16px 20px; }
+  .project-progress { margin-bottom: 12px; }
+  .progress-bar {
+    width: 100%; height: 8px; background: var(--surface-3); border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+    border-radius: 99px; transition: width 0.3s;
+  }
+  .progress-text { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .project-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .summary-item { }
+  .summary-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .summary-value { font-size: 14px; font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+  .project-detail-doc {
+    display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    margin-bottom: 6px; cursor: pointer; transition: all 0.15s; gap: 12px;
+  }
+  .project-detail-doc:hover { border-color: var(--accent); }
+  .project-detail-doc-info { flex: 1; min-width: 0; }
+  .project-detail-doc-no { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+  .project-detail-doc-period { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .project-detail-doc-amt { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .container { padding: 1rem; }
+    .topbar { padding: 0.75rem 1rem; }
+    .brand-sub { display: none; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .money-tbl td.amount-col { width: 130px; }
+    .money-tbl td:first-child { font-size: 12px; }
+    .doc-amt { min-width: auto; text-align: left; }
+    .stat-value { font-size: 20px; }
+    .pin-input { width: 38px; height: 46px; font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo"><i class="ti ti-receipt-2" style="color:white"></i></div>
+      <h1>ระบบเบิกจ่ายงวดงาน</h1>
+      <p>Payment & Handover Form System</p>
+    </div>
+    <div class="login-body">
+      <div class="storage-warning" id="storage-warning">
+        <strong><i class="ti ti-alert-triangle"></i> ข้อจำกัดการบันทึกข้อมูล</strong><br>
+        เบราว์เซอร์ block การบันทึกข้อมูล กรุณาดาวน์โหลดไฟล์แล้วเปิดในเบราว์เซอร์โดยตรง หรืออัพโหลดขึ้น GitHub Pages
+      </div>
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;text-align:center">เลือกผู้ใช้งานเพื่อเข้าสู่ระบบ</p>
+      <div class="field" style="margin-bottom:16px">
+        <label>ผู้ใช้งาน</label>
+        <select class="select" id="login-user"></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">
+        <i class="ti ti-login"></i> เข้าสู่ระบบ
+      </button>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="showFirstSetup()">
+          <i class="ti ti-settings"></i> ตั้งค่าผู้ใช้งานครั้งแรก
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-name">Payment Form</div>
+        <div class="brand-sub">ระบบเบิกจ่ายงวดงาน</div>
+      </div>
+    </div>
+    <div class="user-chip" onclick="logout()" title="ออกจากระบบ">
+      <div class="user-avatar" id="topbar-avatar">A</div>
+      <div>
+        <div class="user-name" id="topbar-name"></div>
+        <div class="user-role" id="topbar-role"></div>
+      </div>
+      <i class="ti ti-logout" style="font-size:14px;color:var(--text-3);margin-left:4px"></i>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="form" onclick="switchTab('form')">
+        <i class="ti ti-edit"></i> สร้างใบเบิก
+      </button>
+      <button class="tab" data-tab="projects" onclick="switchTab('projects')">
+        <i class="ti ti-building-skyscraper"></i> โครงการ
+      </button>
+      <button class="tab" data-tab="history" onclick="switchTab('history')">
+        <i class="ti ti-files"></i> เอกสารทั้งหมด
+        <span class="tab-badge" id="badge-pending" style="display:none">0</span>
+      </button>
+      <button class="tab" data-tab="settings" onclick="switchTab('settings')">
+        <i class="ti ti-users-group"></i> ตั้งค่า
+      </button>
+    </div>
+
+    <!-- FORM PAGE -->
+    <div class="page active" id="page-form">
+      <div class="card">
+        <div class="card-head"><i class="ti ti-building"></i><h3>ข้อมูลโครงการ</h3></div>
+        <div class="card-body">
+          <div class="grid">
+            <div class="field">
+              <label>ชื่อโครงการ <span class="req">*</span></label>
+              <input type="text" class="input" id="f-project" placeholder="เช่น บ้านคุณสมชาย เขตบางนา" list="project-list-datalist">
+              <datalist id="project-list-datalist"></datalist>
+              <span class="field-hint">ใช้ชื่อเดิมเพื่อรวมเป็นโครงการเดียวกัน</span>
+            </div>
+            <div class="field">
+              <label>เลขที่เอกสาร</label>
+              <input type="text" class="input mono" id="f-docno" readonly placeholder="สร้างอัตโนมัติเมื่อบันทึก">
+            </div>
+            <div class="field">
+              <label>ผู้รับเหมา / ผู้ขอเบิก <span class="req">*</span></label>
+              <input type="text" class="input" id="f-contractor" placeholder="ชื่อ-นามสกุล หรือ บริษัท">
+            </div>
+            <div class="field">
+              <label>วันที่ส่งมอบงาน</label>
+              <input type="date" class="input" id="f-date">
+            </div>
+            <div class="field">
+              <label>งวดงานที่</label>
+              <input type="number" class="input" id="f-period" placeholder="1" min="1">
+            </div>
+            <div class="field">
+              <label>จากทั้งหมด (งวด)</label>
+              <input type="number" class="input" id="f-period-total" placeholder="5" min="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-clipboard-text"></i><h3>รายละเอียดเนื้องานที่ส่งมอบ</h3></div>
+        <div class="card-body">
+          <textarea class="textarea" id="f-desc" placeholder="เช่น งานโครงสร้างชั้น 1 เสร็จสมบูรณ์ ตามแบบและสัญญาทุกประการ..."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-chart-bar"></i><h3>ความก้าวหน้าโครงการ</h3></div>
+        <table class="money-tbl">
+          <tr><td>มูลค่างานรวมตามสัญญา</td><td class="amount-col"><input type="number" id="f-contract" oninput="calc()" placeholder="680,000"></td><td class="pct-col">100%</td></tr>
+          <tr><td>ผลงานสะสมยกมา</td><td class="amount-col"><input type="number" id="f-prev" oninput="calc()" placeholder="0"></td><td class="pct-col" id="o-prev-pct">0%</td></tr>
+          <tr><td>ผลงานงวดนี้</td><td class="amount-col"><input type="number" id="f-curr" oninput="calc()" placeholder="0"></td><td class="pct-col" id="o-curr-pct">0%</td></tr>
+          <tr class="total-row"><td>รวมผลงานสะสมถึงปัจจุบัน</td><td class="amount-col readonly" id="o-total">0</td><td class="pct-col" id="o-total-pct">0%</td></tr>
+          <tr><td>มูลค่างานคงเหลือ</td><td class="amount-col readonly" id="o-remain">0</td><td class="pct-col" id="o-remain-pct">0%</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-coin"></i><h3>สรุปยอดเงินขอเบิก</h3></div>
+        <table class="money-tbl">
+          <tr><td>มูลค่างานขอเบิกงวดนี้</td><td class="amount-col readonly" id="o-billed">0</td><td class="pct-col"></td></tr>
+          <tr class="deduction"><td>เงินประกันผลงาน</td><td class="amount-col"><input type="number" id="f-retention-pct" oninput="calc()" placeholder="5" value="5"></td><td class="pct-col">%</td></tr>
+          <tr><td style="padding-left:32px;font-size:12px;color:var(--text-3)">→ จำนวนเงิน</td><td class="amount-col readonly" id="o-retention" style="color:var(--text-3)">0</td><td class="pct-col"></td></tr>
+          <tr class="deduction"><td>เงินเบิกล่วงหน้า / แอดวานซ์</td><td class="amount-col"><input type="number" id="f-advance" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
+          <tr class="deduction"><td>ค่าวัสดุที่บริษัทจ่ายแทน</td><td class="amount-col"><input type="number" id="f-material" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
+          <tr class="deduction"><td>ค่าปรับ / ความเสียหาย</td><td class="amount-col"><input type="number" id="f-penalty" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
+          <tr class="net-row"><td>ยอดเงินสุทธิที่ขอเบิกจ่ายงวดนี้</td><td class="amount-col readonly" id="o-net">0</td><td class="pct-col"></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบประกอบการเบิกจ่าย</h3></div>
+        <div class="card-body">
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="f-att-qc"> QC Checklist</label>
+            <label class="check"><input type="checkbox" id="f-att-photo"> รูปถ่ายความก้าวหน้า</label>
+            <label class="check"><input type="checkbox" id="f-att-bank"> สำเนาบัญชี</label>
+            <label class="check"><input type="checkbox" id="f-att-other"> เอกสารอื่นๆ</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="resetForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
+        <button class="btn btn-primary" onclick="submitForm()"><i class="ti ti-send"></i> ส่งขออนุมัติ</button>
+      </div>
+    </div>
+
+    <!-- PROJECTS PAGE -->
+    <div class="page" id="page-projects">
+      <div class="toolbar">
+        <h2><i class="ti ti-building-skyscraper" style="color:var(--accent)"></i> ภาพรวมโครงการ</h2>
+      </div>
+      <div id="project-list-container" class="project-list"></div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="stats" id="stats-bar"></div>
+      <div class="toolbar">
+        <h2><i class="ti ti-files" style="color:var(--accent)"></i> เอกสารทั้งหมด</h2>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="exportData()"><i class="ti ti-download"></i> สำรอง JSON</button>
+          <button class="btn btn-sm" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> นำเข้า</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+      </div>
+      <div class="filter">
+        <button class="filter-btn active" data-filter="all" onclick="filterList('all')">ทั้งหมด</button>
+        <button class="filter-btn" data-filter="my-pending" onclick="filterList('my-pending')">รอฉันอนุมัติ</button>
+        <button class="filter-btn" data-filter="pending" onclick="filterList('pending')">กำลังดำเนินการ</button>
+        <button class="filter-btn" data-filter="approved" onclick="filterList('approved')">อนุมัติแล้ว</button>
+        <button class="filter-btn" data-filter="rejected" onclick="filterList('rejected')">ไม่อนุมัติ</button>
+      </div>
+      <div class="doc-list" id="doc-list"></div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="toolbar">
+        <h2><i class="ti ti-users-group" style="color:var(--accent)"></i> ตั้งค่าผู้ใช้งาน</h2>
+        <button class="btn btn-primary btn-sm" onclick="showAddUser()"><i class="ti ti-user-plus"></i> เพิ่มผู้ใช้งาน</button>
+      </div>
+      <div class="card" style="background:var(--info-soft);border-color:var(--info)">
+        <div class="card-body" style="font-size:13px">
+          <strong style="color:var(--info)"><i class="ti ti-info-circle"></i> บทบาทและสิทธิ์</strong>
+          <ul style="margin:8px 0 0 20px;color:var(--text-2)">
+            <li><strong style="color:var(--info)">ผู้นำเสนอ</strong> — สร้างใบเบิกได้</li>
+            <li><strong style="color:var(--accent-dark)">หัวหน้า</strong> — เซ็นอนุมัติขั้นแรก (และสร้างใบเบิกได้ด้วย)</li>
+            <li><strong style="color:#6b2d85">ผู้บริหาร</strong> — เซ็นอนุมัติขั้นสุดท้าย (ต้องมี 2 คนต่างกัน)</li>
+            <li><strong>PIN 4-6 หลัก</strong> — จำเป็นสำหรับการอนุมัติ ผู้ใช้ที่ไม่ตั้ง PIN จะอนุมัติไม่ได้</li>
+          </ul>
+        </div>
+      </div>
+      <div id="user-list-container"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL MODAL -->
+  <div class="modal-bg" id="detail-modal" onclick="closeModalBg(event)">
+    <div class="modal" onclick="event.stopPropagation()" id="modal-content"></div>
+  </div>
+
+  <!-- USER MODAL -->
+  <div class="modal-bg" id="user-modal" onclick="closeUserModalBg(event)">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:480px">
+      <div class="modal-head">
+        <div><h3 style="font-size:16px;font-weight:600" id="user-modal-title">เพิ่มผู้ใช้งาน</h3></div>
+        <button class="btn btn-ghost btn-sm" onclick="closeUserModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="u-id">
+        <div class="field" style="margin-bottom:14px">
+          <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+          <input type="text" class="input" id="u-name" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>บทบาท <span class="req">*</span></label>
+          <select class="select" id="u-role">
+            <option value="submitter">ผู้นำเสนอ — สร้างใบเบิก</option>
+            <option value="manager">หัวหน้า — อนุมัติขั้นแรก</option>
+            <option value="executive">ผู้บริหาร — อนุมัติขั้นสุดท้าย</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>ตำแหน่ง / หมายเหตุ</label>
+          <input type="text" class="input" id="u-title" placeholder="เช่น Project Manager">
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <label>PIN สำหรับอนุมัติ (4-6 หลัก)</label>
+          <input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]*" class="input mono" id="u-pin" placeholder="เว้นว่างหากไม่ต้องการเปลี่ยน" autocomplete="new-password">
+          <span class="field-hint">ผู้นำเสนอไม่จำเป็นต้องตั้ง / หัวหน้าและผู้บริหารต้องตั้งเพื่อใช้อนุมัติ</span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeUserModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveUser()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP MODAL -->
+  <div class="modal-bg" id="setup-modal" onclick="event.target.id==='setup-modal' && closeSetupModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+      <div class="modal-head">
+        <div>
+          <h3 style="font-size:16px;font-weight:600">ตั้งค่าครั้งแรก</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px">สร้างผู้ใช้งานเริ่มต้น</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeSetupModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:16px">ระบบจะสร้างผู้ใช้งานเริ่มต้นให้ คุณสามารถแก้ไข เพิ่ม หรือลบได้ในหน้าตั้งค่า</p>
+        <div style="background:var(--surface-2);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-2)">ผู้ใช้งานเริ่มต้น (PIN: 1234):</div>
+          <ul style="font-size:12px;color:var(--text-2);margin:0 0 0 18px;line-height:1.8">
+            <li>คุณ A — ผู้นำเสนอ</li>
+            <li>คุณ B — หัวหน้า (PIN: 1234)</li>
+            <li>คุณ C — ผู้บริหาร 1 (PIN: 1234)</li>
+            <li>คุณ D — ผู้บริหาร 2 (PIN: 1234)</li>
+          </ul>
+          <p style="font-size:11px;color:var(--danger);margin-top:8px"><i class="ti ti-alert-circle"></i> กรุณาเปลี่ยน PIN ของผู้อนุมัติทันทีหลังเข้าระบบ</p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeSetupModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="initDefaultUsers()"><i class="ti ti-check"></i> สร้างผู้ใช้งานเริ่มต้น</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN MODAL -->
+  <div class="modal-bg" id="pin-modal">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+      <div class="modal-head">
+        <div>
+          <h3 style="font-size:16px;font-weight:600" id="pin-modal-title">ยืนยันการอนุมัติ</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px" id="pin-modal-sub">กรุณากรอก PIN ของคุณ</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closePinModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="pin-grid" id="pin-grid">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="0">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="1">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="2">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="3">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="4">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-input" data-idx="5">
+        </div>
+        <p id="pin-error" style="font-size:12px;color:var(--danger);text-align:center;height:16px;margin-bottom:8px"></p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closePinModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="confirmPin()" id="pin-confirm-btn">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============ CONSTANTS ============
+  const STORAGE_DOCS = 'pf_documents';
+  const STORAGE_USERS = 'pf_users';
+  const STORAGE_CURRENT = 'pf_current_user';
+  const ROLES = {
+    submitter: { label: 'ผู้นำเสนอ', cls: 'role-submitter' },
+    manager: { label: 'หัวหน้า', cls: 'role-manager' },
+    executive: { label: 'ผู้บริหาร', cls: 'role-exec' }
+  };
+
+  // ============ STATE ============
+  let documents = [];
+  let users = [];
+  let currentUser = null;
+  let currentFilter = 'all';
+  let pendingApproval = null; // { id, stepKey, action, note }
+  let selectedProject = null;
+
+  // ============ STORAGE WITH FALLBACK ============
+  // Try localStorage; if blocked (e.g. sandboxed iframe), fall back to in-memory storage
+  const memoryStore = {};
+  let storageAvailable = false;
+
+  function testStorage() {
+    try {
+      const test = '__pf_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      storageAvailable = true;
+      return true;
+    } catch (e) {
+      storageAvailable = false;
+      return false;
+    }
+  }
+
+  function storageGet(key) {
+    if (storageAvailable) {
+      try { return localStorage.getItem(key); } catch (e) { return memoryStore[key] || null; }
+    }
+    return memoryStore[key] || null;
+  }
+  function storageSet(key, value) {
+    if (storageAvailable) {
+      try { localStorage.setItem(key, value); return true; } catch (e) {
+        memoryStore[key] = value; return false;
+      }
+    }
+    memoryStore[key] = value;
+    return false;
+  }
+  function storageRemove(key) {
+    if (storageAvailable) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+    delete memoryStore[key];
+  }
+
+  // ============ HASH (simple, for PIN) ============
+  async function hashPin(pin) {
+    const enc = new TextEncoder().encode('pf_salt_' + pin);
+    const hash = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ============ DATA ============
+  function loadAll() {
+    try {
+      documents = JSON.parse(storageGet(STORAGE_DOCS) || '[]');
+      users = JSON.parse(storageGet(STORAGE_USERS) || '[]');
+      const userId = storageGet(STORAGE_CURRENT);
+      currentUser = users.find(u => u.id === userId) || null;
+    } catch (e) {
+      console.error(e);
+      documents = []; users = []; currentUser = null;
+    }
+  }
+
+  function saveDocs() {
+    const ok = storageSet(STORAGE_DOCS, JSON.stringify(documents));
+    if (!ok && !storageAvailable) toast('โหมดทดลอง: ข้อมูลจะหายเมื่อรีเฟรช', 'error');
+    return true;
+  }
+
+  function saveUsers() {
+    const ok = storageSet(STORAGE_USERS, JSON.stringify(users));
+    if (!ok && !storageAvailable) toast('โหมดทดลอง: ข้อมูลจะหายเมื่อรีเฟรช', 'error');
+    return true;
+  }
+
+  // ============ HELPERS ============
+  const fmt = n => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const num = id => Number(document.getElementById(id).value) || 0;
+  const val = id => document.getElementById(id).value.trim();
+  const chk = id => document.getElementById(id).checked;
+  const fmtDate = ts => new Date(ts).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+  const fmtDateTime = ts => new Date(ts).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+  const initials = name => (name || '?').split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function generateDocNo() {
+    const now = new Date();
+    const ym = `${now.getFullYear().toString().slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const seq = (documents.length + 1).toString().padStart(3, '0');
+    return `PAY-${ym}-${seq}`;
+  }
+
+  function toast(msg, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    const icon = type === 'success' ? 'check' : type === 'error' ? 'alert-circle' : 'info-circle';
+    t.innerHTML = `<i class="ti ti-${icon}"></i> ${escapeHtml(msg)}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
+  // ============ LOGIN ============
+  function renderLoginUserList() {
+    const sel = document.getElementById('login-user');
+    if (users.length === 0) {
+      sel.innerHTML = '<option value="">— ยังไม่มีผู้ใช้งาน กรุณาตั้งค่าก่อน —</option>';
+      return;
+    }
+    sel.innerHTML = users.map(u =>
+      `<option value="${u.id}">${escapeHtml(u.name)} — ${ROLES[u.role].label}${u.title ? ' (' + escapeHtml(u.title) + ')' : ''}</option>`
+    ).join('');
+  }
+
+  function login() {
+    const userId = document.getElementById('login-user').value;
+    if (!userId) { toast('กรุณาตั้งค่าผู้ใช้งานก่อน', 'error'); return; }
+    currentUser = users.find(u => u.id === userId);
+    if (!currentUser) return;
+    storageSet(STORAGE_CURRENT, userId);
+    showApp();
+  }
+
+  function logout() {
+    if (!confirm('ออกจากระบบ?')) return;
+    storageRemove(STORAGE_CURRENT);
+    currentUser = null;
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('login-screen').style.display = 'flex';
+    renderLoginUserList();
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('active');
+    document.getElementById('topbar-name').textContent = currentUser.name;
+    document.getElementById('topbar-role').textContent = ROLES[currentUser.role].label + (currentUser.title ? ' · ' + currentUser.title : '');
+    document.getElementById('topbar-avatar').textContent = initials(currentUser.name);
+    calc();
+    refreshProjectDatalist();
+    renderHistory();
+    renderUserList();
+    updatePendingBadge();
+  }
+
+  function showFirstSetup() { document.getElementById('setup-modal').classList.add('show'); }
+  function closeSetupModal() { document.getElementById('setup-modal').classList.remove('show'); }
+
+  async function initDefaultUsers() {
+    const defaultPin = await hashPin('1234');
+    users = [
+      { id: 'u1', name: 'คุณ A', role: 'submitter', title: 'หัวหน้าช่าง', pinHash: null },
+      { id: 'u2', name: 'คุณ B', role: 'manager', title: 'Project Manager', pinHash: defaultPin },
+      { id: 'u3', name: 'คุณ C', role: 'executive', title: 'ผู้บริหาร', pinHash: defaultPin },
+      { id: 'u4', name: 'คุณ D', role: 'executive', title: 'ผู้บริหาร', pinHash: defaultPin }
+    ];
+    saveUsers();
+    closeSetupModal();
+    renderLoginUserList();
+    toast('สร้างผู้ใช้งานเริ่มต้นเรียบร้อย (PIN: 1234)', 'success');
+  }
+
+  // ============ DATALIST ============
+  function refreshProjectDatalist() {
+    const list = document.getElementById('project-list-datalist');
+    if (!list) return;
+    const projects = [...new Set(documents.map(d => d.project))];
+    list.innerHTML = projects.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+  }
+
+  // ============ CALCULATIONS ============
+  function calc() {
+    const contract = num('f-contract');
+    const prev = num('f-prev');
+    const curr = num('f-curr');
+    const total = prev + curr;
+    const remain = contract - total;
+
+    document.getElementById('o-total').textContent = fmt(total);
+    document.getElementById('o-remain').textContent = fmt(remain);
+    document.getElementById('o-billed').textContent = fmt(curr);
+
+    const pct = (v) => contract > 0 ? `${((v / contract) * 100).toFixed(1)}%` : '0%';
+    document.getElementById('o-prev-pct').textContent = pct(prev);
+    document.getElementById('o-curr-pct').textContent = pct(curr);
+    document.getElementById('o-total-pct').textContent = pct(total);
+    document.getElementById('o-remain-pct').textContent = pct(remain);
+
+    const retentionPct = num('f-retention-pct');
+    const retention = curr * (retentionPct / 100);
+    const advance = num('f-advance');
+    const material = num('f-material');
+    const penalty = num('f-penalty');
+    const net = curr - retention - advance - material - penalty;
+
+    document.getElementById('o-retention').textContent = fmt(retention);
+    document.getElementById('o-net').textContent = fmt(net);
+  }
+
+  // ============ TABS ============
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === `page-${tab}`));
+    if (tab === 'history') renderHistory();
+    if (tab === 'settings') renderUserList();
+    if (tab === 'projects') renderProjects();
+  }
+
+  // ============ FORM SUBMIT ============
+  function submitForm() {
+    if (!val('f-project')) { toast('กรุณากรอกชื่อโครงการ', 'error'); return; }
+    if (!val('f-contractor')) { toast('กรุณากรอกชื่อผู้รับเหมา', 'error'); return; }
+    if (num('f-curr') <= 0) { toast('กรุณากรอกผลงานงวดนี้', 'error'); return; }
+
+    const contract = num('f-contract');
+    const prev = num('f-prev');
+    const curr = num('f-curr');
+    const retentionPct = num('f-retention-pct');
+    const retention = curr * (retentionPct / 100);
+    const advance = num('f-advance');
+    const material = num('f-material');
+    const penalty = num('f-penalty');
+    const net = curr - retention - advance - material - penalty;
+
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const doc = {
+      id,
+      docNo: generateDocNo(),
+      project: val('f-project'),
+      contractor: val('f-contractor'),
+      handoverDate: val('f-date'),
+      period: val('f-period'),
+      periodTotal: val('f-period-total'),
+      description: val('f-desc'),
+      contract, prev, curr, retentionPct, retention, advance, material, penalty, net,
+      total: prev + curr,
+      remain: contract - prev - curr,
+      attachments: { qc: chk('f-att-qc'), photo: chk('f-att-photo'), bank: chk('f-att-bank'), other: chk('f-att-other') },
+      submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
+      approvals: { manager: null, exec1: null, exec2: null },
+      status: 'pending',
+      createdAt: Date.now()
+    };
+
+    documents.unshift(doc);
+    saveDocs();
+    toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
+    refreshProjectDatalist();
+    resetForm();
+    switchTab('history');
+  }
+
+  function resetForm() {
+    document.querySelectorAll('#page-form input, #page-form textarea').forEach(el => {
+      if (el.type === 'checkbox') el.checked = false;
+      else if (el.id === 'f-retention-pct') el.value = '5';
+      else el.value = '';
+    });
+    calc();
+  }
+
+  // ============ APPROVAL LOGIC ============
+  function getCurrentStep(doc) {
+    if (doc.status === 'rejected') return -1;
+    if (!doc.approvals.manager) return 'manager';
+    if (!doc.approvals.exec1) return 'exec1';
+    if (!doc.approvals.exec2) return 'exec2';
+    return 'done';
+  }
+
+  function getStatusInfo(doc) {
+    if (doc.status === 'rejected') return { label: 'ไม่อนุมัติ', cls: 'pill-rejected' };
+    const step = getCurrentStep(doc);
+    if (step === 'done') return { label: 'อนุมัติครบทุกขั้น', cls: 'pill-approved' };
+    if (step === 'manager') return { label: 'รอหัวหน้า', cls: 'pill-pending' };
+    if (step === 'exec1') return { label: 'รอผู้บริหาร 1', cls: 'pill-pending' };
+    if (step === 'exec2') return { label: 'รอผู้บริหาร 2', cls: 'pill-pending' };
+    return { label: 'ไม่ทราบสถานะ', cls: 'pill-draft' };
+  }
+
+  function canApprove(doc) {
+    if (!currentUser) return false;
+    const step = getCurrentStep(doc);
+    if (step === -1 || step === 'done') return false;
+    if (step === 'manager') return currentUser.role === 'manager';
+    if (step === 'exec1' || step === 'exec2') {
+      if (currentUser.role !== 'executive') return false;
+      if (step === 'exec2' && doc.approvals.exec1 && doc.approvals.exec1.approverId === currentUser.id) return false;
+      return true;
+    }
+    return false;
+  }
+
+  function isMyPending(doc) { return canApprove(doc); }
+
+  function updatePendingBadge() {
+    const count = documents.filter(d => isMyPending(d)).length;
+    const badge = document.getElementById('badge-pending');
+    if (count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function filterList(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+    renderHistory();
+  }
+
+  // ============ HISTORY ============
+  function renderHistory() {
+    const list = document.getElementById('doc-list');
+    if (!list) return;
+
+    const total = documents.length;
+    const pending = documents.filter(d => d.status === 'pending' && getCurrentStep(d) !== 'done').length;
+    const approved = documents.filter(d => getCurrentStep(d) === 'done').length;
+    const myPending = documents.filter(d => isMyPending(d)).length;
+    const totalAmount = documents.filter(d => getCurrentStep(d) === 'done').reduce((s, d) => s + d.net, 0);
+
+    document.getElementById('stats-bar').innerHTML = `
+      <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div></div>
+      <div class="stat warn"><div class="stat-label">รอฉันอนุมัติ</div><div class="stat-value">${myPending}</div><div class="stat-sub">รอทั้งระบบ ${pending}</div></div>
+      <div class="stat ok"><div class="stat-label">อนุมัติครบ</div><div class="stat-value">${approved}</div></div>
+      <div class="stat"><div class="stat-label">ยอดอนุมัติรวม</div><div class="stat-value">${fmt(totalAmount)}</div><div class="stat-sub">บาท</div></div>
+    `;
+
+    let docs = documents;
+    if (currentFilter === 'my-pending') docs = documents.filter(d => isMyPending(d));
+    else if (currentFilter === 'pending') docs = documents.filter(d => d.status === 'pending' && getCurrentStep(d) !== 'done');
+    else if (currentFilter === 'approved') docs = documents.filter(d => getCurrentStep(d) === 'done');
+    else if (currentFilter === 'rejected') docs = documents.filter(d => d.status === 'rejected');
+
+    if (docs.length === 0) {
+      list.innerHTML = `
+        <div class="empty">
+          <i class="ti ti-inbox"></i>
+          <div class="empty-title">ไม่พบเอกสาร</div>
+          <div class="empty-sub">${currentFilter === 'all' ? 'เริ่มสร้างใบเบิกใหม่ได้ที่แท็บ "สร้างใบเบิก"' : 'ลองเปลี่ยนตัวกรอง'}</div>
+        </div>
+      `;
+      updatePendingBadge();
+      return;
+    }
+
+    list.innerHTML = docs.map(d => {
+      const status = getStatusInfo(d);
+      const myTurn = isMyPending(d);
+      return `
+        <div class="doc-item" onclick="showDetail('${d.id}')" style="${myTurn ? 'border-left:4px solid var(--warning)' : ''}">
+          <div class="doc-item-row">
+            <div class="doc-meta">
+              <div class="doc-no">${d.docNo}${myTurn ? ' · <span style="color:var(--warning);font-weight:600">รอคุณอนุมัติ</span>' : ''}</div>
+              <div class="doc-name">${escapeHtml(d.project)}</div>
+              <div class="doc-info">
+                <span><i class="ti ti-user" style="font-size:13px"></i> ${escapeHtml(d.contractor)}</span>
+                <span><i class="ti ti-progress" style="font-size:13px"></i> งวด ${d.period || '-'}/${d.periodTotal || '-'}</span>
+                <span><i class="ti ti-calendar" style="font-size:13px"></i> ${fmtDate(d.createdAt)}</span>
+              </div>
+            </div>
+            <div class="doc-amt">
+              <div class="doc-amt-label">ยอดสุทธิ</div>
+              <div class="doc-amt-value">${fmt(d.net)}</div>
+              <div style="margin-top:6px"><span class="pill ${status.cls}">${status.label}</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    updatePendingBadge();
+  }
+
+  // ============ PROJECT VIEW ============
+  function renderProjects() {
+    const container = document.getElementById('project-list-container');
+    if (!container) return;
+
+    // Group documents by project name
+    const projectMap = {};
+    documents.forEach(d => {
+      if (!projectMap[d.project]) {
+        projectMap[d.project] = {
+          name: d.project,
+          contractor: d.contractor,
+          contract: d.contract || 0,
+          docs: [],
+          totalApproved: 0,
+          totalPending: 0,
+          totalRejected: 0,
+          netApproved: 0,
+          latestDate: 0,
+          highestPeriod: 0,
+          highestPeriodTotal: 0,
+          highestTotal: 0
+        };
+      }
+      const p = projectMap[d.project];
+      p.docs.push(d);
+      // Use highest contract value from latest document
+      if (d.contract > p.contract) p.contract = d.contract;
+      if (d.createdAt > p.latestDate) {
+        p.latestDate = d.createdAt;
+        p.contractor = d.contractor;
+      }
+      const periodNum = parseInt(d.period) || 0;
+      const periodTotalNum = parseInt(d.periodTotal) || 0;
+      if (periodNum > p.highestPeriod) p.highestPeriod = periodNum;
+      if (periodTotalNum > p.highestPeriodTotal) p.highestPeriodTotal = periodTotalNum;
+      if (d.total > p.highestTotal) p.highestTotal = d.total;
+
+      const step = getCurrentStep(d);
+      if (d.status === 'rejected') p.totalRejected++;
+      else if (step === 'done') {
+        p.totalApproved++;
+        p.netApproved += d.net;
+      } else p.totalPending++;
+    });
+
+    const projects = Object.values(projectMap).sort((a, b) => b.latestDate - a.latestDate);
+
+    if (projects.length === 0) {
+      container.innerHTML = `
+        <div class="empty">
+          <i class="ti ti-building"></i>
+          <div class="empty-title">ยังไม่มีโครงการ</div>
+          <div class="empty-sub">สร้างใบเบิกใบแรกเพื่อเริ่มต้น</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (selectedProject) {
+      renderProjectDetail(projectMap[selectedProject]);
+      return;
+    }
+
+    container.innerHTML = projects.map(p => {
+      const progressPct = p.contract > 0 ? Math.min(100, (p.highestTotal / p.contract) * 100) : 0;
+      return `
+        <div class="project-card" onclick="selectProject('${escapeHtml(p.name).replace(/'/g, "\\'")}')">
+          <div class="project-card-head">
+            <div style="flex:1;min-width:0">
+              <div class="project-name">${escapeHtml(p.name)}</div>
+              <div class="project-contractor"><i class="ti ti-user" style="font-size:13px"></i> ${escapeHtml(p.contractor)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${p.totalPending > 0 ? `<span class="pill pill-pending">รอ ${p.totalPending}</span>` : ''}
+              ${p.totalApproved > 0 ? `<span class="pill pill-approved">อนุมัติ ${p.totalApproved}</span>` : ''}
+              ${p.totalRejected > 0 ? `<span class="pill pill-rejected">ไม่อนุมัติ ${p.totalRejected}</span>` : ''}
+            </div>
+          </div>
+          <div class="project-card-body">
+            <div class="project-progress">
+              <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+              <div class="progress-text">
+                <span>ความคืบหน้าผลงาน ${progressPct.toFixed(1)}%</span>
+                <span>${fmt(p.highestTotal)} / ${fmt(p.contract)}</span>
+              </div>
+            </div>
+            <div class="project-summary">
+              <div class="summary-item">
+                <div class="summary-label">งวด</div>
+                <div class="summary-value">${p.highestPeriod || '-'} / ${p.highestPeriodTotal || '-'}</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">เอกสาร</div>
+                <div class="summary-value">${p.docs.length}</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">ยอดเบิกแล้ว</div>
+                <div class="summary-value" style="color:var(--success)">${fmt(p.netApproved)}</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">อัปเดตล่าสุด</div>
+                <div class="summary-value" style="font-size:12px">${fmtDate(p.latestDate)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectProject(name) {
+    selectedProject = name;
+    renderProjects();
+  }
+
+  function backToProjects() {
+    selectedProject = null;
+    renderProjects();
+  }
+
+  function renderProjectDetail(p) {
+    const container = document.getElementById('project-list-container');
+    if (!p) { backToProjects(); return; }
+    const progressPct = p.contract > 0 ? Math.min(100, (p.highestTotal / p.contract) * 100) : 0;
+
+    const docsHtml = p.docs.sort((a, b) => (parseInt(a.period) || 0) - (parseInt(b.period) || 0) || a.createdAt - b.createdAt).map(d => {
+      const status = getStatusInfo(d);
+      return `
+        <div class="project-detail-doc" onclick="showDetail('${d.id}')">
+          <div class="project-detail-doc-info">
+            <div class="project-detail-doc-no">${d.docNo} · ${fmtDate(d.createdAt)}</div>
+            <div class="project-detail-doc-period">งวดที่ ${d.period || '-'}/${d.periodTotal || '-'}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="project-detail-doc-amt">${fmt(d.net)}</div>
+            <span class="pill ${status.cls}" style="margin-top:4px">${status.label}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="backToProjects()" style="margin-bottom:12px">
+        <i class="ti ti-arrow-left"></i> กลับ
+      </button>
+      <div class="card">
+        <div class="card-head" style="background:var(--text);color:white">
+          <i class="ti ti-building-skyscraper" style="color:var(--accent)"></i>
+          <h3 style="color:white">${escapeHtml(p.name)}</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px">
+            <div><div class="summary-label">ผู้รับเหมา</div><div style="font-size:14px;font-weight:500">${escapeHtml(p.contractor)}</div></div>
+            <div><div class="summary-label">มูลค่าตามสัญญา</div><div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace">${fmt(p.contract)}</div></div>
+          </div>
+          <div class="project-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+            <div class="progress-text">
+              <span>ความคืบหน้า ${progressPct.toFixed(1)}%</span>
+              <span>${fmt(p.highestTotal)} / ${fmt(p.contract)}</span>
+            </div>
+          </div>
+          <div class="project-summary">
+            <div class="summary-item"><div class="summary-label">งวดงาน</div><div class="summary-value">${p.highestPeriod || '-'} / ${p.highestPeriodTotal || '-'}</div></div>
+            <div class="summary-item"><div class="summary-label">เอกสารทั้งหมด</div><div class="summary-value">${p.docs.length}</div></div>
+            <div class="summary-item"><div class="summary-label">ยอดเบิกแล้ว</div><div class="summary-value" style="color:var(--success)">${fmt(p.netApproved)}</div></div>
+            <div class="summary-item"><div class="summary-label">รอดำเนินการ</div><div class="summary-value" style="color:var(--warning)">${p.totalPending}</div></div>
+          </div>
+        </div>
+      </div>
+      <h3 style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;font-weight:600">เอกสารทั้งหมดในโครงการ</h3>
+      ${docsHtml}
+    `;
+  }
+
+  // ============ DETAIL MODAL ============
+  function showDetail(id) {
+    const d = documents.find(x => x.id === id);
+    if (!d) return;
+
+    const currStep = getCurrentStep(d);
+    const status = getStatusInfo(d);
+    const myTurn = canApprove(d);
+
+    const APPROVAL_STEPS = [
+      { key: '_submitted', label: 'นำเสนอ' },
+      { key: 'manager', label: 'หัวหน้าอนุมัติ' },
+      { key: 'exec1', label: 'ผู้บริหาร 1' },
+      { key: 'exec2', label: 'ผู้บริหาร 2' }
+    ];
+
+    const stepsHtml = APPROVAL_STEPS.map((step, i) => {
+      let stepData = null;
+      let cls = '';
+      let detail = '';
+
+      if (step.key === '_submitted') {
+        stepData = d.submittedBy;
+        cls = 'done';
+        detail = `${escapeHtml(stepData.name)} · ${fmtDateTime(stepData.at)}`;
+      } else {
+        stepData = d.approvals[step.key];
+        if (stepData) {
+          if (stepData.rejected) {
+            cls = 'rejected';
+            detail = `<span style="color:var(--danger);font-weight:500">ไม่อนุมัติ</span> · ${escapeHtml(stepData.name)} · ${fmtDateTime(stepData.at)}`;
+          } else {
+            cls = 'done';
+            detail = `${escapeHtml(stepData.name)} · ${fmtDateTime(stepData.at)}`;
+          }
+        } else if (currStep === step.key && d.status !== 'rejected') {
+          cls = 'current';
+          detail = 'รอการอนุมัติ';
+        } else {
+          detail = 'ยังไม่ถึงคิว';
+        }
+      }
+
+      const iconHtml = (cls === 'done') ? '<i class="ti ti-check"></i>' : (cls === 'rejected') ? '<i class="ti ti-x"></i>' : i;
+      return `
+        <div class="step ${cls}">
+          <div class="step-icon">${iconHtml}</div>
+          <div class="step-body">
+            <div class="step-title">${step.label}</div>
+            <div class="step-meta">${detail}</div>
+            ${stepData && stepData.note ? `<div class="step-note">${escapeHtml(stepData.note)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const attList = [];
+    if (d.attachments.qc) attList.push('QC Checklist');
+    if (d.attachments.photo) attList.push('รูปถ่าย');
+    if (d.attachments.bank) attList.push('สำเนาบัญชี');
+    if (d.attachments.other) attList.push('อื่นๆ');
+
+    const cannotApproveReason = (() => {
+      if (myTurn) return '';
+      if (d.status === 'rejected' || currStep === 'done') return '';
+      if (d.status !== 'pending') return '';
+      if (currStep === 'exec2' && currentUser.role === 'executive' && d.approvals.exec1 && d.approvals.exec1.approverId === currentUser.id) {
+        return 'คุณได้อนุมัติในขั้น "ผู้บริหาร 1" ไปแล้ว ขั้นนี้ต้องเป็นผู้บริหารอีกคน';
+      }
+      return 'เอกสารนี้ไม่อยู่ในขั้นที่คุณอนุมัติได้';
+    })();
+
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-head">
+        <div style="flex:1;min-width:0">
+          <div class="mono" style="font-size:11px;color:var(--text-3);letter-spacing:0.04em">${d.docNo}</div>
+          <h3 style="margin:4px 0 6px;font-size:18px;font-weight:600">${escapeHtml(d.project)}</h3>
+          <span class="pill ${status.cls}">${status.label}</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">ผู้รับเหมา</div><div class="detail-value">${escapeHtml(d.contractor)}</div></div>
+          <div class="detail-item"><div class="detail-label">งวด</div><div class="detail-value">${d.period || '-'} / ${d.periodTotal || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">วันที่ส่งมอบ</div><div class="detail-value">${d.handoverDate || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">มูลค่าตามสัญญา</div><div class="detail-value mono">${fmt(d.contract)}</div></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">สรุปการเบิกจ่าย</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>ผลงานงวดนี้</span><span class="mono">${fmt(d.curr)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>ผลงานสะสม (${d.contract > 0 ? ((d.total / d.contract) * 100).toFixed(1) : 0}%)</span><span class="mono">${fmt(d.total)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--danger)"><span>− ประกันผลงาน ${d.retentionPct}%</span><span class="mono">${fmt(d.retention)}</span></div>
+          ${d.advance > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--danger)"><span>− เงินล่วงหน้า</span><span class="mono">${fmt(d.advance)}</span></div>` : ''}
+          ${d.material > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--danger)"><span>− ค่าวัสดุ</span><span class="mono">${fmt(d.material)}</span></div>` : ''}
+          ${d.penalty > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--danger)"><span>− ค่าปรับ</span><span class="mono">${fmt(d.penalty)}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:10px 0 0;margin-top:6px;border-top:1px solid var(--border);font-weight:600;color:var(--success);font-size:15px"><span>ยอดสุทธิ</span><span class="mono">${fmt(d.net)}</span></div>
+        </div>
+        ${d.description ? `
+          <div class="detail-section">
+            <div class="detail-section-title">รายละเอียดงาน</div>
+            <div style="font-size:13px;line-height:1.6">${escapeHtml(d.description)}</div>
+          </div>
+        ` : ''}
+        ${attList.length > 0 ? `
+          <div class="detail-section">
+            <div class="detail-section-title">เอกสารแนบ</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${attList.map(a => `<span class="pill pill-info"><i class="ti ti-paperclip"></i> ${a}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <h4 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 0">เส้นทางอนุมัติ</h4>
+        <div class="timeline">${stepsHtml}</div>
+        ${myTurn ? renderApprovalActions(d, currStep) : ''}
+        ${cannotApproveReason ? `
+          <div style="background:var(--surface-2);padding:12px;border-radius:var(--radius);font-size:12px;color:var(--text-2);text-align:center;margin-top:12px">
+            <i class="ti ti-info-circle"></i> ${cannotApproveReason}
+          </div>
+        ` : ''}
+      </div>
+      <div class="modal-foot">
+        <div>
+          ${currentUser && (currentUser.role === 'manager' || currentUser.id === d.submittedBy.id) ? `
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')">
+              <i class="ti ti-trash"></i> ลบ
+            </button>
+          ` : ''}
+        </div>
+        <button class="btn" onclick="closeModal()">ปิด</button>
+      </div>
+    `;
+
+    document.getElementById('detail-modal').classList.add('show');
+  }
+
+  function renderApprovalActions(d, currStep) {
+    const stepLabels = { manager: 'หัวหน้า', exec1: 'ผู้บริหาร 1', exec2: 'ผู้บริหาร 2' };
+    const hasPin = currentUser && currentUser.pinHash;
+    return `
+      <div class="approval-box">
+        <div class="approval-box-title">
+          <i class="ti ti-pencil"></i> รอการอนุมัติจาก${stepLabels[currStep]} (คุณ)
+        </div>
+        ${!hasPin ? `
+          <div style="background:var(--danger-soft);color:var(--danger);padding:10px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:12px">
+            <i class="ti ti-alert-circle"></i> คุณยังไม่ได้ตั้ง PIN โปรดไปที่ "ตั้งค่า" เพื่อตั้ง PIN ก่อน
+          </div>
+        ` : ''}
+        <div class="field" style="margin-bottom:12px">
+          <label>หมายเหตุ / ความเห็น (ถ้ามี)</label>
+          <input type="text" class="input" id="approver-note" placeholder="ความเห็นเพิ่มเติม...">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success" ${!hasPin ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''} onclick="initiateApproval('${d.id}', '${currStep}', 'approve')" style="flex:1;justify-content:center">
+            <i class="ti ti-check"></i> อนุมัติ
+          </button>
+          <button class="btn btn-danger" ${!hasPin ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''} onclick="initiateApproval('${d.id}', '${currStep}', 'reject')" style="flex:1;justify-content:center">
+            <i class="ti ti-x"></i> ไม่อนุมัติ
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ============ PIN APPROVAL FLOW ============
+  function initiateApproval(id, stepKey, action) {
+    if (!currentUser.pinHash) {
+      toast('กรุณาตั้ง PIN ก่อน', 'error');
+      return;
+    }
+    const note = document.getElementById('approver-note').value.trim();
+    if (action === 'reject' && !note) {
+      toast('กรุณาระบุเหตุผลที่ไม่อนุมัติ', 'error');
+      return;
+    }
+    pendingApproval = { id, stepKey, action, note };
+
+    document.getElementById('pin-modal-title').textContent = action === 'approve' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการไม่อนุมัติ';
+    document.getElementById('pin-modal-sub').textContent = `กรุณากรอก PIN ของ ${currentUser.name}`;
+    clearPinInputs();
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-modal').classList.add('show');
+    setTimeout(() => document.querySelector('.pin-input[data-idx="0"]').focus(), 100);
+  }
+
+  function clearPinInputs() {
+    document.querySelectorAll('.pin-input').forEach(i => {
+      i.value = '';
+      i.classList.remove('filled', 'error');
+    });
+  }
+
+  function getPinValue() {
+    return Array.from(document.querySelectorAll('.pin-input')).map(i => i.value).join('');
+  }
+
+  async function confirmPin() {
+    if (!pendingApproval || !currentUser.pinHash) return;
+    const pin = getPinValue();
+    if (pin.length < 4) {
+      document.getElementById('pin-error').textContent = 'PIN ต้องมีอย่างน้อย 4 หลัก';
+      return;
+    }
+    const hash = await hashPin(pin);
+    if (hash !== currentUser.pinHash) {
+      document.getElementById('pin-error').textContent = 'PIN ไม่ถูกต้อง';
+      document.querySelectorAll('.pin-input').forEach(i => i.classList.add('error'));
+      setTimeout(() => {
+        clearPinInputs();
+        document.querySelector('.pin-input[data-idx="0"]').focus();
+      }, 600);
+      return;
+    }
+    // Success
+    const { id, stepKey, action, note } = pendingApproval;
+    const doc = documents.find(x => x.id === id);
+    if (!doc || !canApprove(doc)) { closePinModal(); return; }
+
+    if (action === 'approve') {
+      doc.approvals[stepKey] = {
+        approverId: currentUser.id, name: currentUser.name, at: Date.now(), note: note || null
+      };
+      saveDocs();
+      toast('อนุมัติเรียบร้อย', 'success');
+    } else {
+      doc.status = 'rejected';
+      doc.approvals[stepKey] = {
+        approverId: currentUser.id, name: currentUser.name, at: Date.now(), note, rejected: true
+      };
+      saveDocs();
+      toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
+    }
+    closePinModal();
+    showDetail(id);
+    renderHistory();
+  }
+
+  function closePinModal() {
+    document.getElementById('pin-modal').classList.remove('show');
+    pendingApproval = null;
+    clearPinInputs();
+  }
+
+  // PIN input behavior
+  document.addEventListener('DOMContentLoaded', () => {
+    const pinInputs = document.querySelectorAll('.pin-input');
+    pinInputs.forEach((inp, idx) => {
+      inp.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        if (e.target.value) {
+          e.target.classList.add('filled');
+          if (idx < pinInputs.length - 1) pinInputs[idx + 1].focus();
+        } else {
+          e.target.classList.remove('filled');
+        }
+        document.getElementById('pin-error').textContent = '';
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) pinInputs[idx - 1].focus();
+        if (e.key === 'Enter') confirmPin();
+      });
+      inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        for (let i = 0; i < paste.length && i < pinInputs.length; i++) {
+          pinInputs[i].value = paste[i];
+          pinInputs[i].classList.add('filled');
+        }
+        const next = Math.min(paste.length, pinInputs.length - 1);
+        pinInputs[next].focus();
+      });
+    });
+  });
+
+  function confirmDelete(id) {
+    if (!confirm('ต้องการลบเอกสารนี้?')) return;
+    documents = documents.filter(d => d.id !== id);
+    saveDocs();
+    toast('ลบเรียบร้อย', 'success');
+    closeModal();
+    renderHistory();
+    refreshProjectDatalist();
+  }
+
+  function closeModal() { document.getElementById('detail-modal').classList.remove('show'); }
+  function closeModalBg(e) { if (e.target.id === 'detail-modal') closeModal(); }
+
+  // ============ EXPORT/IMPORT ============
+  function exportData() {
+    const data = { documents, users, exportedAt: Date.now() };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payment-form-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('สำรองข้อมูลเรียบร้อย', 'success');
+  }
+
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!confirm('การนำเข้าจะแทนที่ข้อมูลทั้งหมด ดำเนินการต่อ?')) return;
+        if (data.documents) documents = data.documents;
+        if (data.users) users = data.users;
+        saveDocs();
+        saveUsers();
+        renderHistory();
+        renderUserList();
+        refreshProjectDatalist();
+        toast('นำเข้าข้อมูลเรียบร้อย', 'success');
+      } catch (err) {
+        toast('ไฟล์ไม่ถูกต้อง', 'error');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ============ USER MANAGEMENT ============
+  function renderUserList() {
+    const container = document.getElementById('user-list-container');
+    if (!container) return;
+    if (users.length === 0) {
+      container.innerHTML = `
+        <div class="empty">
+          <i class="ti ti-users"></i>
+          <div class="empty-title">ยังไม่มีผู้ใช้งาน</div>
+          <div class="empty-sub">กดปุ่ม "เพิ่มผู้ใช้งาน" เพื่อเริ่มต้น</div>
+        </div>
+      `;
+      return;
+    }
+    container.innerHTML = users.map(u => {
+      const isMe = currentUser && u.id === currentUser.id;
+      const needsPin = u.role === 'manager' || u.role === 'executive';
+      const pinSet = !!u.pinHash;
+      return `
+        <div class="user-row">
+          <div class="user-avatar">${initials(u.name)}</div>
+          <div class="user-row-info">
+            <div class="user-row-name">${escapeHtml(u.name)} ${isMe ? '<span style="font-size:11px;color:var(--text-3);font-weight:400">(คุณ)</span>' : ''}</div>
+            <div class="user-row-meta">
+              ${escapeHtml(u.title || '-')}
+              ${needsPin ? `· <span class="pin-status ${pinSet ? 'set' : ''}"><i class="ti ti-${pinSet ? 'lock-check' : 'lock-exclamation'}"></i> ${pinSet ? 'ตั้ง PIN แล้ว' : 'ยังไม่ได้ตั้ง PIN'}</span>` : ''}
+            </div>
+          </div>
+          <span class="role-tag ${ROLES[u.role].cls}">${ROLES[u.role].label}</span>
+          <button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')" title="แก้ไข"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteUser('${u.id}')" title="ลบ" ${isMe ? 'disabled style="opacity:0.3;cursor:not-allowed"' : ''}><i class="ti ti-trash"></i></button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showAddUser() {
+    document.getElementById('user-modal-title').textContent = 'เพิ่มผู้ใช้งาน';
+    document.getElementById('u-id').value = '';
+    document.getElementById('u-name').value = '';
+    document.getElementById('u-role').value = 'submitter';
+    document.getElementById('u-title').value = '';
+    document.getElementById('u-pin').value = '';
+    document.getElementById('user-modal').classList.add('show');
+  }
+
+  function editUser(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('user-modal-title').textContent = 'แก้ไขผู้ใช้งาน';
+    document.getElementById('u-id').value = u.id;
+    document.getElementById('u-name').value = u.name;
+    document.getElementById('u-role').value = u.role;
+    document.getElementById('u-title').value = u.title || '';
+    document.getElementById('u-pin').value = '';
+    document.getElementById('user-modal').classList.add('show');
+  }
+
+  async function saveUser() {
+    const id = document.getElementById('u-id').value;
+    const name = document.getElementById('u-name').value.trim();
+    const role = document.getElementById('u-role').value;
+    const title = document.getElementById('u-title').value.trim();
+    const pin = document.getElementById('u-pin').value.trim();
+
+    if (!name) { toast('กรุณากรอกชื่อ', 'error'); return; }
+    if (pin && (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin))) {
+      toast('PIN ต้องเป็นตัวเลข 4-6 หลัก', 'error'); return;
+    }
+
+    let pinHash = null;
+    if (pin) pinHash = await hashPin(pin);
+
+    if (id) {
+      const u = users.find(x => x.id === id);
+      if (u) {
+        u.name = name; u.role = role; u.title = title;
+        if (pin) u.pinHash = pinHash; // only update if provided
+      }
+    } else {
+      users.push({ id: 'u' + Date.now(), name, role, title, pinHash });
+    }
+
+    saveUsers();
+    closeUserModal();
+    renderUserList();
+    if (currentUser && id === currentUser.id) {
+      currentUser = users.find(u => u.id === id);
+      document.getElementById('topbar-name').textContent = currentUser.name;
+      document.getElementById('topbar-role').textContent = ROLES[currentUser.role].label + (currentUser.title ? ' · ' + currentUser.title : '');
+      document.getElementById('topbar-avatar').textContent = initials(currentUser.name);
+    }
+    toast('บันทึกผู้ใช้งานเรียบร้อย', 'success');
+  }
+
+  function deleteUser(id) {
+    if (currentUser && id === currentUser.id) { toast('ไม่สามารถลบตัวเองได้', 'error'); return; }
+    if (!confirm('ต้องการลบผู้ใช้งานนี้?')) return;
+    users = users.filter(u => u.id !== id);
+    saveUsers();
+    renderUserList();
+    toast('ลบเรียบร้อย', 'success');
+  }
+
+  function closeUserModal() { document.getElementById('user-modal').classList.remove('show'); }
+  function closeUserModalBg(e) { if (e.target.id === 'user-modal') closeUserModal(); }
+
+  // ============ INIT ============
+  (function init() {
+    testStorage();
+    if (!storageAvailable) {
+      document.getElementById('storage-warning').classList.add('show');
+    }
+    loadAll();
+    if (currentUser) {
+      showApp();
+    } else {
+      renderLoginUserList();
+      if (users.length === 0) {
+        setTimeout(() => showFirstSetup(), 300);
+      }
+    }
+  })();
+</script>
+</body>
+</html>
