@@ -222,10 +222,10 @@
   /* MODAL */
   .modal-bg {
     display: none; position: fixed; inset: 0; background: rgba(20,18,14,0.6);
-    backdrop-filter: blur(4px); z-index: 100; align-items: flex-start; justify-content: center;
+    backdrop-filter: blur(4px); z-index: 9999; align-items: flex-start; justify-content: center;
     padding: 2rem 1rem; overflow-y: auto;
   }
-  .modal-bg.show { display: flex; }
+  .modal-bg.show { display: flex !important; }
   .modal {
     background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
     width: 100%; max-width: 640px; overflow: hidden; animation: modalIn 0.2s;
