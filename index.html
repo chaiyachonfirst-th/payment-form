@@ -369,6 +369,92 @@
     .stat-value { font-size: 20px; }
     .pin-input { width: 38px; height: 46px; font-size: 18px; }
   }
+
+  /* FILE UPLOAD */
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 12px; max-width: 240px; position: relative;
+  }
+  .file-chip-icon {
+    width: 28px; height: 28px; border-radius: var(--radius-sm); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; color: white;
+  }
+  .file-chip-icon.pdf { background: #b3261e; }
+  .file-chip-icon.img { background: var(--info); }
+  .file-chip-info { min-width: 0; flex: 1; }
+  .file-chip-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-chip-size { color: var(--text-3); font-size: 11px; }
+  .file-chip-remove {
+    background: transparent; border: none; color: var(--text-3); cursor: pointer; padding: 2px;
+    display: flex; align-items: center; border-radius: 50%;
+  }
+  .file-chip-remove:hover { background: var(--danger-soft); color: var(--danger); }
+  .file-thumb {
+    width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover;
+    cursor: pointer; border: 1px solid var(--border); transition: all 0.15s;
+  }
+  .file-thumb:hover { border-color: var(--accent); transform: scale(1.05); }
+  .file-pdf-card {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    cursor: pointer; text-decoration: none; color: inherit; transition: all 0.15s; font-size: 13px;
+  }
+  .file-pdf-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .image-viewer-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+    z-index: 9999; align-items: center; justify-content: center; padding: 1rem; cursor: zoom-out;
+  }
+  .image-viewer-bg.show { display: flex; }
+  .image-viewer-bg img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  /* PRINT */
+  @media print {
+    @page { size: A4; margin: 15mm; }
+    body { background: white !important; font-size: 11pt; }
+    .topbar, .tabs, .login-screen, .actions, .modal-foot, .approval-box, .filter,
+    .toolbar, .stat, .empty, #storage-warning, .toast,
+    .modal-bg:not(#detail-modal),
+    button, .btn, .file-chip-remove, .pf-list-item:not(.printing) {
+      display: none !important;
+    }
+    .modal-bg#detail-modal {
+      display: block !important; position: static !important; background: white !important;
+      backdrop-filter: none !important; padding: 0 !important; overflow: visible !important;
+    }
+    .modal {
+      box-shadow: none !important; border: none !important; max-width: 100% !important;
+      max-height: none !important; border-radius: 0 !important; animation: none !important;
+    }
+    .modal-head { border-bottom: 2pt solid black !important; padding: 0 0 8pt !important; }
+    .modal-body { padding: 8pt 0 !important; max-height: none !important; overflow: visible !important; }
+    .card, .detail-section { border: 1pt solid #999 !important; box-shadow: none !important; page-break-inside: avoid; }
+    .pill { border: 1pt solid #999; background: white !important; color: black !important; }
+    .step-icon { background: white !important; border: 1.5pt solid #555 !important; color: black !important; }
+    .step.done .step-icon { background: #444 !important; color: white !important; }
+    .step.rejected .step-icon { background: black !important; color: white !important; }
+    .print-only { display: block !important; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    .page { display: block !important; }
+    .page:not(.active) { display: none !important; }
+    .timeline { page-break-inside: avoid; }
+    .print-signatures { display: grid !important; grid-template-columns: 1fr 1fr; gap: 24pt; margin-top: 24pt; page-break-inside: avoid; }
+    .print-sig-box {
+      border: 1pt solid #555; padding: 8pt; min-height: 80pt; position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .print-sig-label { font-size: 9pt; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+    .print-sig-line { border-top: 1pt solid black; margin-top: 30pt; padding-top: 4pt; text-align: center; font-size: 10pt; }
+    .print-doc-header {
+      text-align: center; margin-bottom: 16pt; padding-bottom: 12pt; border-bottom: 2pt solid black;
+    }
+    .print-doc-header h1 { font-size: 18pt; font-weight: 700; }
+    .print-doc-header .docno { font-family: monospace; font-size: 10pt; margin-top: 4pt; }
+    .file-thumb { max-width: 200pt; max-height: 200pt; page-break-inside: avoid; }
+    a.file-pdf-card { color: black !important; }
+    a.file-pdf-card::after { content: " (ดูไฟล์ PDF ที่ระบบ)"; font-style: italic; font-size: 9pt; color: #555; }
+  }
+  .print-only { display: none; }
 </style>
 </head>
 <body>
@@ -510,11 +596,24 @@
       <div class="card">
         <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบประกอบการเบิกจ่าย</h3></div>
         <div class="card-body">
-          <div class="checks">
+          <div class="checks" style="margin-bottom:14px">
             <label class="check"><input type="checkbox" id="f-att-qc"> QC Checklist</label>
             <label class="check"><input type="checkbox" id="f-att-photo"> รูปถ่ายความก้าวหน้า</label>
             <label class="check"><input type="checkbox" id="f-att-bank"> สำเนาบัญชี</label>
             <label class="check"><input type="checkbox" id="f-att-other"> เอกสารอื่นๆ</label>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-size:13px;font-weight:500">อัพโหลดไฟล์ (PDF / รูปภาพ)</div>
+                <div class="field-hint">รูป ≤ 1 MB · PDF ≤ 2 MB · รวมทุกไฟล์ ≤ 5 MB</div>
+              </div>
+              <button type="button" class="btn btn-sm" onclick="document.getElementById('f-files').click()">
+                <i class="ti ti-upload"></i> เลือกไฟล์
+              </button>
+              <input type="file" id="f-files" accept="image/*,.pdf" multiple style="display:none" onchange="handleFiles(event)">
+            </div>
+            <div id="f-files-preview" style="display:flex;flex-wrap:wrap;gap:8px"></div>
           </div>
         </div>
       </div>
@@ -650,6 +749,11 @@
     </div>
   </div>
 
+  <!-- IMAGE VIEWER -->
+  <div class="image-viewer-bg" id="image-viewer" onclick="closeImageViewer()">
+    <img id="image-viewer-img" src="" alt="">
+  </div>
+
   <!-- PIN MODAL -->
   <div class="modal-bg" id="pin-modal">
     <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
@@ -696,6 +800,11 @@
   let currentFilter = 'all';
   let pendingApproval = null; // { id, stepKey, action, note }
   let selectedProject = null;
+  let pendingFiles = []; // [{ name, type, size, dataUrl }]
+
+  const MAX_IMG_SIZE = 1 * 1024 * 1024;     // 1 MB per image (after compression)
+  const MAX_PDF_SIZE = 2 * 1024 * 1024;     // 2 MB per PDF
+  const MAX_TOTAL_SIZE = 5 * 1024 * 1024;   // 5 MB total per document
 
   // ============ STORAGE WITH FALLBACK ============
   // Try localStorage; if blocked (e.g. sandboxed iframe), fall back to in-memory storage
@@ -839,6 +948,7 @@
     refreshProjectDatalist();
     renderHistory();
     renderUserList();
+    renderFilesPreview();
     updatePendingBadge();
   }
 
@@ -865,6 +975,172 @@
     if (!list) return;
     const projects = [...new Set(documents.map(d => d.project))];
     list.innerHTML = projects.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+  }
+
+  // ============ FILE HANDLING ============
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  // Compress image to reduce size
+  function compressImage(file, maxSizeBytes) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_DIM = 1920;
+          let { width, height } = img;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round(height * MAX_DIM / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round(width * MAX_DIM / height);
+              height = MAX_DIM;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try progressively lower quality until under size
+          let quality = 0.85;
+          let dataUrl = canvas.toDataURL('image/jpeg', quality);
+          while (dataUrl.length * 0.75 > maxSizeBytes && quality > 0.4) {
+            quality -= 0.1;
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+          resolve(dataUrl);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleFiles(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+      try {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const isImage = file.type.startsWith('image/');
+
+        if (!isPdf && !isImage) {
+          toast(`${file.name}: รองรับเฉพาะ PDF และรูปภาพ`, 'error');
+          continue;
+        }
+
+        if (isPdf && file.size > MAX_PDF_SIZE) {
+          toast(`${file.name}: PDF เกิน 2 MB`, 'error');
+          continue;
+        }
+
+        let dataUrl;
+        let finalSize;
+        let finalType;
+        let finalName = file.name;
+
+        if (isImage) {
+          dataUrl = await compressImage(file, MAX_IMG_SIZE);
+          finalSize = Math.round(dataUrl.length * 0.75);
+          finalType = 'image/jpeg';
+          if (!finalName.match(/\.(jpe?g|png|webp)$/i)) finalName += '.jpg';
+        } else {
+          dataUrl = await readFileAsDataURL(file);
+          finalSize = file.size;
+          finalType = 'application/pdf';
+        }
+
+        const currentTotal = pendingFiles.reduce((s, f) => s + f.size, 0);
+        if (currentTotal + finalSize > MAX_TOTAL_SIZE) {
+          toast(`${finalName}: รวมไฟล์เกิน 5 MB ลบไฟล์อื่นออกก่อน`, 'error');
+          continue;
+        }
+
+        pendingFiles.push({
+          id: 'f' + Date.now() + Math.random().toString(36).slice(2, 6),
+          name: finalName,
+          type: finalType,
+          size: finalSize,
+          dataUrl
+        });
+      } catch (err) {
+        toast(`อ่าน ${file.name} ไม่สำเร็จ`, 'error');
+      }
+    }
+
+    renderFilesPreview();
+    event.target.value = '';
+  }
+
+  function removeFile(id) {
+    pendingFiles = pendingFiles.filter(f => f.id !== id);
+    renderFilesPreview();
+  }
+
+  function renderFilesPreview() {
+    const container = document.getElementById('f-files-preview');
+    if (!container) return;
+    if (pendingFiles.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0">ยังไม่มีไฟล์แนบ</div>';
+      return;
+    }
+    container.innerHTML = pendingFiles.map(f => {
+      const isImg = f.type.startsWith('image/');
+      return `
+        <div class="file-chip">
+          <div class="file-chip-icon ${isImg ? 'img' : 'pdf'}">
+            <i class="ti ti-${isImg ? 'photo' : 'file-type-pdf'}"></i>
+          </div>
+          <div class="file-chip-info">
+            <div class="file-chip-name">${escapeHtml(f.name)}</div>
+            <div class="file-chip-size">${fmtSize(f.size)}</div>
+          </div>
+          <button class="file-chip-remove" onclick="removeFile('${f.id}')" title="ลบ">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openImageViewer(dataUrl) {
+    document.getElementById('image-viewer-img').src = dataUrl;
+    document.getElementById('image-viewer').classList.add('show');
+  }
+  function closeImageViewer() {
+    document.getElementById('image-viewer').classList.remove('show');
+  }
+  function openPdf(dataUrl, name) {
+    // Open PDF in new tab
+    const win = window.open();
+    if (win) {
+      win.document.write(`
+        <!DOCTYPE html><html><head><title>${escapeHtml(name)}</title>
+        <style>body{margin:0;background:#333}embed{width:100vw;height:100vh}</style>
+        </head><body><embed src="${dataUrl}" type="application/pdf"></body></html>
+      `);
+    } else {
+      toast('กรุณาอนุญาต popup เพื่อดู PDF', 'error');
+    }
   }
 
   // ============ CALCULATIONS ============
@@ -935,6 +1211,7 @@
       total: prev + curr,
       remain: contract - prev - curr,
       attachments: { qc: chk('f-att-qc'), photo: chk('f-att-photo'), bank: chk('f-att-bank'), other: chk('f-att-other') },
+      files: pendingFiles.slice(),
       submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
       approvals: { manager: null, exec1: null, exec2: null },
       status: 'pending',
@@ -955,6 +1232,8 @@
       else if (el.id === 'f-retention-pct') el.value = '5';
       else el.value = '';
     });
+    pendingFiles = [];
+    renderFilesPreview();
     calc();
   }
 
@@ -1331,6 +1610,10 @@
         <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
+        <div class="print-only print-doc-header">
+          <h1>ใบขอเบิกจ่ายงวดงาน</h1>
+          <div class="docno">เลขที่: ${d.docNo} · วันที่ออกเอกสาร: ${fmtDate(d.createdAt)}</div>
+        </div>
         <div class="detail-grid">
           <div class="detail-item"><div class="detail-label">ผู้รับเหมา</div><div class="detail-value">${escapeHtml(d.contractor)}</div></div>
           <div class="detail-item"><div class="detail-label">งวด</div><div class="detail-value">${d.period || '-'} / ${d.periodTotal || '-'}</div></div>
@@ -1355,14 +1638,57 @@
         ` : ''}
         ${attList.length > 0 ? `
           <div class="detail-section">
-            <div class="detail-section-title">เอกสารแนบ</div>
+            <div class="detail-section-title">หมวดเอกสารแนบ</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               ${attList.map(a => `<span class="pill pill-info"><i class="ti ti-paperclip"></i> ${a}</span>`).join('')}
             </div>
           </div>
         ` : ''}
+        ${(d.files && d.files.length > 0) ? `
+          <div class="detail-section">
+            <div class="detail-section-title">ไฟล์แนบ (${d.files.length} ไฟล์)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${d.files.map((f, i) => {
+                const isImg = f.type.startsWith('image/');
+                if (isImg) {
+                  return `<img src="${f.dataUrl}" class="file-thumb" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}" onclick="openImageViewer('${f.dataUrl}')">`;
+                } else {
+                  return `<a class="file-pdf-card" onclick="event.preventDefault();openPdf('${f.dataUrl}', '${escapeHtml(f.name).replace(/'/g, "\\'")}')" href="#">
+                    <div class="file-chip-icon pdf"><i class="ti ti-file-type-pdf"></i></div>
+                    <div><div style="font-weight:500">${escapeHtml(f.name)}</div><div style="font-size:11px;color:var(--text-3)">${fmtSize(f.size)} · เปิดดู PDF</div></div>
+                  </a>`;
+                }
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
         <h4 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 0">เส้นทางอนุมัติ</h4>
         <div class="timeline">${stepsHtml}</div>
+        <!-- Print-only signatures -->
+        <div class="print-signatures print-only">
+          ${[
+            { key: 'manager', label: 'ผู้อนุมัติขั้นที่ 1 (หัวหน้า)' },
+            { key: 'exec1', label: 'ผู้อนุมัติขั้นที่ 2 (ผู้บริหาร 1)' },
+            { key: 'exec2', label: 'ผู้อนุมัติขั้นที่ 3 (ผู้บริหาร 2)' },
+            { key: '_submitted', label: 'ผู้นำเสนอ' }
+          ].map(s => {
+            const data = s.key === '_submitted' ? d.submittedBy : d.approvals[s.key];
+            const filled = data && (s.key === '_submitted' || !data.rejected);
+            return `
+              <div class="print-sig-box">
+                <div class="print-sig-label">${s.label}</div>
+                <div class="print-sig-line">
+                  ${filled ? `(${escapeHtml(data.name)})` : '...........................................'}
+                  <div style="font-size:9pt;color:#555;margin-top:2pt">
+                    ${filled ? fmtDateTime(data.at) : 'วันที่ ............ / ............ / ............'}
+                  </div>
+                  ${data && data.note ? `<div style="font-size:9pt;color:#555;margin-top:2pt;font-style:italic">หมายเหตุ: ${escapeHtml(data.note)}</div>` : ''}
+                  ${data && data.rejected ? `<div style="font-size:9pt;color:#b3261e;margin-top:2pt;font-weight:bold">[ ไม่อนุมัติ ]</div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
         ${myTurn ? renderApprovalActions(d, currStep) : ''}
         ${cannotApproveReason ? `
           <div style="background:var(--surface-2);padding:12px;border-radius:var(--radius);font-size:12px;color:var(--text-2);text-align:center;margin-top:12px">
@@ -1371,7 +1697,10 @@
         ` : ''}
       </div>
       <div class="modal-foot">
-        <div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="printDocument()">
+            <i class="ti ti-printer"></i> ปริ้น
+          </button>
           ${currentUser && (currentUser.role === 'manager' || currentUser.id === d.submittedBy.id) ? `
             <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')">
               <i class="ti ti-trash"></i> ลบ
@@ -1536,6 +1865,10 @@
 
   function closeModal() { document.getElementById('detail-modal').classList.remove('show'); }
   function closeModalBg(e) { if (e.target.id === 'detail-modal') closeModal(); }
+
+  function printDocument() {
+    window.print();
+  }
 
   // ============ EXPORT/IMPORT ============
   function exportData() {
