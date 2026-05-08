@@ -320,6 +320,7 @@
   .toast.success { background: var(--success); }
   .toast.error { background: var(--danger); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* PROJECT VIEW */
   .project-list { display: flex; flex-direction: column; gap: 12px; }
@@ -468,23 +469,22 @@
       <p>Payment & Handover Form System</p>
     </div>
     <div class="login-body">
-      <div class="storage-warning" id="storage-warning">
-        <strong><i class="ti ti-alert-triangle"></i> ข้อจำกัดการบันทึกข้อมูล</strong><br>
-        เบราว์เซอร์ block การบันทึกข้อมูล กรุณาดาวน์โหลดไฟล์แล้วเปิดในเบราว์เซอร์โดยตรง หรืออัพโหลดขึ้น GitHub Pages
+      <div class="storage-warning show" id="storage-warning" style="display:none"></div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Email</label>
+        <input type="email" class="input" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')login()">
       </div>
-      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;text-align:center">เลือกผู้ใช้งานเพื่อเข้าสู่ระบบ</p>
-      <div class="field" style="margin-bottom:16px">
-        <label>ผู้ใช้งาน</label>
-        <select class="select" id="login-user"></select>
+      <div class="field" style="margin-bottom:6px">
+        <label>Password</label>
+        <input type="password" class="input" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">
+      <p id="login-error" style="font-size:12px;color:var(--danger);min-height:18px;margin-bottom:10px"></p>
+      <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center" onclick="login()">
         <i class="ti ti-login"></i> เข้าสู่ระบบ
       </button>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
-        <button class="btn btn-ghost btn-sm" onclick="showFirstSetup()">
-          <i class="ti ti-settings"></i> ตั้งค่าผู้ใช้งานครั้งแรก
-        </button>
-      </div>
+      <p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:14px">
+        <i class="ti ti-info-circle"></i> ติดต่อผู้ดูแลระบบเพื่อขอบัญชีผู้ใช้งาน
+      </p>
     </div>
   </div>
 </div>
@@ -690,6 +690,14 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="u-id">
+        <div class="field" style="margin-bottom:14px" id="u-email-row">
+          <label>Email (Firebase) <span class="req">*</span></label>
+          <input type="email" class="input" id="u-email" placeholder="user@email.com">
+        </div>
+        <div class="field" style="margin-bottom:14px" id="u-password-row">
+          <label>Password <span class="req">*</span></label>
+          <input type="password" class="input" id="u-password" placeholder="อย่างน้อย 6 ตัวอักษร">
+        </div>
         <div class="field" style="margin-bottom:14px">
           <label>ชื่อ-นามสกุล <span class="req">*</span></label>
           <input type="text" class="input" id="u-name" placeholder="เช่น สมชาย ใจดี">
@@ -703,13 +711,13 @@
           </select>
         </div>
         <div class="field" style="margin-bottom:14px">
-          <label>ตำแหน่ง / หมายเหตุ</label>
+          <label>ตำแหน่ง</label>
           <input type="text" class="input" id="u-title" placeholder="เช่น Project Manager">
         </div>
-        <div class="field" style="margin-bottom:8px">
-          <label>PIN สำหรับอนุมัติ (4-6 หลัก)</label>
-          <input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]*" class="input mono" id="u-pin" placeholder="เว้นว่างหากไม่ต้องการเปลี่ยน" autocomplete="new-password">
-          <span class="field-hint">ผู้นำเสนอไม่จำเป็นต้องตั้ง / หัวหน้าและผู้บริหารต้องตั้งเพื่อใช้อนุมัติ</span>
+        <div class="field">
+          <label>PIN อนุมัติ (4-6 หลัก)</label>
+          <input type="password" inputmode="numeric" maxlength="6" class="input mono" id="u-pin" placeholder="เว้นว่างหากไม่ต้องการเปลี่ยน">
+          <span class="field-hint">หัวหน้าและผู้บริหารต้องตั้ง PIN เพื่อใช้อนุมัติ</span>
         </div>
       </div>
       <div class="modal-foot">
@@ -719,32 +727,36 @@
     </div>
   </div>
 
-  <!-- SETUP MODAL -->
-  <div class="modal-bg" id="setup-modal" onclick="event.target.id==='setup-modal' && closeSetupModal()">
-    <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+  <!-- SETUP PROFILE MODAL (First login) -->
+  <div class="modal-bg show" id="setup-profile-modal" style="display:none">
+    <div class="modal" style="max-width:480px">
       <div class="modal-head">
         <div>
-          <h3 style="font-size:16px;font-weight:600">ตั้งค่าครั้งแรก</h3>
-          <p style="font-size:12px;color:var(--text-3);margin-top:4px">สร้างผู้ใช้งานเริ่มต้น</p>
+          <h3 style="font-size:16px;font-weight:600">ตั้งค่าโปรไฟล์</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px">Login สำเร็จ! กรอกข้อมูลเพื่อเริ่มใช้งาน</p>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="closeSetupModal()"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--text-2);margin-bottom:16px">ระบบจะสร้างผู้ใช้งานเริ่มต้นให้ คุณสามารถแก้ไข เพิ่ม หรือลบได้ในหน้าตั้งค่า</p>
-        <div style="background:var(--surface-2);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px">
-          <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-2)">ผู้ใช้งานเริ่มต้น (PIN: 1234):</div>
-          <ul style="font-size:12px;color:var(--text-2);margin:0 0 0 18px;line-height:1.8">
-            <li>คุณ A — ผู้นำเสนอ</li>
-            <li>คุณ B — หัวหน้า (PIN: 1234)</li>
-            <li>คุณ C — ผู้บริหาร 1 (PIN: 1234)</li>
-            <li>คุณ D — ผู้บริหาร 2 (PIN: 1234)</li>
-          </ul>
-          <p style="font-size:11px;color:var(--danger);margin-top:8px"><i class="ti ti-alert-circle"></i> กรุณาเปลี่ยน PIN ของผู้อนุมัติทันทีหลังเข้าระบบ</p>
+        <div class="field" style="margin-bottom:14px">
+          <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+          <input type="text" class="input" id="sp-name" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>บทบาท <span class="req">*</span></label>
+          <select class="select" id="sp-role">
+            <option value="submitter">ผู้นำเสนอ — สร้างใบเบิก</option>
+            <option value="manager">หัวหน้า — อนุมัติขั้นแรก</option>
+            <option value="executive">ผู้บริหาร — อนุมัติขั้นสุดท้าย</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ตำแหน่ง</label>
+          <input type="text" class="input" id="sp-title" placeholder="เช่น Project Manager">
         </div>
       </div>
       <div class="modal-foot">
-        <button class="btn" onclick="closeSetupModal()">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="initDefaultUsers()"><i class="ti ti-check"></i> สร้างผู้ใช้งานเริ่มต้น</button>
+        <div></div>
+        <button class="btn btn-primary" onclick="saveNewProfile()"><i class="ti ti-check"></i> เริ่มใช้งาน</button>
       </div>
     </div>
   </div>
@@ -782,11 +794,26 @@
     </div>
   </div>
 
-<script>
+<script type="module">
+  // ============ FIREBASE CONFIG ============
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAmRuAKqVHPe-89UAd-3sIQ5P5WPDOiu7U",
+    authDomain: "payment-home-delight.firebaseapp.com",
+    projectId: "payment-home-delight",
+    storageBucket: "payment-home-delight.firebasestorage.app",
+    messagingSenderId: "43936956440",
+    appId: "1:43936956440:web:4fd338e185ea3a0eef436d"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+
   // ============ CONSTANTS ============
-  const STORAGE_DOCS = 'pf_documents';
-  const STORAGE_USERS = 'pf_users';
-  const STORAGE_CURRENT = 'pf_current_user';
   const ROLES = {
     submitter: { label: 'ผู้นำเสนอ', cls: 'role-submitter' },
     manager: { label: 'หัวหน้า', cls: 'role-manager' },
@@ -796,86 +823,88 @@
   // ============ STATE ============
   let documents = [];
   let users = [];
-  let currentUser = null;
+  let currentUser = null;  // Firestore user profile doc
   let currentFilter = 'all';
-  let pendingApproval = null; // { id, stepKey, action, note }
+  let pendingApproval = null;
   let selectedProject = null;
-  let pendingFiles = []; // [{ name, type, size, dataUrl }]
+  let pendingFiles = [];
+  let unsubDocs = null;   // realtime listener unsubscribe
+  let unsubUsers = null;
 
-  const MAX_IMG_SIZE = 1 * 1024 * 1024;     // 1 MB per image (after compression)
-  const MAX_PDF_SIZE = 2 * 1024 * 1024;     // 2 MB per PDF
-  const MAX_TOTAL_SIZE = 5 * 1024 * 1024;   // 5 MB total per document
+  const MAX_IMG_SIZE = 1 * 1024 * 1024;
+  const MAX_PDF_SIZE = 2 * 1024 * 1024;
+  const MAX_TOTAL_SIZE = 5 * 1024 * 1024;
 
-  // ============ STORAGE WITH FALLBACK ============
-  // Try localStorage; if blocked (e.g. sandboxed iframe), fall back to in-memory storage
-  const memoryStore = {};
-  let storageAvailable = false;
-
-  function testStorage() {
-    try {
-      const test = '__pf_test__';
-      localStorage.setItem(test, test);
-      localStorage.removeItem(test);
-      storageAvailable = true;
-      return true;
-    } catch (e) {
-      storageAvailable = false;
-      return false;
-    }
-  }
-
-  function storageGet(key) {
-    if (storageAvailable) {
-      try { return localStorage.getItem(key); } catch (e) { return memoryStore[key] || null; }
-    }
-    return memoryStore[key] || null;
-  }
-  function storageSet(key, value) {
-    if (storageAvailable) {
-      try { localStorage.setItem(key, value); return true; } catch (e) {
-        memoryStore[key] = value; return false;
-      }
-    }
-    memoryStore[key] = value;
-    return false;
-  }
-  function storageRemove(key) {
-    if (storageAvailable) {
-      try { localStorage.removeItem(key); } catch (e) {}
-    }
-    delete memoryStore[key];
-  }
-
-  // ============ HASH (simple, for PIN) ============
+  // ============ HASH (PIN) ============
   async function hashPin(pin) {
     const enc = new TextEncoder().encode('pf_salt_' + pin);
     const hash = await crypto.subtle.digest('SHA-256', enc);
     return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // ============ DATA ============
-  function loadAll() {
+  // ============ FIREBASE DATA ============
+  async function saveDocs(docObj) {
     try {
-      documents = JSON.parse(storageGet(STORAGE_DOCS) || '[]');
-      users = JSON.parse(storageGet(STORAGE_USERS) || '[]');
-      const userId = storageGet(STORAGE_CURRENT);
-      currentUser = users.find(u => u.id === userId) || null;
+      await setDoc(doc(db, 'documents', docObj.id), docObj);
+      return true;
     } catch (e) {
-      console.error(e);
-      documents = []; users = []; currentUser = null;
+      toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+      return false;
     }
   }
 
-  function saveDocs() {
-    const ok = storageSet(STORAGE_DOCS, JSON.stringify(documents));
-    if (!ok && !storageAvailable) toast('โหมดทดลอง: ข้อมูลจะหายเมื่อรีเฟรช', 'error');
-    return true;
+  async function saveUsers(userObj) {
+    try {
+      await setDoc(doc(db, 'users', userObj.id), userObj);
+      return true;
+    } catch (e) {
+      toast('บันทึก user ไม่สำเร็จ', 'error');
+      return false;
+    }
   }
 
-  function saveUsers() {
-    const ok = storageSet(STORAGE_USERS, JSON.stringify(users));
-    if (!ok && !storageAvailable) toast('โหมดทดลอง: ข้อมูลจะหายเมื่อรีเฟรช', 'error');
-    return true;
+  async function deleteDocFromDb(id) {
+    try {
+      await deleteDoc(doc(db, 'documents', id));
+      return true;
+    } catch (e) {
+      toast('ลบไม่สำเร็จ', 'error');
+      return false;
+    }
+  }
+
+  async function deleteUserFromDb(id) {
+    try {
+      await deleteDoc(doc(db, 'users', id));
+      return true;
+    } catch (e) {
+      toast('ลบ user ไม่สำเร็จ', 'error');
+      return false;
+    }
+  }
+
+  function subscribeRealtime() {
+    // Listen to documents in real-time
+    if (unsubDocs) unsubDocs();
+    const qDocs = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
+    unsubDocs = onSnapshot(qDocs, snap => {
+      documents = snap.docs.map(d => d.data());
+      renderHistory();
+      updatePendingBadge();
+      refreshProjectDatalist();
+    });
+
+    // Listen to users in real-time
+    if (unsubUsers) unsubUsers();
+    unsubUsers = onSnapshot(collection(db, 'users'), snap => {
+      users = snap.docs.map(d => d.data());
+      // Update currentUser profile if changed
+      if (currentUser) {
+        const updated = users.find(u => u.uid === currentUser.uid);
+        if (updated) currentUser = updated;
+      }
+      renderUserList();
+    });
   }
 
   // ============ HELPERS ============
@@ -909,33 +938,70 @@
   }
 
   // ============ LOGIN ============
-  function renderLoginUserList() {
-    const sel = document.getElementById('login-user');
-    if (users.length === 0) {
-      sel.innerHTML = '<option value="">— ยังไม่มีผู้ใช้งาน กรุณาตั้งค่าก่อน —</option>';
-      return;
+  async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    if (!email || !password) { errEl.textContent = 'กรุณากรอก Email และ Password'; return; }
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> กำลังเข้าสู่ระบบ...';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      errEl.textContent = 'Email หรือ Password ไม่ถูกต้อง';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login"></i> เข้าสู่ระบบ';
     }
-    sel.innerHTML = users.map(u =>
-      `<option value="${u.id}">${escapeHtml(u.name)} — ${ROLES[u.role].label}${u.title ? ' (' + escapeHtml(u.title) + ')' : ''}</option>`
-    ).join('');
   }
 
-  function login() {
-    const userId = document.getElementById('login-user').value;
-    if (!userId) { toast('กรุณาตั้งค่าผู้ใช้งานก่อน', 'error'); return; }
-    currentUser = users.find(u => u.id === userId);
-    if (!currentUser) return;
-    storageSet(STORAGE_CURRENT, userId);
-    showApp();
-  }
-
-  function logout() {
+  async function logout() {
     if (!confirm('ออกจากระบบ?')) return;
-    storageRemove(STORAGE_CURRENT);
-    currentUser = null;
-    document.getElementById('app').classList.remove('active');
-    document.getElementById('login-screen').style.display = 'flex';
-    renderLoginUserList();
+    if (unsubDocs) { unsubDocs(); unsubDocs = null; }
+    if (unsubUsers) { unsubUsers(); unsubUsers = null; }
+    await signOut(auth);
+  }
+
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        users = snap.docs.map(d => d.data());
+        currentUser = users.find(u => u.uid === firebaseUser.uid);
+        if (!currentUser) {
+          // First time login — ask for profile setup
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('setup-profile-modal').classList.add('show');
+          window._pendingFirebaseUser = firebaseUser;
+          return;
+        }
+        showApp();
+        subscribeRealtime();
+      } catch (e) {
+        console.error(e);
+        toast('โหลดข้อมูลไม่สำเร็จ: ' + e.message, 'error');
+      }
+    } else {
+      currentUser = null; documents = []; users = [];
+      document.getElementById('app').classList.remove('active');
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+  });
+
+  async function saveNewProfile() {
+    const name = document.getElementById('sp-name').value.trim();
+    const role = document.getElementById('sp-role').value;
+    const title = document.getElementById('sp-title').value.trim();
+    if (!name) { toast('กรุณากรอกชื่อ', 'error'); return; }
+    const fu = window._pendingFirebaseUser;
+    if (!fu) return;
+    const profile = { id: fu.uid, uid: fu.uid, email: fu.email, name, role, title, pinHash: null, createdAt: Date.now() };
+    await saveUsers(profile);
+    currentUser = profile;
+    document.getElementById('setup-profile-modal').classList.remove('show');
+    showApp();
+    subscribeRealtime();
   }
 
   function showApp() {
@@ -950,23 +1016,6 @@
     renderUserList();
     renderFilesPreview();
     updatePendingBadge();
-  }
-
-  function showFirstSetup() { document.getElementById('setup-modal').classList.add('show'); }
-  function closeSetupModal() { document.getElementById('setup-modal').classList.remove('show'); }
-
-  async function initDefaultUsers() {
-    const defaultPin = await hashPin('1234');
-    users = [
-      { id: 'u1', name: 'คุณ A', role: 'submitter', title: 'หัวหน้าช่าง', pinHash: null },
-      { id: 'u2', name: 'คุณ B', role: 'manager', title: 'Project Manager', pinHash: defaultPin },
-      { id: 'u3', name: 'คุณ C', role: 'executive', title: 'ผู้บริหาร', pinHash: defaultPin },
-      { id: 'u4', name: 'คุณ D', role: 'executive', title: 'ผู้บริหาร', pinHash: defaultPin }
-    ];
-    saveUsers();
-    closeSetupModal();
-    renderLoginUserList();
-    toast('สร้างผู้ใช้งานเริ่มต้นเรียบร้อย (PIN: 1234)', 'success');
   }
 
   // ============ DATALIST ============
@@ -1219,11 +1268,12 @@
     };
 
     documents.unshift(doc);
-    saveDocs();
-    toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
-    refreshProjectDatalist();
-    resetForm();
-    switchTab('history');
+    const ok = await saveDocs(doc);
+    if (ok) {
+      toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
+      resetForm();
+      switchTab('history');
+    }
   }
 
   function resetForm() {
@@ -1794,26 +1844,25 @@
     }
     // Success
     const { id, stepKey, action, note } = pendingApproval;
-    const doc = documents.find(x => x.id === id);
-    if (!doc || !canApprove(doc)) { closePinModal(); return; }
+    const docObj = documents.find(x => x.id === id);
+    if (!docObj || !canApprove(docObj)) { closePinModal(); return; }
 
     if (action === 'approve') {
-      doc.approvals[stepKey] = {
+      docObj.approvals[stepKey] = {
         approverId: currentUser.id, name: currentUser.name, at: Date.now(), note: note || null
       };
-      saveDocs();
+      await saveDocs(docObj);
       toast('อนุมัติเรียบร้อย', 'success');
     } else {
-      doc.status = 'rejected';
-      doc.approvals[stepKey] = {
+      docObj.status = 'rejected';
+      docObj.approvals[stepKey] = {
         approverId: currentUser.id, name: currentUser.name, at: Date.now(), note, rejected: true
       };
-      saveDocs();
+      await saveDocs(docObj);
       toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
     }
     closePinModal();
     showDetail(id);
-    renderHistory();
   }
 
   function closePinModal() {
@@ -1853,14 +1902,13 @@
     });
   });
 
-  function confirmDelete(id) {
+  async function confirmDelete(id) {
     if (!confirm('ต้องการลบเอกสารนี้?')) return;
-    documents = documents.filter(d => d.id !== id);
-    saveDocs();
-    toast('ลบเรียบร้อย', 'success');
-    closeModal();
-    renderHistory();
-    refreshProjectDatalist();
+    const ok = await deleteDocFromDb(id);
+    if (ok) {
+      toast('ลบเรียบร้อย', 'success');
+      closeModal();
+    }
   }
 
   function closeModal() { document.getElementById('detail-modal').classList.remove('show'); }
@@ -1888,17 +1936,13 @@
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target.result);
         if (!confirm('การนำเข้าจะแทนที่ข้อมูลทั้งหมด ดำเนินการต่อ?')) return;
-        if (data.documents) documents = data.documents;
-        if (data.users) users = data.users;
-        saveDocs();
-        saveUsers();
-        renderHistory();
-        renderUserList();
-        refreshProjectDatalist();
+        if (data.documents) {
+          for (const d of data.documents) await saveDocs(d);
+        }
         toast('นำเข้าข้อมูลเรียบร้อย', 'success');
       } catch (err) {
         toast('ไฟล์ไม่ถูกต้อง', 'error');
@@ -1917,7 +1961,7 @@
         <div class="empty">
           <i class="ti ti-users"></i>
           <div class="empty-title">ยังไม่มีผู้ใช้งาน</div>
-          <div class="empty-sub">กดปุ่ม "เพิ่มผู้ใช้งาน" เพื่อเริ่มต้น</div>
+          <div class="empty-sub">เพิ่มโดยให้ทีมสมัครผ่านหน้า login แล้วตั้งค่า role ที่นี่</div>
         </div>
       `;
       return;
@@ -1932,7 +1976,7 @@
           <div class="user-row-info">
             <div class="user-row-name">${escapeHtml(u.name)} ${isMe ? '<span style="font-size:11px;color:var(--text-3);font-weight:400">(คุณ)</span>' : ''}</div>
             <div class="user-row-meta">
-              ${escapeHtml(u.title || '-')}
+              ${escapeHtml(u.email || '')} · ${escapeHtml(u.title || '-')}
               ${needsPin ? `· <span class="pin-status ${pinSet ? 'set' : ''}"><i class="ti ti-${pinSet ? 'lock-check' : 'lock-exclamation'}"></i> ${pinSet ? 'ตั้ง PIN แล้ว' : 'ยังไม่ได้ตั้ง PIN'}</span>` : ''}
             </div>
           </div>
@@ -1945,12 +1989,16 @@
   }
 
   function showAddUser() {
-    document.getElementById('user-modal-title').textContent = 'เพิ่มผู้ใช้งาน';
+    document.getElementById('user-modal-title').textContent = 'เพิ่มผู้ใช้งาน (Firebase)';
     document.getElementById('u-id').value = '';
     document.getElementById('u-name').value = '';
+    document.getElementById('u-email').value = '';
+    document.getElementById('u-password').value = '';
     document.getElementById('u-role').value = 'submitter';
     document.getElementById('u-title').value = '';
     document.getElementById('u-pin').value = '';
+    document.getElementById('u-email-row').style.display = 'flex';
+    document.getElementById('u-password-row').style.display = 'flex';
     document.getElementById('user-modal').classList.add('show');
   }
 
@@ -1960,15 +2008,21 @@
     document.getElementById('user-modal-title').textContent = 'แก้ไขผู้ใช้งาน';
     document.getElementById('u-id').value = u.id;
     document.getElementById('u-name').value = u.name;
+    document.getElementById('u-email').value = u.email || '';
+    document.getElementById('u-password').value = '';
     document.getElementById('u-role').value = u.role;
     document.getElementById('u-title').value = u.title || '';
     document.getElementById('u-pin').value = '';
+    document.getElementById('u-email-row').style.display = 'none';
+    document.getElementById('u-password-row').style.display = 'none';
     document.getElementById('user-modal').classList.add('show');
   }
 
   async function saveUser() {
     const id = document.getElementById('u-id').value;
     const name = document.getElementById('u-name').value.trim();
+    const email = document.getElementById('u-email').value.trim();
+    const password = document.getElementById('u-password').value.trim();
     const role = document.getElementById('u-role').value;
     const title = document.getElementById('u-title').value.trim();
     const pin = document.getElementById('u-pin').value.trim();
@@ -1978,37 +2032,52 @@
       toast('PIN ต้องเป็นตัวเลข 4-6 หลัก', 'error'); return;
     }
 
-    let pinHash = null;
+    let pinHash = id ? (users.find(u => u.id === id)?.pinHash || null) : null;
     if (pin) pinHash = await hashPin(pin);
 
     if (id) {
+      // Edit existing
       const u = users.find(x => x.id === id);
       if (u) {
-        u.name = name; u.role = role; u.title = title;
-        if (pin) u.pinHash = pinHash; // only update if provided
+        const updated = { ...u, name, role, title, pinHash };
+        await saveUsers(updated);
+        if (currentUser && id === currentUser.id) {
+          currentUser = updated;
+          document.getElementById('topbar-name').textContent = currentUser.name;
+          document.getElementById('topbar-role').textContent = ROLES[currentUser.role].label + (currentUser.title ? ' · ' + currentUser.title : '');
+          document.getElementById('topbar-avatar').textContent = initials(currentUser.name);
+        }
       }
     } else {
-      users.push({ id: 'u' + Date.now(), name, role, title, pinHash });
+      // Create new Firebase Auth user
+      if (!email || !password) { toast('กรุณากรอก Email และ Password', 'error'); return; }
+      if (password.length < 6) { toast('Password ต้องมีอย่างน้อย 6 ตัวอักษร', 'error'); return; }
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const profile = {
+          id: cred.user.uid, uid: cred.user.uid,
+          email, name, role, title, pinHash, createdAt: Date.now()
+        };
+        await saveUsers(profile);
+        // Sign back in as current user (createUserWithEmailAndPassword signs in as new user)
+        toast(`สร้างบัญชี ${email} เรียบร้อย`, 'success');
+        // Note: Firebase auto-signs-in new user — need to re-sign in as original user
+        toast('ระบบจะ sign out — กรุณา login ใหม่ด้วยบัญชีของคุณ', 'error');
+        return;
+      } catch (e) {
+        toast('สร้างบัญชีไม่สำเร็จ: ' + e.message, 'error');
+        return;
+      }
     }
 
-    saveUsers();
     closeUserModal();
-    renderUserList();
-    if (currentUser && id === currentUser.id) {
-      currentUser = users.find(u => u.id === id);
-      document.getElementById('topbar-name').textContent = currentUser.name;
-      document.getElementById('topbar-role').textContent = ROLES[currentUser.role].label + (currentUser.title ? ' · ' + currentUser.title : '');
-      document.getElementById('topbar-avatar').textContent = initials(currentUser.name);
-    }
     toast('บันทึกผู้ใช้งานเรียบร้อย', 'success');
   }
 
-  function deleteUser(id) {
+  async function deleteUser(id) {
     if (currentUser && id === currentUser.id) { toast('ไม่สามารถลบตัวเองได้', 'error'); return; }
     if (!confirm('ต้องการลบผู้ใช้งานนี้?')) return;
-    users = users.filter(u => u.id !== id);
-    saveUsers();
-    renderUserList();
+    await deleteUserFromDb(id);
     toast('ลบเรียบร้อย', 'success');
   }
 
@@ -2016,21 +2085,7 @@
   function closeUserModalBg(e) { if (e.target.id === 'user-modal') closeUserModal(); }
 
   // ============ INIT ============
-  (function init() {
-    testStorage();
-    if (!storageAvailable) {
-      document.getElementById('storage-warning').classList.add('show');
-    }
-    loadAll();
-    if (currentUser) {
-      showApp();
-    } else {
-      renderLoginUserList();
-      if (users.length === 0) {
-        setTimeout(() => showFirstSetup(), 300);
-      }
-    }
-  })();
+  // Firebase handles auth state via onAuthStateChanged above
 </script>
 </body>
 </html>
