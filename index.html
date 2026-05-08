@@ -2086,6 +2086,39 @@
 
   // ============ INIT ============
   // Firebase handles auth state via onAuthStateChanged above
+
+  // ============ GLOBAL EXPORTS (required for type="module") ============
+  window.login = login;
+  window.logout = logout;
+  window.saveNewProfile = saveNewProfile;
+  window.switchTab = switchTab;
+  window.calc = calc;
+  window.handleFiles = handleFiles;
+  window.removeFile = removeFile;
+  window.resetForm = resetForm;
+  window.submitForm = submitForm;
+  window.exportData = exportData;
+  window.importData = importData;
+  window.filterList = filterList;
+  window.showAddUser = showAddUser;
+  window.editUser = editUser;
+  window.deleteUser = deleteUser;
+  window.saveUser = saveUser;
+  window.closeUserModal = closeUserModal;
+  window.closeUserModalBg = closeUserModalBg;
+  window.closeModalBg = closeModalBg;
+  window.closeModal = closeModal;
+  window.printDocument = printDocument;
+  window.confirmDelete = confirmDelete;
+  window.initiateApproval = initiateApproval;
+  window.closePinModal = closePinModal;
+  window.confirmPin = confirmPin;
+  window.selectProject = selectProject;
+  window.backToProjects = backToProjects;
+  window.showDetail = showDetail;
+  window.openImageViewer = openImageViewer;
+  window.closeImageViewer = closeImageViewer;
+  window.openPdf = openPdf;
 </script>
 </body>
 </html>
