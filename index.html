@@ -1231,7 +1231,7 @@
   }
 
   // ============ FORM SUBMIT ============
-  function submitForm() {
+  async function submitForm() {
     if (!val('f-project')) { toast('กรุณากรอกชื่อโครงการ', 'error'); return; }
     if (!val('f-contractor')) { toast('กรุณากรอกชื่อผู้รับเหมา', 'error'); return; }
     if (num('f-curr') <= 0) { toast('กรุณากรอกผลงานงวดนี้', 'error'); return; }
