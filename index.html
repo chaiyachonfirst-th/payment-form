@@ -3888,10 +3888,20 @@
       if (t === 'po') return d.status === 'pending' || (d.status === 'approved' && !d.vendorConfirmedAt);
       return !d.reimbursedAt;
     });
-    
+    else if (currentFilter === 'approved') docs = docs.filter(d => {
+      // ซ่อนรายการที่จ่ายแล้ว
+      if (d.paidAt) return false; 
+      // ซ่อนรายการที่ถูกปฏิเสธ (Executive ไม่อนุมัติจ่าย) ไม่ให้มาโผล่กวนใจ
+      if (d.status === 'rejected') return false; 
+
+      const t = d.type || 'installment';
+      if (t === 'installment') return getCurrentStep(d) === 'done';
+      if (t === 'pr') return d.status === 'approved' && d.poDocId;
+      if (t === 'po') return d.status === 'approved' && d.vendorConfirmedAt;
+      return !!d.reimbursedAt;
+    });
     else if (currentFilter === 'paid') docs = docs.filter(d => !!d.paidAt);
     else if (currentFilter === 'rejected') docs = docs.filter(d => d.status === 'rejected');
-
     if (docs.length === 0) {
       list.innerHTML = `
         <div class="empty">
