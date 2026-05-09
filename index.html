@@ -4459,7 +4459,7 @@
     document.getElementById('detail-modal').classList.add('show');
   }
 
-  // ============ PR DETAIL ============
+ // ============ PR DETAIL ============
   function showPrDetail(d) {
     const status = getStatusInfo(d);
     const URGENCY_LABELS = { normal: 'ปกติ', urgent: 'เร่งด่วน', critical: 'วิกฤต — หยุดงาน' };
@@ -4477,7 +4477,7 @@
     const canMakePo = canCreatePO() && d.status === 'approved' && !d.poDocId;
     const linkedPo = d.poDocId ? documents.find(x => x.id === d.poDocId) : null;
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-clipboard-list" style="color:#0e7c66"></i> รายละเอียด PR <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
@@ -4524,14 +4524,21 @@
           <div class="detail-section-title">PO ที่ออกจาก PR นี้</div>
           <div onclick="closeModal();setTimeout(()=>showDetail('${linkedPo.id}'),100)" style="cursor:pointer;color:#5b3a8a;font-weight:600;text-decoration:underline">${linkedPo.docNo}</div>
         </div>` : ''}
+
+        ${canAct ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#e6f7eb,#fff);border-color:var(--success);margin-top:16px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-clipboard-check"></i> รอการอนุมัติจากจัดซื้อ (คุณ)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">ตรวจสอบรายการและทำการอนุมัติ PR เพื่อนำไปจัดทำเอกสาร PO ต่อไป</p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success" onclick="approvePR('${d.id}')" style="flex:1;justify-content:center"><i class="ti ti-check"></i> อนุมัติ PR</button>
+              <button class="btn btn-danger" onclick="rejectPR('${d.id}')" style="background:transparent;flex:1;justify-content:center"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+            </div>
+          </div>
+        ` : ''}
       </div>
 
       <div class="modal-foot">
         <div style="display:flex;gap:8px">
-          ${canAct ? `
-            <button class="btn btn-success btn-sm" onclick="approvePR('${d.id}')"><i class="ti ti-check"></i> อนุมัติ PR</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectPR('${d.id}')"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
-          ` : ''}
           ${canMakePo ? `
             <button class="btn btn-primary btn-sm" onclick="closeModal();setTimeout(()=>{switchTab('po');document.getElementById('po-from-pr').value='${d.id}';prefillPoFromPr();},100)" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-truck-delivery"></i> สร้าง PO จาก PR นี้</button>
           ` : ''}
@@ -4573,7 +4580,7 @@
           </a>`;
     }).join('');
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-truck-delivery" style="color:#5b3a8a"></i> รายละเอียด PO <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
@@ -4634,6 +4641,17 @@
 
         ${renderPaymentInfo(d)}
 
+        ${canApprove ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#e6f7eb,#fff);border-color:var(--success);margin-top:16px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-file-check"></i> รอการอนุมัติจาก Project Manager (คุณ)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">ตรวจสอบรายการสั่งซื้อ (PO) ให้ถูกต้องก่อนดำเนินการ</p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success" onclick="approvePO('${d.id}')" style="flex:1;justify-content:center"><i class="ti ti-check"></i> อนุมัติ PO</button>
+              <button class="btn btn-danger" onclick="rejectPO('${d.id}')" style="background:transparent;flex:1;justify-content:center"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+            </div>
+          </div>
+        ` : ''}
+
         ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
             <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
@@ -4645,10 +4663,6 @@
 
       <div class="modal-foot">
         <div style="display:flex;gap:8px">
-          ${canApprove ? `
-            <button class="btn btn-success btn-sm" onclick="approvePO('${d.id}')"><i class="ti ti-check"></i> อนุมัติ PO</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectPO('${d.id}')"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
-          ` : ''}
           ${canAttachVendor ? `
             <button class="btn btn-primary btn-sm" onclick="confirmPoVendorDoc('${d.id}')" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-paperclip"></i> ยืนยันแนบเอกสาร</button>
           ` : ''}
@@ -4661,7 +4675,6 @@
     `;
     document.getElementById('detail-modal').classList.add('show');
   }
-
   function renderFilesSection(d) {
     if (!d.files || d.files.length === 0) return '';
     return `
