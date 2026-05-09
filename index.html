@@ -3340,6 +3340,28 @@
     toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
     closeModal();
   }
+  // Executive ปฏิเสธ PO ในขั้นตอนจ่ายเงิน
+  async function rejectPOByExec(docId) {
+    if (currentUser?.role !== 'executive') { toast('เฉพาะ Executive', 'error'); return; }
+    const d = documents.find(x => x.id === docId);
+    if (!d || d.type !== 'po' || d.status !== 'approved' || d.paidAt) return;
+
+    const reason = prompt('เหตุผลที่ปฏิเสธ PO นี้:');
+    if (!reason) return; // ถ้ายกเลิก หรือไม่พิมพ์เหตุผล ให้หยุดทำงาน
+
+    d.status = 'rejected';
+    d.rejectedBy = { 
+      id: currentUser.id, 
+      name: currentUser.name, 
+      at: Date.now(), 
+      reason: '(Executive ปฏิเสธการจ่าย) ' + reason 
+    };
+
+    await saveDocs(d);
+    logActivity('doc-reject', `Executive ปฏิเสธ ${d.docNo} (PO) — ${reason}`);
+    toast('บันทึกการปฏิเสธเรียบร้อย', 'success');
+    closeModal();
+  }
 
   // PO Vendor Confirmation (Procurement attaches vendor's response)
   async function confirmPoVendorDoc(docId) {
@@ -4652,11 +4674,16 @@
           </div>
         ` : ''}
 
-        ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
+${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
             <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
             <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">PO อนุมัติแล้ว — บันทึกการจ่ายเงินพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
-            <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'po')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'po')" style="background:var(--success);border-color:var(--success);${currentUser?.role === 'executive' ? 'flex:1;justify-content:center;' : ''}"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
+              ${currentUser?.role === 'executive' ? `
+                <button class="btn btn-danger" onclick="rejectPOByExec('${d.id}')" style="background:transparent;flex:1;justify-content:center;"><i class="ti ti-x"></i> ปฏิเสธ / ไม่อนุมัติ</button>
+              ` : ''}
+            </div>
           </div>
         ` : ''}
       </div>
@@ -6662,6 +6689,7 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.printDashboardReport = printDashboardReport;
   window.printProjectReport = printProjectReport;
   window.onHistoryProjectChange = onHistoryProjectChange;
+  window.rejectPOByExec = rejectPOByExec;
 </script>
 
 <!-- Phase 2 Batch 4: Print area for high-quality vector PDF via browser print -->
