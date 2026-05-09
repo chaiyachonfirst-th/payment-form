@@ -3783,20 +3783,35 @@
   }
 
   function isMyPending(doc) {
-    if (canApprove(doc)) return true;
-    const type = doc.type || 'installment';
-    // Reimbursement
-    if ((type === 'purchase' || type === 'fuel') && !doc.reimbursedAt && canConfirmReimburse()) return true;
-    // PR pending Procurement approval
-    if (type === 'pr' && doc.status === 'pending' && canApprovePR()) return true;
-    // PR approved + no PO yet — Procurement needs to create PO
-    if (type === 'pr' && doc.status === 'approved' && !doc.poDocId && canCreatePO()) return true;
-    // PO pending PM approval
-    if (type === 'po' && doc.status === 'pending' && canApprovePO()) return true;
-    // PO approved + no vendor confirmation — Procurement needs to attach
-    if (type === 'po' && doc.status === 'approved' && !doc.vendorConfirmedAt && canAttachPOVendorDoc()) return true;
-    return false;
+  if (doc.status === 'rejected') return false; // ซ่อนเอกสารที่ถูกปฏิเสธ
+
+  if (canApprove(doc)) return true;
+  const type = doc.type || 'installment';
+
+  // --- เพิ่มใหม่: ดึงเอกสารที่รอจ่ายเงิน ไปแสดงใน "รอฉันดำเนินการ" ของ Executive ---
+  if (currentUser && currentUser.role === 'executive') {
+    // 1. งวดงาน: อนุมัติครบแล้ว แต่ยังไม่จ่าย
+    if (type === 'installment' && getCurrentStep(doc) === 'done' && !doc.paidAt) return true;
+    // 2. PO: อนุมัติแล้ว แต่ยังไม่จ่าย
+    if (type === 'po' && doc.status === 'approved' && !doc.paidAt) return true;
+    // 3. ซื้อของ และ ค่ารถ: ยังไม่จ่าย (จัดซื้อยังไม่จ่ายจาก Pocket Money หรือ Exec ยังไม่โอน)
+    if ((type === 'purchase' || type === 'fuel') && !doc.paidAt) return true;
   }
+  // -------------------------------------------------------------------------
+
+  // Reimbursement
+  if ((type === 'purchase' || type === 'fuel') && !doc.reimbursedAt && canConfirmReimburse()) return true;
+  // PR pending Procurement approval
+  if (type === 'pr' && doc.status === 'pending' && canApprovePR()) return true;
+  // PR approved + no PO yet — Procurement needs to create PO
+  if (type === 'pr' && doc.status === 'approved' && !doc.poDocId && canCreatePO()) return true;
+  // PO pending PM approval
+  if (type === 'po' && doc.status === 'pending' && canApprovePO()) return true;
+  // PO approved + no vendor confirmation — Procurement needs to attach
+  if (type === 'po' && doc.status === 'approved' && !doc.vendorConfirmedAt && canAttachPOVendorDoc()) return true;
+  
+  return false;
+}
 
 
   function updatePendingBadge() {
@@ -3873,15 +3888,7 @@
       if (t === 'po') return d.status === 'pending' || (d.status === 'approved' && !d.vendorConfirmedAt);
       return !d.reimbursedAt;
     });
-    else if (currentFilter === 'approved') docs = docs.filter(d => {
-      // Approved & complete BUT not yet paid — these still need attention
-      if (d.paidAt) return false; // hide paid
-      const t = d.type || 'installment';
-      if (t === 'installment') return getCurrentStep(d) === 'done';
-      if (t === 'pr') return d.status === 'approved' && d.poDocId;
-      if (t === 'po') return d.status === 'approved' && d.vendorConfirmedAt;
-      return !!d.reimbursedAt;
-    });
+    
     else if (currentFilter === 'paid') docs = docs.filter(d => !!d.paidAt);
     else if (currentFilter === 'rejected') docs = docs.filter(d => d.status === 'rejected');
 
