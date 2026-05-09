@@ -1848,7 +1848,222 @@
           <label class="check"><input type="checkbox" id="pay-flag-approved" checked> <strong>อนุมัติ</strong></label>
           <label class="check"><input type="checkbox" id="pay-flag-paid" checked onchange="onPayFlagPaidChange()"> <strong>จ่ายเงินแล้ว</strong></label>
         </div>
+// ============ PR DETAIL ============
+  function showPrDetail(d) {
+    const status = getStatusInfo(d);
+    const URGENCY_LABELS = { normal: 'ปกติ', urgent: 'เร่งด่วน', critical: 'วิกฤต — หยุดงาน' };
+    const URGENCY_COLORS = { normal: 'var(--text-2)', urgent: '#b8740a', critical: 'var(--danger)' };
+    const CATEGORY_LABELS = { material: 'วัสดุก่อสร้าง', tool: 'เครื่องมือ/อุปกรณ์', consumable: 'วัสดุสิ้นเปลือง', service: 'บริการ/รับเหมาช่วง', other: 'อื่นๆ' };
+    const itemsHtml = (d.items || []).map(it => `
+      <tr>
+        <td>${escapeHtml(it.name)}</td>
+        <td class="right">${fmt(it.qty)}</td>
+        <td>${escapeHtml(it.unit || '-')}</td>
+        <td class="right">${fmt(it.est)}</td>
+        <td class="right">${fmt(it.total)}</td>
+      </tr>`).join('');
+    const canAct = canApprovePR() && d.status === 'pending';
+    const canMakePo = canCreatePO() && d.status === 'approved' && !d.poDocId;
+    const linkedPo = d.poDocId ? documents.find(x => x.id === d.poDocId) : null;
 
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-head">
+        <h3><i class="ti ti-clipboard-list" style="color:#0e7c66"></i> รายละเอียด PR <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
+        <span class="pill ${status.cls}">${status.label}</span>
+      </div>
+      <div class="modal-body">
+        <div class="detail-section">
+          <div class="detail-section-title">ข้อมูลคำขอ</div>
+          <div class="kv-grid">
+            <div><div class="kv-k">โครงการ</div><div class="kv-v">${escapeHtml(d.project || '-')}</div></div>
+            <div><div class="kv-k">วันที่ขอ</div><div class="kv-v">${d.requestDate || '-'}</div></div>
+            <div><div class="kv-k">ต้องการภายใน</div><div class="kv-v"><strong>${d.neededBy || '-'}</strong></div></div>
+            <div><div class="kv-k">ความเร่งด่วน</div><div class="kv-v" style="color:${URGENCY_COLORS[d.urgency]||'var(--text)'};font-weight:600">${URGENCY_LABELS[d.urgency]||d.urgency}</div></div>
+            <div><div class="kv-k">หมวดหมู่</div><div class="kv-v">${CATEGORY_LABELS[d.category]||d.category||'-'}</div></div>
+            <div><div class="kv-k">ผู้ขอ</div><div class="kv-v">${escapeHtml(d.submittedBy.name)}</div></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">รายการที่ขอ (${(d.items||[]).length})</div>
+          <table class="items-tbl">
+            <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th>หน่วย</th><th class="right">ประมาณการ/หน่วย</th><th class="right">รวม</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ประมาณการรวม</td><td class="row-total">${fmt(d.totalEst)}</td></tr></tfoot>
+          </table>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">เหตุผล</div>
+          <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(d.reason || '-')}</div>
+          ${d.suggestedVendor ? `<div style="margin-top:8px"><strong>ผู้ขายแนะนำ:</strong> ${escapeHtml(d.suggestedVendor)}</div>` : ''}
+          ${d.note ? `<div style="margin-top:8px;color:var(--text-2)"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+        </div>
+
+        ${d.approvedBy ? `<div class="detail-section">
+          <div class="detail-section-title">อนุมัติแล้ว</div>
+          <div>${escapeHtml(d.approvedBy.name)} · ${fmtDateTime(d.approvedBy.at)}</div>
+        </div>` : ''}
+        ${d.rejectedBy ? `<div class="detail-section">
+          <div class="detail-section-title" style="color:var(--danger)">ไม่อนุมัติ</div>
+          <div>${escapeHtml(d.rejectedBy.name)} · ${fmtDateTime(d.rejectedBy.at)}</div>
+          <div style="color:var(--danger);margin-top:6px">เหตุผล: ${escapeHtml(d.rejectedBy.reason || '-')}</div>
+        </div>` : ''}
+        ${linkedPo ? `<div class="detail-section">
+          <div class="detail-section-title">PO ที่ออกจาก PR นี้</div>
+          <div onclick="closeModal();setTimeout(()=>showDetail('${linkedPo.id}'),100)" style="cursor:pointer;color:#5b3a8a;font-weight:600;text-decoration:underline">${linkedPo.docNo}</div>
+        </div>` : ''}
+
+        ${canAct ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#e6f7eb,#fff);border-color:var(--success);margin-top:16px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-clipboard-check"></i> รอการอนุมัติจากจัดซื้อ (คุณ)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">ตรวจสอบรายการและทำการอนุมัติ PR เพื่อนำไปจัดทำเอกสาร PO ต่อไป</p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success" onclick="approvePR('${d.id}')" style="flex:1;justify-content:center"><i class="ti ti-check"></i> อนุมัติ PR</button>
+              <button class="btn btn-danger" onclick="rejectPR('${d.id}')" style="background:transparent;flex:1;justify-content:center"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="modal-foot">
+        <div style="display:flex;gap:8px">
+          ${canMakePo ? `
+            <button class="btn btn-primary btn-sm" onclick="closeModal();setTimeout(()=>{switchTab('po');document.getElementById('po-from-pr').value='${d.id}';prefillPoFromPr();},100)" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-truck-delivery"></i> สร้าง PO จาก PR นี้</button>
+          ` : ''}
+          ${canDeleteAnything() ? `
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
+          ` : ''}
+        </div>
+        <button class="btn" onclick="closeModal()">ปิด</button>
+      </div>
+    `;
+    document.getElementById('detail-modal').classList.add('show');
+  }
+
+  // ============ PO DETAIL ============
+  function showPoDetail(d) {
+    const status = getStatusInfo(d);
+    const PAYMENT_LABELS = {
+      cod: 'เงินสด ณ จุดส่งของ (COD)', prepaid: 'โอนล่วงหน้า',
+      'credit-7': 'เครดิต 7 วัน', 'credit-15': 'เครดิต 15 วัน', 'credit-30': 'เครดิต 30 วัน', other: 'อื่นๆ'
+    };
+    const itemsHtml = (d.items || []).map(it => `
+      <tr>
+        <td>${escapeHtml(it.name)}</td>
+        <td class="right">${fmt(it.qty)}</td>
+        <td>${escapeHtml(it.unit || '-')}</td>
+        <td class="right">${fmt(it.price)}</td>
+        <td class="right">${fmt(it.total)}</td>
+      </tr>`).join('');
+    const canApprove = canApprovePO() && d.status === 'pending';
+    const canAttachVendor = canAttachPOVendorDoc() && d.status === 'approved' && !d.vendorConfirmedAt;
+
+    const vendorDocsHtml = (d.vendorDocs || []).map(f => {
+      const isImg = (f.type || '').startsWith('image/');
+      return isImg
+        ? `<img src="${f.dataUrl}" class="file-thumb" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}" onclick="openImageViewer('${f.dataUrl}')">`
+        : `<a class="file-pdf-card" onclick="event.preventDefault();openPdf('${f.dataUrl}', '${escapeHtml(f.name).replace(/'/g,"\\'")}')" href="#">
+            <div class="file-chip-icon pdf"><i class="ti ti-file-type-pdf"></i></div>
+            <div><div style="font-weight:500">${escapeHtml(f.name)}</div><div style="font-size:11px;color:var(--text-3)">${fmtSize(f.size)} · เปิดดู PDF</div></div>
+          </a>`;
+    }).join('');
+
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-head">
+        <h3><i class="ti ti-truck-delivery" style="color:#5b3a8a"></i> รายละเอียด PO <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
+        <span class="pill ${status.cls}">${status.label}</span>
+      </div>
+      <div class="modal-body">
+        <div class="detail-section">
+          <div class="detail-section-title">ข้อมูลใบสั่งซื้อ</div>
+          <div class="kv-grid">
+            <div><div class="kv-k">โครงการ</div><div class="kv-v">${escapeHtml(d.project || '-')}</div></div>
+            <div><div class="kv-k">PR ที่อ้างอิง</div><div class="kv-v" onclick="closeModal();setTimeout(()=>showDetail('${d.prDocId}'),100)" style="cursor:pointer;color:#0e7c66;font-weight:600;text-decoration:underline">${d.prDocNo || '-'}</div></div>
+            <div><div class="kv-k">วันที่สั่ง</div><div class="kv-v">${d.orderDate || '-'}</div></div>
+            <div><div class="kv-k">วันที่จัดส่ง</div><div class="kv-v">${d.deliveryDate || '-'}</div></div>
+            <div><div class="kv-k">ผู้ขาย</div><div class="kv-v"><strong>${escapeHtml(d.vendor || '-')}</strong>${d.vendorContact ? `<br><span style="color:var(--text-2);font-size:13px">${escapeHtml(d.vendorContact)}</span>` : ''}</div></div>
+            <div><div class="kv-k">เงื่อนไขชำระ</div><div class="kv-v">${PAYMENT_LABELS[d.paymentTerms] || d.paymentTerms || '-'}</div></div>
+            <div><div class="kv-k">ผู้สั่งซื้อ</div><div class="kv-v">${escapeHtml(d.submittedBy.name)}</div></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">รายการสั่งซื้อ (${(d.items||[]).length})</div>
+          <table class="items-tbl">
+            <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th>หน่วย</th><th class="right">ราคา/หน่วย</th><th class="right">รวม</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวม</td><td class="row-total">${fmt(d.total)}</td></tr></tfoot>
+          </table>
+        </div>
+
+        ${d.note ? `<div class="detail-section">
+          <div class="detail-section-title">หมายเหตุ</div>
+          <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(d.note)}</div>
+        </div>` : ''}
+
+        ${renderFilesSection(d)}
+
+        ${d.vendorDocs && d.vendorDocs.length > 0 ? `<div class="detail-section">
+          <div class="detail-section-title">เอกสารตอบกลับจากร้านค้า (${d.vendorDocs.length})</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${vendorDocsHtml}</div>
+          ${d.vendorConfirmedBy ? `<div style="margin-top:8px;color:var(--text-2);font-size:13px">โดย ${escapeHtml(d.vendorConfirmedBy.name)} · ${fmtDateTime(d.vendorConfirmedAt)}</div>` : ''}
+        </div>` : ''}
+
+        ${d.approvedBy ? `<div class="detail-section">
+          <div class="detail-section-title">PM อนุมัติ</div>
+          <div>${escapeHtml(d.approvedBy.name)} · ${fmtDateTime(d.approvedBy.at)}</div>
+        </div>` : ''}
+        ${d.rejectedBy ? `<div class="detail-section">
+          <div class="detail-section-title" style="color:var(--danger)">PM ไม่อนุมัติ</div>
+          <div>${escapeHtml(d.rejectedBy.name)} · ${fmtDateTime(d.rejectedBy.at)}</div>
+          <div style="color:var(--danger);margin-top:6px">เหตุผล: ${escapeHtml(d.rejectedBy.reason || '-')}</div>
+        </div>` : ''}
+
+        ${canAttachVendor ? `<div class="detail-section" style="background:#f4f0fa;padding:12px;border-radius:var(--radius-sm)">
+          <div class="detail-section-title">แนบเอกสารตอบกลับจากร้านค้า</div>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:10px">เลือกไฟล์ก่อน แล้วกด "ยืนยันแนบเอกสาร"</p>
+          <input type="file" id="po-vendor-files" multiple accept="image/*,.pdf" onchange="handleFiles(event)" style="display:none">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('po-vendor-files').click()"><i class="ti ti-upload"></i> เลือกไฟล์</button>
+          <div id="files-preview" style="margin-top:10px"></div>
+        </div>` : ''}
+
+        ${renderPaymentInfo(d)}
+
+        ${canApprove ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#e6f7eb,#fff);border-color:var(--success);margin-top:16px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-file-check"></i> รอการอนุมัติจาก Project Manager (คุณ)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">ตรวจสอบรายการสั่งซื้อ (PO) ให้ถูกต้องก่อนดำเนินการ</p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success" onclick="approvePO('${d.id}')" style="flex:1;justify-content:center"><i class="ti ti-check"></i> อนุมัติ PO</button>
+              <button class="btn btn-danger" onclick="rejectPO('${d.id}')" style="background:transparent;flex:1;justify-content:center"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">PO อนุมัติแล้ว — บันทึกการจ่ายเงินพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
+            <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'po')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="modal-foot">
+        <div style="display:flex;gap:8px">
+          ${canAttachVendor ? `
+            <button class="btn btn-primary btn-sm" onclick="confirmPoVendorDoc('${d.id}')" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-paperclip"></i> ยืนยันแนบเอกสาร</button>
+          ` : ''}
+          ${canDeleteAnything() ? `
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
+          ` : ''}
+        </div>
+        <button class="btn" onclick="closeModal()">ปิด</button>
+      </div>
+    `;
+    document.getElementById('detail-modal').classList.add('show');
+  }
         <div id="pay-method-section">
           <div class="field" style="margin-bottom:10px">
             <label>วิธีจ่ายเงิน <span class="req">*</span></label>
