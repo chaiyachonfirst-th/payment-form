@@ -1214,7 +1214,7 @@
               <i class="ti ti-upload"></i> เลือกไฟล์
             </button>
           </div>
-          <div id="files-preview" style="margin-top:10px"></div>
+          <div id="po-files-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
         </div>
       </div>
 
@@ -1441,7 +1441,7 @@
       </div>
       <div class="filter">
         <button class="filter-btn active type-filter-btn" data-type="all" onclick="filterByType('all')"><i class="ti ti-stack-2"></i> ทุกประเภท</button>
-        <button class="filter-btn type-filter-btn" data-type="installment" onclick="filterByType('installment')"><i class="ti ti-edit"></i> งวดงาน</button>
+        <button class="filter-btn type-filter-btn" data-type="installment" data-installment-only onclick="filterByType('installment')"><i class="ti ti-edit"></i> งวดงาน</button>
         <button class="filter-btn type-filter-btn" data-type="purchase" onclick="filterByType('purchase')"><i class="ti ti-shopping-cart"></i> ซื้อของ</button>
         <button class="filter-btn type-filter-btn" data-type="fuel" onclick="filterByType('fuel')"><i class="ti ti-gas-station"></i> ค่ารถ</button>
         <button class="filter-btn type-filter-btn" data-type="pr" onclick="filterByType('pr')"><i class="ti ti-clipboard-list"></i> PR</button>
@@ -1487,10 +1487,11 @@
             <strong style="color:var(--info)"><i class="ti ti-info-circle"></i> บทบาทและสิทธิ์ (Phase 2)</strong>
             <ul style="margin:8px 0 0 20px;color:var(--text-2)">
               <li><strong style="color:var(--info)">Foreman</strong> — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</li>
-              <li><strong style="color:#2c5282">Site Engineer</strong> — สร้างงวดงาน + เบิกคืน + ยืนยันเบิกคืน + req PR</li>
-              <li><strong style="color:#7a5d2e">Procurement</strong> — อนุมัติ PR + สร้าง PO + ยืนยันเบิกคืน + จ่าย Pocket Money (น้ำมัน/วัสดุสิ้นเปลือง)</li>
-              <li><strong style="color:var(--accent-dark)">Project Manager</strong> — สร้าง+เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO + สร้าง PR</li>
-              <li><strong style="color:#6b2d85">Executive</strong> — เซ็นงวดงานขั้นสุดท้าย (ต้อง 2 คนต่างกัน) + จ่ายเงินจริง + ลงสลิป</li>
+              <li><strong style="color:#2c5282">Site Engineer</strong> — สร้างงวดงาน + เบิกคืน + อนุมัติเบิกคืน + req PR</li>
+              <li><strong style="color:#7a5d2e">Procurement</strong> — อนุมัติ PR + สร้าง PO + อนุมัติเบิกคืน + จ่ายเงินจริง (เบิกคืนซื้อของ/ค่ารถ + Pocket Money)</li>
+              <li><strong style="color:var(--accent-dark)">Project Manager</strong> — สร้าง+เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO + สร้าง PR + อนุมัติเบิกคืน <em>(ไม่มีอำนาจจ่ายเงิน)</em></li>
+              <li><strong style="color:#6b2d85">Executive</strong> — เซ็นงวดงานขั้นสุดท้าย (2 คนต่างกัน) + จ่ายเงินจริง (งวดงาน/PO) + ลงสลิป</li>
+              <li><strong>เบิกคืน 2 ขั้น</strong> — Site/PM/Procurement อนุมัติ → Procurement จ่ายเงิน + ลงสลิป</li>
               <li><strong>PIN 4-6 หลัก</strong> — จำเป็นสำหรับทุก role ยกเว้น Foreman</li>
             </ul>
           </div>
@@ -1586,10 +1587,10 @@
           <label>บทบาท <span class="req">*</span></label>
           <select class="select" id="u-role">
             <option value="foreman">Foreman — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</option>
-            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + PR</option>
-            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + จ่าย Pocket Money</option>
-            <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ</option>
-            <option value="executive">Executive — เซ็นขั้นสุดท้าย + จ่ายเงิน</option>
+            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + อนุมัติเบิกคืน + req PR</option>
+            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + อนุมัติเบิกคืน + จ่าย (เบิกคืน/Pocket)</option>
+            <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO + อนุมัติเบิกคืน</option>
+            <option value="executive">Executive — เซ็นงวดงานขั้นสุดท้าย + จ่ายเงิน (งวดงาน/PO)</option>
             <option value="admin">Admin — ผู้ดูแลระบบ (เต็มสิทธิ์)</option>
           </select>
         </div>
@@ -1628,10 +1629,10 @@
           <label>บทบาท <span class="req">*</span></label>
           <select class="select" id="sp-role">
             <option value="foreman">Foreman — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</option>
-            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + PR</option>
-            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + จ่าย Pocket Money</option>
-            <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ</option>
-            <option value="executive">Executive — เซ็นขั้นสุดท้าย + จ่ายเงิน</option>
+            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + อนุมัติเบิกคืน + req PR</option>
+            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + อนุมัติเบิกคืน + จ่าย (เบิกคืน/Pocket)</option>
+            <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO + อนุมัติเบิกคืน</option>
+            <option value="executive">Executive — เซ็นงวดงานขั้นสุดท้าย + จ่ายเงิน (งวดงาน/PO)</option>
           </select>
         </div>
         <div class="field">
@@ -1707,8 +1708,8 @@
     <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
       <div class="modal-head">
         <div>
-          <h3 style="font-size:16px;font-weight:600">ยืนยันการเบิกคืน</h3>
-          <p style="font-size:12px;color:var(--text-3);margin-top:4px">กรุณากรอก PIN เพื่อยืนยันว่าได้คืนเงินแล้ว</p>
+          <h3 style="font-size:16px;font-weight:600">อนุมัติการเบิกคืน</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px">กรุณากรอก PIN เพื่ออนุมัติ — Procurement จะเป็นผู้จ่ายเงินจริง</p>
         </div>
       </div>
       <div class="modal-body">
@@ -1725,7 +1726,7 @@
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeReimburseModal()">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="confirmReimburse()"><i class="ti ti-check"></i> ยืนยันเบิกคืน</button>
+        <button class="btn btn-primary" onclick="confirmReimburse()"><i class="ti ti-check"></i> อนุมัติเบิกคืน</button>
       </div>
     </div>
   </div>
@@ -2242,8 +2243,12 @@
       }
     }
     if ((type === 'purchase' || type === 'fuel') && !d.reimbursedAt) {
-      // Reimbursement: 24h SLA from submission
-      return { who: 'ผู้ยืนยันเบิกคืน', days: 1, sla: slaStatus(d.submittedBy?.at, null, 1) };
+      // Step 1 — reimbursement approval: 24h SLA from submission
+      return { who: 'ผู้อนุมัติเบิกคืน (Site/PM/จัดซื้อ)', days: 1, sla: slaStatus(d.submittedBy?.at, null, 1) };
+    }
+    if ((type === 'purchase' || type === 'fuel') && d.reimbursedAt && !d.paidAt) {
+      // Step 2 — Procurement payment: 24h SLA from approval
+      return { who: 'จัดซื้อ (จ่ายเงิน)', days: 1, sla: slaStatus(d.reimbursedAt, null, 1) };
     }
     return null;
   }
@@ -2417,18 +2422,26 @@
     const tabPo = document.querySelector('.tab[data-tab="po"]');
     const tabPocket = document.querySelector('.tab[data-tab="pocket"]');
     const tabOverview = document.querySelector('.tab[data-tab="overview"]');
-    if (tabInstall) tabInstall.style.display = canCreateInstallment() ? '' : 'none';
+    // Procurement never sees installment tab (even if technically allowed elsewhere)
+    if (tabInstall) tabInstall.style.display = (canCreateInstallment() && canSeeInstallments()) ? '' : 'none';
     if (tabPurchase) tabPurchase.style.display = canCreatePurchase() ? '' : 'none';
     if (tabFuel) tabFuel.style.display = canCreateFuel() ? '' : 'none';
     if (tabPr) tabPr.style.display = canCreatePR() ? '' : 'none';
     if (tabPo) tabPo.style.display = canCreatePO() ? '' : 'none';
     // Pocket Money: Procurement (manage) + PM/Executive (view all)
     if (tabPocket) tabPocket.style.display = (currentUser?.role === 'procurement' || canSeeAllProjects()) ? '' : 'none';
-    // Overview: PM/Executive only
-    if (tabOverview) tabOverview.style.display = canSeeAllProjects() ? '' : 'none';
+    // Overview: PM/Executive only (Procurement excluded — installment-focused)
+    if (tabOverview) tabOverview.style.display = (canSeeAllProjects() && canSeeInstallments()) ? '' : 'none';
     // Dashboard: PM/Executive/Admin only
     const tabDashboard = document.querySelector('.tab[data-tab="dashboard"]');
     if (tabDashboard) tabDashboard.style.display = canViewDashboard() ? '' : 'none';
+    // Hide installment-only filter button + auto-reset filter if procurement has it set
+    document.querySelectorAll('[data-installment-only]').forEach(el => {
+      el.style.display = canSeeInstallments() ? '' : 'none';
+    });
+    if (!canSeeInstallments() && currentTypeFilter === 'installment') {
+      filterByType('all');
+    }
     // If current tab is hidden, switch to first visible
     const activeTab = document.querySelector('.tab.active[data-tab]');
     if (activeTab && activeTab.style.display === 'none') {
@@ -2664,7 +2677,7 @@
   }
 
   function renderFilesPreview() {
-    const containers = ['f-files-preview', 'p-files-preview', 'g-files-preview'];
+    const containers = ['f-files-preview', 'p-files-preview', 'g-files-preview', 'po-files-preview'];
     const html = pendingFiles.length === 0
       ? '<div style="font-size:12px;color:var(--text-3);padding:8px 0">ยังไม่มีไฟล์แนบ</div>'
       : pendingFiles.map(f => {
@@ -3560,6 +3573,12 @@
     );
   }
 
+  // Phase 3: Procurement should NOT see installment (งวดงาน) anywhere — not their concern
+  function canSeeInstallments() {
+    if (isAdmin()) return true;
+    return currentUser && currentUser.role !== 'procurement';
+  }
+
   // PM and Executive (and Admin) can view dashboard + add income (รายรับ) + print reports
   function canViewDashboard() {
     if (isAdmin()) return true;
@@ -3596,14 +3615,26 @@
     if (isAdmin()) return true;
     return currentUser && currentUser.role === 'procurement';
   }
-  // NEW: Procurement can mark PO/Purchase as paid (with evidence)
-  function canMarkPaid() {
+  // Payment authority — split by document type (Phase 3)
+  // - Installment + PO: Executive only (2 different exec needed for installment final approval)
+  // - Purchase + Fuel (reimbursement): Procurement only — AFTER reimbursement is approved
+  // - Pocket Money: Procurement only (handled separately)
+  // - Admin: super-user, can pay anything
+  function canMarkPaidFor(docType) {
     if (isAdmin()) return true;
-    return currentUser && (
-      currentUser.role === 'procurement' ||
-      currentUser.role === 'executive' ||
-      currentUser.role === 'projectManager'
-    );
+    if (!currentUser) return false;
+    const t = docType || 'installment';
+    if (t === 'installment' || t === 'po') {
+      return currentUser.role === 'executive';
+    }
+    if (t === 'purchase' || t === 'fuel') {
+      return currentUser.role === 'procurement';
+    }
+    return false;
+  }
+  // Backward-compat: old callers without doc context (rare) — assume installment
+  function canMarkPaid() {
+    return canMarkPaidFor('installment');
   }
 
   // ============ PROJECT CRUD ============
@@ -3732,10 +3763,10 @@
     if (doc.paidAt) {
       return { label: 'จ่ายเงินแล้ว', cls: 'pill-reimbursed' };
     }
-    // Purchase / Fuel — reimbursement flow
+    // Purchase / Fuel — 2-step reimbursement flow (approve -> pay by Procurement)
     if (type === 'purchase' || type === 'fuel') {
-      if (doc.reimbursedAt) return { label: 'เบิกคืนแล้ว', cls: 'pill-reimbursed' };
-      return { label: 'จ่ายแล้ว · รอเบิกคืน', cls: 'pill-paid-pending' };
+      if (doc.reimbursedAt) return { label: 'อนุมัติเบิกคืน · รอจัดซื้อจ่าย', cls: 'pill-paid-pending' };
+      return { label: 'รออนุมัติเบิกคืน', cls: 'pill-pending' };
     }
     // PR — Procurement approval flow
     if (type === 'pr') {
@@ -3746,12 +3777,12 @@
       }
       return { label: 'PR รอจัดซื้ออนุมัติ', cls: 'pill-pending' };
     }
-    // PO — PM approval flow + vendor confirmation
+    // PO — PM approval flow → Executive payment
     if (type === 'po') {
       if (doc.status === 'rejected') return { label: 'PO ไม่อนุมัติ', cls: 'pill-rejected' };
       if (doc.status === 'approved') {
-        if (doc.vendorConfirmedAt) return { label: 'PO เสร็จสมบูรณ์', cls: 'pill-reimbursed' };
-        return { label: 'PO อนุมัติ · รอเอกสารร้านค้า', cls: 'pill-paid-pending' };
+        // After PM approval: ready for Executive to pay
+        return { label: 'PO อนุมัติ · รอจ่ายเงิน', cls: 'pill-paid-pending' };
       }
       return { label: 'PO รอ PM อนุมัติ', cls: 'pill-pending' };
     }
@@ -3794,22 +3825,23 @@
     if (type === 'installment' && getCurrentStep(doc) === 'done' && !doc.paidAt) return true;
     // 2. PO: อนุมัติแล้ว แต่ยังไม่จ่าย
     if (type === 'po' && doc.status === 'approved' && !doc.paidAt) return true;
-    // 3. ซื้อของ และ ค่ารถ: ยังไม่จ่าย (จัดซื้อยังไม่จ่ายจาก Pocket Money หรือ Exec ยังไม่โอน)
-    if ((type === 'purchase' || type === 'fuel') && !doc.paidAt) return true;
+    // (Executive does NOT pay purchase/fuel — those are Procurement's job)
   }
   // -------------------------------------------------------------------------
 
-  // Reimbursement
+  // Reimbursement step 1: approval pending (Site Eng / PM / Procurement)
   if ((type === 'purchase' || type === 'fuel') && !doc.reimbursedAt && canConfirmReimburse()) return true;
+  // Reimbursement step 2: approved but unpaid → Procurement needs to pay
+  if ((type === 'purchase' || type === 'fuel') && doc.reimbursedAt && !doc.paidAt && canMarkPaidFor(type)) return true;
   // PR pending Procurement approval
   if (type === 'pr' && doc.status === 'pending' && canApprovePR()) return true;
   // PR approved + no PO yet — Procurement needs to create PO
   if (type === 'pr' && doc.status === 'approved' && !doc.poDocId && canCreatePO()) return true;
   // PO pending PM approval
   if (type === 'po' && doc.status === 'pending' && canApprovePO()) return true;
-  // PO approved + no vendor confirmation — Procurement needs to attach
-  if (type === 'po' && doc.status === 'approved' && !doc.vendorConfirmedAt && canAttachPOVendorDoc()) return true;
-  
+  // PO approved + not paid yet — Executive must pay
+  if (type === 'po' && doc.status === 'approved' && !doc.paidAt && canMarkPaidFor('po')) return true;
+
   return false;
 }
 
@@ -3853,28 +3885,42 @@
 
     refreshHistoryProjectSelect();
 
-    const total = documents.length;
-    const installmentDocs = documents.filter(d => (d.type || 'installment') === 'installment');
-    const purchaseDocs = documents.filter(d => d.type === 'purchase');
-    const fuelDocs = documents.filter(d => d.type === 'fuel');
-    const prDocs = documents.filter(d => d.type === 'pr');
-    const poDocs = documents.filter(d => d.type === 'po');
+    // For Procurement: scope all stats to non-installment docs only
+    const visibleDocs = canSeeInstallments() ? documents : documents.filter(d => (d.type || 'installment') !== 'installment');
+    const total = visibleDocs.length;
+    const installmentDocs = visibleDocs.filter(d => (d.type || 'installment') === 'installment');
+    const purchaseDocs = visibleDocs.filter(d => d.type === 'purchase');
+    const fuelDocs = visibleDocs.filter(d => d.type === 'fuel');
+    const prDocs = visibleDocs.filter(d => d.type === 'pr');
+    const poDocs = visibleDocs.filter(d => d.type === 'po');
 
     const pending = installmentDocs.filter(d => d.status === 'pending' && getCurrentStep(d) !== 'done').length;
     const approved = installmentDocs.filter(d => getCurrentStep(d) === 'done').length;
     const reimbPending = [...purchaseDocs, ...fuelDocs].filter(d => !d.reimbursedAt).length;
-    const myPending = documents.filter(d => isMyPending(d)).length;
+    const myPending = visibleDocs.filter(d => isMyPending(d)).length;
     const totalAmount = installmentDocs.filter(d => getCurrentStep(d) === 'done').reduce((s, d) => s + (Number(d.net) || 0), 0)
       + [...purchaseDocs, ...fuelDocs].reduce((s, d) => s + (Number(d.net) || 0), 0);
 
-    document.getElementById('stats-bar').innerHTML = `
-      <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div><div class="stat-sub">งวด ${installmentDocs.length} · ซื้อ ${purchaseDocs.length} · ค่ารถ ${fuelDocs.length} · PR ${prDocs.length} · PO ${poDocs.length}</div></div>
-      <div class="stat warn"><div class="stat-label">รอฉันดำเนินการ</div><div class="stat-value">${myPending}</div><div class="stat-sub">รออนุมัติ ${pending} · รอเบิกคืน ${reimbPending}</div></div>
-      <div class="stat ok"><div class="stat-label">งวดงานอนุมัติแล้ว</div><div class="stat-value">${approved}</div></div>
-      <div class="stat"><div class="stat-label">ยอดรวมที่จ่าย/อนุมัติ</div><div class="stat-value">${fmt(totalAmount)}</div><div class="stat-sub">บาท</div></div>
-    `;
+    if (canSeeInstallments()) {
+      document.getElementById('stats-bar').innerHTML = `
+        <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div><div class="stat-sub">งวด ${installmentDocs.length} · ซื้อ ${purchaseDocs.length} · ค่ารถ ${fuelDocs.length} · PR ${prDocs.length} · PO ${poDocs.length}</div></div>
+        <div class="stat warn"><div class="stat-label">รอฉันดำเนินการ</div><div class="stat-value">${myPending}</div><div class="stat-sub">รออนุมัติ ${pending} · รอเบิกคืน ${reimbPending}</div></div>
+        <div class="stat ok"><div class="stat-label">งวดงานอนุมัติแล้ว</div><div class="stat-value">${approved}</div></div>
+        <div class="stat"><div class="stat-label">ยอดรวมที่จ่าย/อนุมัติ</div><div class="stat-value">${fmt(totalAmount)}</div><div class="stat-sub">บาท</div></div>
+      `;
+    } else {
+      // Procurement view — no installment stats
+      document.getElementById('stats-bar').innerHTML = `
+        <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div><div class="stat-sub">ซื้อ ${purchaseDocs.length} · ค่ารถ ${fuelDocs.length} · PR ${prDocs.length} · PO ${poDocs.length}</div></div>
+        <div class="stat warn"><div class="stat-label">รอฉันดำเนินการ</div><div class="stat-value">${myPending}</div><div class="stat-sub">รวม ${myPending} รายการ</div></div>
+        <div class="stat ok"><div class="stat-label">รอเบิกคืน</div><div class="stat-value">${reimbPending}</div><div class="stat-sub">ซื้อของ + ค่ารถ</div></div>
+        <div class="stat"><div class="stat-label">ยอดรวมเบิกคืน</div><div class="stat-value">${fmt([...purchaseDocs, ...fuelDocs].reduce((s, d) => s + (Number(d.net) || 0), 0))}</div><div class="stat-sub">บาท</div></div>
+      `;
+    }
 
     let docs = documents;
+    // Phase 3: Procurement never sees installments
+    if (!canSeeInstallments()) docs = docs.filter(d => (d.type || 'installment') !== 'installment');
     // Project filter
     if (currentProjectFilter !== 'all') docs = docs.filter(d => d.projectId === currentProjectFilter);
     // Type filter
@@ -3885,7 +3931,7 @@
       const t = d.type || 'installment';
       if (t === 'installment') return d.status === 'pending' && getCurrentStep(d) !== 'done';
       if (t === 'pr') return d.status === 'pending' || (d.status === 'approved' && !d.poDocId);
-      if (t === 'po') return d.status === 'pending' || (d.status === 'approved' && !d.vendorConfirmedAt);
+      if (t === 'po') return d.status === 'pending' || (d.status === 'approved' && !d.paidAt);
       return !d.reimbursedAt;
     });
     else if (currentFilter === 'approved') docs = docs.filter(d => {
@@ -3897,7 +3943,7 @@
       const t = d.type || 'installment';
       if (t === 'installment') return getCurrentStep(d) === 'done';
       if (t === 'pr') return d.status === 'approved' && d.poDocId;
-      if (t === 'po') return d.status === 'approved' && d.vendorConfirmedAt;
+      if (t === 'po') return d.status === 'approved'; // approved = ready (no vendor step)
       return !!d.reimbursedAt;
     });
     else if (currentFilter === 'paid') docs = docs.filter(d => !!d.paidAt);
@@ -4017,8 +4063,10 @@
       return;
     }
 
+    const showInstallments = canSeeInstallments();
     container.innerHTML = projects.map(p => {
-      const docsInProj = documents.filter(d => d.projectId === p.id);
+      let docsInProj = documents.filter(d => d.projectId === p.id);
+      if (!showInstallments) docsInProj = docsInProj.filter(d => (d.type || 'installment') !== 'installment');
       const installmentDocs = docsInProj.filter(d => (d.type || 'installment') === 'installment');
       const purchaseDocs = docsInProj.filter(d => d.type === 'purchase');
       const fuelDocs = docsInProj.filter(d => d.type === 'fuel');
@@ -4054,7 +4102,7 @@
             </div>
           </div>
           <div class="project-card-body" onclick="selectProject('${escapeHtml(p.id)}')" style="cursor:pointer">
-            ${p.contractValue > 0 ? `
+            ${(showInstallments && p.contractValue > 0) ? `
               <div class="project-progress">
                 <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
                 <div class="progress-text">
@@ -4064,10 +4112,12 @@
               </div>
             ` : ''}
             <div class="project-summary">
+              ${showInstallments ? `
               <div class="summary-item">
                 <div class="summary-label">งวดงาน</div>
                 <div class="summary-value" style="color:var(--accent)">${fmt(netApproved)}</div>
               </div>
+              ` : ''}
               <div class="summary-item">
                 <div class="summary-label">ซื้อของ</div>
                 <div class="summary-value" style="color:var(--info)">${fmt(totalPurchase)}</div>
@@ -4110,7 +4160,9 @@
   function renderProjectDetail(p) {
     const container = document.getElementById('project-list-container');
     if (!p) { backToProjects(); return; }
-    const docsInProj = documents.filter(d => d.projectId === p.id);
+    const showInstallments = canSeeInstallments();
+    let docsInProj = documents.filter(d => d.projectId === p.id);
+    if (!showInstallments) docsInProj = docsInProj.filter(d => (d.type || 'installment') !== 'installment');
     const installmentDocs = docsInProj.filter(d => (d.type || 'installment') === 'installment');
     const purchaseDocs = docsInProj.filter(d => d.type === 'purchase');
     const fuelDocs = docsInProj.filter(d => d.type === 'fuel');
@@ -4180,7 +4232,7 @@
             ${p.contractor ? `<div><div class="summary-label">ผู้รับเหมา</div><div style="font-size:14px;font-weight:500">${escapeHtml(p.contractor)}</div></div>` : ''}
             ${p.contractValue > 0 ? `<div><div class="summary-label">มูลค่าสัญญา</div><div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace">${fmt(p.contractValue)}</div></div>` : ''}
           </div>
-          ${p.contractValue > 0 ? `
+          ${(showInstallments && p.contractValue > 0) ? `
             <div class="project-progress">
               <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
               <div class="progress-text">
@@ -4190,7 +4242,7 @@
             </div>
           ` : ''}
           <div class="project-summary">
-            <div class="summary-item"><div class="summary-label">งวดงาน (อนุมัติ)</div><div class="summary-value" style="color:var(--accent)">${fmt(netApproved)}</div></div>
+            ${showInstallments ? `<div class="summary-item"><div class="summary-label">งวดงาน (อนุมัติ)</div><div class="summary-value" style="color:var(--accent)">${fmt(netApproved)}</div></div>` : ''}
             <div class="summary-item"><div class="summary-label">ซื้อของ</div><div class="summary-value" style="color:var(--info)">${fmt(totalPurchase)}</div></div>
             <div class="summary-item"><div class="summary-label">ค่ารถ</div><div class="summary-value" style="color:var(--warning)">${fmt(totalFuel)}</div></div>
             <div class="summary-item"><div class="summary-label">รวมทั้งหมด</div><div class="summary-value" style="color:var(--success)">${fmt(grandTotal)}</div></div>
@@ -4325,10 +4377,10 @@
         ${myTurn ? renderApprovalActions(d, currStep) : ''}
         ${cannotApproveReason ? `<div style="background:var(--surface-2);padding:12px;border-radius:var(--radius);font-size:12px;color:var(--text-2);text-align:center;margin-top:12px"><i class="ti ti-info-circle"></i> ${cannotApproveReason}</div>` : ''}
         ${renderPaymentInfo(d)}
-        ${(currStep === 'done' && d.status !== 'rejected' && canMarkPaid() && !d.paidAt) ? `
+        ${(currStep === 'done' && d.status !== 'rejected' && canMarkPaidFor('installment') && !d.paidAt) ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
-            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">งวดงานนี้อนุมัติครบแล้ว — บันทึกการจ่ายเงินพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน (Executive)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">งวดงานนี้อนุมัติครบแล้ว — Executive จ่ายเงินจริงพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
             <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'installment-final')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
           </div>
         ` : ''}
@@ -4349,7 +4401,8 @@
   function showPurchaseDetail(d) {
     const status = getStatusInfo(d);
     const canConfirm = canConfirmReimburse() && !d.reimbursedAt;
-    const canPay = canMarkPaid() && !d.paidAt;
+    // Step 2: payment requires reimbursement approved first, and only Procurement can pay
+    const canPay = !!d.reimbursedAt && canMarkPaidFor('purchase') && !d.paidAt;
     document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <div style="flex:1;min-width:0">
@@ -4394,15 +4447,15 @@
         ${renderReimburseSection(d)}
         ${canConfirm ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#ffe9d6,#fff);border-color:var(--warning)">
-            <div class="approval-box-title"><i class="ti ti-cash"></i> รอคุณยืนยันการเบิกคืน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">คืนเงิน <strong>${fmt(d.net)}</strong> บาท ให้ <strong>${escapeHtml(d.buyer)}</strong> เรียบร้อยแล้วใช่หรือไม่?</p>
-            <button class="btn btn-primary" onclick="initiateReimburse('${d.id}')"><i class="ti ti-check"></i> ยืนยันเบิกคืน (ใส่ PIN)</button>
+            <div class="approval-box-title"><i class="ti ti-cash"></i> ขั้น 1 — รอคุณอนุมัติเบิกคืน</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">อนุมัติให้คืนเงิน <strong>${fmt(d.net)}</strong> บาท ให้ <strong>${escapeHtml(d.buyer)}</strong> — หลังอนุมัติแล้ว Procurement จะดำเนินการจ่ายเงินจริง</p>
+            <button class="btn btn-primary" onclick="initiateReimburse('${d.id}')"><i class="ti ti-check"></i> อนุมัติเบิกคืน (ใส่ PIN)</button>
           </div>
         ` : ''}
         ${canPay ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
-            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">บันทึกการอนุมัติพร้อมจ่ายเงิน — แนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> ขั้น 2 — บันทึกจ่ายเงิน + แนบสลิป</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">เบิกคืนได้รับอนุมัติแล้ว — Procurement จ่ายเงินจริง พร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
             <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'purchase')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
           </div>
         ` : ''}
@@ -4423,7 +4476,8 @@
   function showFuelDetail(d) {
     const status = getStatusInfo(d);
     const canConfirm = canConfirmReimburse() && !d.reimbursedAt;
-    const canPay = canMarkPaid() && !d.paidAt;
+    // Step 2: payment requires reimbursement approved first, and only Procurement can pay
+    const canPay = !!d.reimbursedAt && canMarkPaidFor('fuel') && !d.paidAt;
     const isMileage = d.mode === 'mileage';
     const isLump = d.mode === 'lump';
     document.getElementById('modal-content').innerHTML = `
@@ -4472,15 +4526,15 @@
         ${renderReimburseSection(d)}
         ${canConfirm ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#ffe9d6,#fff);border-color:var(--warning)">
-            <div class="approval-box-title"><i class="ti ti-cash"></i> รอคุณยืนยันการเบิกคืน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">คืนเงิน <strong>${fmt(d.net)}</strong> บาท ให้ <strong>${escapeHtml(d.driver)}</strong> เรียบร้อยแล้วใช่หรือไม่?</p>
-            <button class="btn btn-primary" onclick="initiateReimburse('${d.id}')"><i class="ti ti-check"></i> ยืนยันเบิกคืน (ใส่ PIN)</button>
+            <div class="approval-box-title"><i class="ti ti-cash"></i> ขั้น 1 — รอคุณอนุมัติเบิกคืน</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">อนุมัติให้คืนเงิน <strong>${fmt(d.net)}</strong> บาท ให้ <strong>${escapeHtml(d.driver)}</strong> — หลังอนุมัติแล้ว Procurement จะดำเนินการจ่ายเงินจริง</p>
+            <button class="btn btn-primary" onclick="initiateReimburse('${d.id}')"><i class="ti ti-check"></i> อนุมัติเบิกคืน (ใส่ PIN)</button>
           </div>
         ` : ''}
         ${canPay ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
-            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">บันทึกการอนุมัติพร้อมจ่ายเงิน — แนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> ขั้น 2 — บันทึกจ่ายเงิน + แนบสลิป</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">เบิกคืนได้รับอนุมัติแล้ว — Procurement จ่ายเงินจริง พร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
             <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'fuel')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
           </div>
         ` : ''}
@@ -4607,17 +4661,6 @@
         <td class="right">${fmt(it.total)}</td>
       </tr>`).join('');
     const canApprove = canApprovePO() && d.status === 'pending';
-    const canAttachVendor = canAttachPOVendorDoc() && d.status === 'approved' && !d.vendorConfirmedAt;
-
-    const vendorDocsHtml = (d.vendorDocs || []).map(f => {
-      const isImg = (f.type || '').startsWith('image/');
-      return isImg
-        ? `<img src="${f.dataUrl}" class="file-thumb" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}" onclick="openImageViewer('${f.dataUrl}')">`
-        : `<a class="file-pdf-card" onclick="event.preventDefault();openPdf('${f.dataUrl}', '${escapeHtml(f.name).replace(/'/g,"\\'")}')" href="#">
-            <div class="file-chip-icon pdf"><i class="ti ti-file-type-pdf"></i></div>
-            <div><div style="font-weight:500">${escapeHtml(f.name)}</div><div style="font-size:11px;color:var(--text-3)">${fmtSize(f.size)} · เปิดดู PDF</div></div>
-          </a>`;
-    }).join('');
 
     document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
@@ -4654,12 +4697,6 @@
 
         ${renderFilesSection(d)}
 
-        ${d.vendorDocs && d.vendorDocs.length > 0 ? `<div class="detail-section">
-          <div class="detail-section-title">เอกสารตอบกลับจากร้านค้า (${d.vendorDocs.length})</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">${vendorDocsHtml}</div>
-          ${d.vendorConfirmedBy ? `<div style="margin-top:8px;color:var(--text-2);font-size:13px">โดย ${escapeHtml(d.vendorConfirmedBy.name)} · ${fmtDateTime(d.vendorConfirmedAt)}</div>` : ''}
-        </div>` : ''}
-
         ${d.approvedBy ? `<div class="detail-section">
           <div class="detail-section-title">PM อนุมัติ</div>
           <div>${escapeHtml(d.approvedBy.name)} · ${fmtDateTime(d.approvedBy.at)}</div>
@@ -4668,14 +4705,6 @@
           <div class="detail-section-title" style="color:var(--danger)">PM ไม่อนุมัติ</div>
           <div>${escapeHtml(d.rejectedBy.name)} · ${fmtDateTime(d.rejectedBy.at)}</div>
           <div style="color:var(--danger);margin-top:6px">เหตุผล: ${escapeHtml(d.rejectedBy.reason || '-')}</div>
-        </div>` : ''}
-
-        ${canAttachVendor ? `<div class="detail-section" style="background:#f4f0fa;padding:12px;border-radius:var(--radius-sm)">
-          <div class="detail-section-title">แนบเอกสารตอบกลับจากร้านค้า</div>
-          <p style="font-size:13px;color:var(--text-2);margin-bottom:10px">เลือกไฟล์ก่อน แล้วกด "ยืนยันแนบเอกสาร"</p>
-          <input type="file" id="po-vendor-files" multiple accept="image/*,.pdf" onchange="handleFiles(event)" style="display:none">
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('po-vendor-files').click()"><i class="ti ti-upload"></i> เลือกไฟล์</button>
-          <div id="files-preview" style="margin-top:10px"></div>
         </div>` : ''}
 
         ${renderPaymentInfo(d)}
@@ -4691,10 +4720,10 @@
           </div>
         ` : ''}
 
-${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
+${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
           <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
-            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน</div>
-            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">PO อนุมัติแล้ว — บันทึกการจ่ายเงินพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบหลักฐาน (Executive)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">PO อนุมัติแล้ว — Executive จ่ายเงินจริงพร้อมแนบสลิป (ถ้าโอน) หรือเลือกเงินสด</p>
             <div style="display:flex;gap:8px">
               <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'po')" style="background:var(--success);border-color:var(--success);${currentUser?.role === 'executive' ? 'flex:1;justify-content:center;' : ''}"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
               ${currentUser?.role === 'executive' ? `
@@ -4707,9 +4736,6 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
 
       <div class="modal-foot">
         <div style="display:flex;gap:8px">
-          ${canAttachVendor ? `
-            <button class="btn btn-primary btn-sm" onclick="confirmPoVendorDoc('${d.id}')" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-paperclip"></i> ยืนยันแนบเอกสาร</button>
-          ` : ''}
           ${canDeleteAnything() ? `
             <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
           ` : ''}
@@ -4743,12 +4769,18 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
 
   function renderReimburseSection(d) {
     if (!d.reimbursedAt) return '';
+    // Phase 3: reimbursedAt now means "approval done" — actual payment is paidAt
+    const isPaid = !!d.paidAt;
+    const headline = isPaid ? 'อนุมัติเบิกคืน + จ่ายเงินเรียบร้อยแล้ว' : 'อนุมัติเบิกคืนแล้ว · รอจัดซื้อจ่ายเงิน';
+    const bg = isPaid ? 'var(--success-soft)' : '#fff4e5';
+    const borderCol = isPaid ? 'var(--success)' : '#b8740a';
+    const textCol = isPaid ? 'var(--success)' : '#7a5d2e';
     return `
-      <div class="reimburse-info" style="margin-top:16px">
+      <div class="reimburse-info" style="margin-top:16px;background:${bg};border:1px solid ${borderCol};color:${textCol}">
         <i class="ti ti-circle-check"></i>
         <div>
-          <div style="font-weight:600">เบิกคืนเรียบร้อยแล้ว</div>
-          <div style="font-size:12px;opacity:0.9">โดย ${escapeHtml(d.reimbursedBy ? d.reimbursedBy.name : '-')} · ${fmtDateTime(d.reimbursedAt)}</div>
+          <div style="font-weight:600">${headline}</div>
+          <div style="font-size:12px;opacity:0.9">อนุมัติโดย ${escapeHtml(d.reimbursedBy ? d.reimbursedBy.name : '-')} · ${fmtDateTime(d.reimbursedAt)}</div>
         </div>
       </div>
     `;
@@ -4924,8 +4956,9 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     const buyerOrDriver = d.buyer || d.driver || '-';
     info.innerHTML = `
       <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">${tInfo.label} · ${d.docNo}</div>
-      <div style="font-weight:600">คืนเงินให้: ${escapeHtml(buyerOrDriver)}</div>
+      <div style="font-weight:600">อนุมัติคืนเงินให้: ${escapeHtml(buyerOrDriver)}</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);margin-top:4px">${fmt(d.net)} บาท</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;font-style:italic">หลังอนุมัติแล้ว Procurement จะเป็นผู้จ่ายเงินจริง</div>
     `;
     document.getElementById('reimburse-modal').classList.add('show');
     setTimeout(() => document.querySelector('.pin-r[data-idx="0"]').focus(), 100);
@@ -4957,7 +4990,7 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     docObj.reimbursedAt = Date.now();
     docObj.reimbursedBy = { id: currentUser.id, name: currentUser.name, role: currentUser.role };
     await saveDocs(docObj);
-    toast('ยืนยันการเบิกคืนเรียบร้อย', 'success');
+    toast('อนุมัติเบิกคืนเรียบร้อย — รอจัดซื้อจ่ายเงิน', 'success');
     closeReimburseModal();
     showDetail(pendingReimburse.id);
   }
@@ -5119,8 +5152,10 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
       d.paymentMethod = method; // 'transfer' or 'cash'
       d.paymentEvidenceFiles = pendingPaymentFiles.slice();
       d.paymentRemark = remark;
-      // For purchase/fuel — also mark reimbursed
-      if (d.type === 'purchase' || d.type === 'fuel') {
+      // Phase 3: For purchase/fuel, reimbursement approval is REQUIRED first.
+      // confirmPayment no longer auto-sets reimbursedAt — that flows through initiateReimburse.
+      // Only Admin override path: if reimbursedAt missing and admin is paying, set it.
+      if ((d.type === 'purchase' || d.type === 'fuel') && !d.reimbursedAt && isAdmin()) {
         d.reimbursedAt = now;
         d.reimbursedBy = me;
       }
@@ -5294,388 +5329,368 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     window.print();
   }
 
-  // ============ PDF EXPORT ============
-  // Thai number to words (basic)
-  function bahtText(num) {
-    num = Number(num) || 0;
-    const t = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
-    const u = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
-    function readMillion(n) {
-      let s = '';
-      const str = String(Math.floor(n));
-      const len = str.length;
-      for (let i = 0; i < len; i++) {
-        const d = parseInt(str[i]);
-        const pos = len - i - 1;
+  // ============ PDF EXPORT (Phase 2 Batch 4: native browser print) ============
+  function bahtText(amount) {
+    const TXT = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+    const POS = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
+    function readInt(n) {
+      n = Math.floor(n);
+      if (n === 0) return '';
+      let s = String(n), out = '';
+      for (let i = 0; i < s.length; i++) {
+        const d = Number(s[i]);
+        const p = s.length - 1 - i;
         if (d === 0) continue;
-        if (pos === 0 && d === 1 && len > 1) s += 'เอ็ด';
-        else if (pos === 1 && d === 2) s += 'ยี่';
-        else if (pos === 1 && d === 1) s += '';
-        else s += t[d];
-        if (pos > 0) s += u[pos];
+        if (p === 0 && s.length > 1 && d === 1) out += 'เอ็ด';
+        else if (p === 1 && d === 2) out += 'ยี่' + POS[1];
+        else if (p === 1 && d === 1) out += POS[1];
+        else out += TXT[d] + POS[p];
       }
-      return s;
+      return out;
     }
-    function readNum(n) {
-      if (n === 0) return 'ศูนย์';
-      let s = '';
-      const millions = Math.floor(n / 1000000);
-      const rest = n % 1000000;
-      if (millions > 0) { s += readMillion(millions) + 'ล้าน'; }
-      if (rest > 0 || millions === 0) s += readMillion(rest);
-      return s;
-    }
-    const intPart = Math.floor(num);
-    const decPart = Math.round((num - intPart) * 100);
-    let result = readNum(intPart) + 'บาท';
-    if (decPart > 0) result += readNum(decPart) + 'สตางค์';
-    else result += 'ถ้วน';
-    return result;
+    amount = Math.round(Number(amount) * 100) / 100;
+    const baht = Math.floor(amount);
+    const satang = Math.round((amount - baht) * 100);
+    let result = readInt(baht) + 'บาท';
+    if (satang === 0) result += 'ถ้วน';
+    else result += readInt(satang) + 'สตางค์';
+    return result || 'ศูนย์บาทถ้วน';
   }
 
-  function thaiDate(ts) {
-    if (!ts) return '-';
-    const d = new Date(ts);
+  function thaiDate(date) {
+    if (!date) return '-';
+    const d = new Date(date);
     const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   }
 
-  function pdfHeader(title, subtitle, docNo) {
-    const logo = companySettings.logoDataUrl
-      ? `<img src="${companySettings.logoDataUrl}" style="max-width:60pt;max-height:60pt;object-fit:contain">`
-      : `<div style="width:48pt;height:48pt;background:#1a1a17;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20pt;font-weight:700;border-radius:6pt">${(companySettings.name || 'H')[0].toUpperCase()}</div>`;
+  function pdfHeader(title, docNo) {
+    const company = companySettings.name || 'Home Delight Co.,Ltd';
+    const address = companySettings.address || '';
+    const logoHtml = companySettings.logoDataUrl
+      ? `<img src="${companySettings.logoDataUrl}" style="width:60px;height:60px;object-fit:contain">`
+      : `<div style="width:60px;height:60px;background:#1a1a17;color:#c8632c;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700">${(company[0] || 'H').toUpperCase()}</div>`;
     return `
-      <div class="pdf-section" style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10pt;border-bottom:1.5pt solid #1a1a17;margin-bottom:14pt">
-        <div style="display:flex;gap:10pt;align-items:center">
-          ${logo}
-          <div>
-            <div style="font-size:13pt;font-weight:700;color:#1a1a17">${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')}</div>
-            ${companySettings.address ? `<div style="font-size:8.5pt;color:#5c5b54;margin-top:2pt;white-space:pre-line">${escapeHtml(companySettings.address)}</div>` : ''}
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:15pt;font-weight:700;letter-spacing:0.04em">${title}</div>
-          <div style="font-size:8.5pt;color:#5c5b54;margin-top:3pt">${subtitle}</div>
-          ${docNo ? `<div style="font-size:9.5pt;font-family:'JetBrains Mono',monospace;margin-top:5pt;background:#f5f4ee;padding:3pt 8pt;display:inline-block;border-radius:3pt">เลขที่: ${docNo}</div>` : ''}
-        </div>
-      </div>
-    `;
+      <table style="width:100%;border-bottom:2px solid #1a1a17;padding-bottom:8pt;margin-bottom:12pt">
+        <tr>
+          <td style="width:60px;vertical-align:middle">${logoHtml}</td>
+          <td style="vertical-align:middle;padding-left:12pt">
+            <div style="font-size:14pt;font-weight:700">${escapeHtml(company)}</div>
+            ${address ? `<div style="font-size:9pt;color:#5c5b54;margin-top:2pt">${escapeHtml(address)}</div>` : ''}
+          </td>
+          <td style="text-align:right;vertical-align:middle">
+            <div style="font-size:13pt;font-weight:700;color:#c8632c">${escapeHtml(title)}</div>
+            <div style="font-size:10pt;font-family:'JetBrains Mono',monospace;color:#5c5b54;margin-top:2pt">${escapeHtml(docNo)}</div>
+          </td>
+        </tr>
+      </table>`;
   }
 
-  function pdfSignatures(roles) {
-    // roles = array of { label, name?, date? }
+  function pdfSignatures(d) {
+    const subBy = d.submittedBy || { name: '-' };
+    const pm = getApprovalSlot(d, 'pm');
+    const e1 = getApprovalSlot(d, 'exec1');
+    const e2 = getApprovalSlot(d, 'exec2');
+    const sigBox = (label, who, withDate = true) => `
+      <td style="width:25%;text-align:center;padding:0 4pt;vertical-align:bottom">
+        <div style="border-top:1px dashed #5c5b54;margin:32pt 8pt 6pt"></div>
+        <div style="font-size:10pt;font-weight:600">${escapeHtml(who?.name || '..............................')}</div>
+        <div style="font-size:9pt;color:#5c5b54;margin-top:2pt">${label}</div>
+        ${withDate && who?.at ? `<div style="font-size:8pt;color:#8b8a82;margin-top:1pt">${thaiDate(who.at)}</div>` : ''}
+      </td>`;
     return `
-      <div class="pdf-signatures" style="display:grid;grid-template-columns:repeat(${roles.length},1fr);gap:10pt;margin-top:28pt">
-        ${roles.map(r => `
-          <div style="text-align:center">
-            <div style="border-top:1pt dotted #1a1a17;padding-top:5pt;margin-top:36pt"></div>
-            <div style="font-size:9pt;color:#5c5b54">${escapeHtml(r.label)}</div>
-            <div style="font-size:8.5pt;color:#8b8a82;margin-top:2pt">${r.name ? '('+escapeHtml(r.name)+')' : ''}</div>
-            <div style="font-size:8.5pt;color:#8b8a82;margin-top:2pt">${r.date ? 'วันที่ ' + thaiDate(r.date) : 'วันที่ ......./......./.......'}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+      <table class="pdf-signatures" style="width:100%;margin-top:24pt">
+        <tr>
+          ${sigBox('ผู้นำเสนอ / เจ้าของเรื่อง', subBy)}
+          ${sigBox('Project Manager', pm)}
+          ${sigBox('Executive 1', e1)}
+          ${sigBox('Executive 2', e2)}
+        </tr>
+      </table>`;
   }
 
   function pdfFooter() {
-    return `<div style="text-align:center;font-size:8pt;color:#8b8a82;margin-top:14pt;padding-top:6pt;border-top:0.5pt solid #e3e1d7">สร้างเมื่อ ${thaiDate(Date.now())} · ${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')}</div>`;
+    return `
+      <div style="margin-top:16pt;padding-top:6pt;border-top:1px solid #c8c5b6;font-size:8pt;color:#8b8a82;text-align:center">
+        ออกโดยระบบเบิกจ่าย Home Delight · พิมพ์ ณ ${thaiDate(Date.now())} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+      </div>`;
   }
 
-  async function generatePdf(html, filename) {
-    // Phase 2 Batch 4: Use browser's native print → "Save as PDF"
-    // Quality is vector (not raster), file size is small, text is selectable
-    // Trade-off: user must pick "Save as PDF" in the print dialog (1 extra click)
-
+  function generatePdf(html) {
     const printArea = document.getElementById('print-area');
     if (!printArea) {
-      toast('ระบบ print area ไม่พร้อม กรุณา reload หน้า', 'error');
+      alert('print-area ไม่พบ');
       return;
     }
-
-    // Set document title temporarily so the saved PDF gets a sensible default name
-    const originalTitle = document.title;
-    const cleanFilename = filename.replace(/\.pdf$/i, '');
-    document.title = cleanFilename;
-
-    // Render content into print area
     printArea.innerHTML = html;
-
-    // Wait briefly for any images / fonts to settle, then trigger print dialog
-    await new Promise(r => setTimeout(r, 100));
-
-    // Set up cleanup to run after print dialog closes
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      printArea.innerHTML = '';
-      document.title = originalTitle;
-      window.removeEventListener('afterprint', cleanup);
-    };
-    window.addEventListener('afterprint', cleanup);
-
-    // Open browser print dialog
-    try {
+    setTimeout(() => {
       window.print();
-    } catch (e) {
-      cleanup();
-      toast('เปิดหน้าต่าง print ไม่สำเร็จ: ' + e.message, 'error');
-      return;
-    }
-
-    // Fallback cleanup if afterprint doesn't fire (some browsers / mobile)
-    setTimeout(cleanup, 60000);
-
-    toast('เลือก "Save as PDF" ในหน้าต่าง print เพื่อบันทึกไฟล์', 'info', 5000);
+    }, 100);
   }
 
   function exportInstallmentPdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
-    const pmSlot = getApprovalSlot(d, 'pm');
-    const e1 = getApprovalSlot(d, 'exec1');
-    const e2 = getApprovalSlot(d, 'exec2');
-    const sigs = [
-      { label: 'ผู้รับเหมา (ผรม.)', name: d.contractor, date: d.submittedBy ? d.submittedBy.at : null },
-      { label: 'Project Manager', name: pmSlot ? pmSlot.name : '', date: pmSlot ? pmSlot.at : null },
-      { label: 'ผู้อนุมัติ', name: '', date: null },
-      { label: 'Executive 1', name: e1 ? e1.name : '', date: e1 ? e1.at : null },
-      { label: 'Executive 2', name: e2 ? e2.name : '', date: e2 ? e2.at : null }
-    ];
-    const html = `
-      ${pdfHeader('ใบขอเบิกจ่ายงวดงาน', 'PAYMENT REQUISITION', d.docNo)}
-      <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:11pt;border-collapse:collapse">
+    const periodText = d.period ? `งวดที่ ${d.period}${d.periodTotal ? ' / ' + d.periodTotal : ''}` : '';
+    let html = pdfHeader('ใบเบิกจ่ายงวดงาน', d.docNo);
+    html += `
+      <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
         <tr>
-          <td style="padding:4pt 0;color:#5c5b54;width:75pt">โครงการ</td>
-          <td style="padding:4pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td>
-          <td style="padding:4pt 0;color:#5c5b54;width:65pt">วันที่</td>
-          <td style="padding:4pt 0">${thaiDate(d.createdAt)}</td>
+          <td style="width:60%;vertical-align:top">
+            <div style="font-weight:600;font-size:11pt">${escapeHtml(d.project || '-')}</div>
+            <div style="color:#5c5b54;margin-top:2pt">ผู้รับเหมา: <strong>${escapeHtml(d.contractor || '-')}</strong></div>
+            ${periodText ? `<div style="color:#5c5b54">${periodText}</div>` : ''}
+          </td>
+          <td style="width:40%;vertical-align:top;text-align:right">
+            <div>วันที่ส่งมอบ: <strong>${thaiDate(d.handoverDate)}</strong></div>
+          </td>
         </tr>
-        <tr>
-          <td style="padding:4pt 0;color:#5c5b54">ผู้รับเหมา</td>
-          <td style="padding:4pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td>
-          <td style="padding:4pt 0;color:#5c5b54">งวดงานที่</td>
-          <td style="padding:4pt 0">${d.period || '-'} / ${d.periodTotal || '-'}</td>
-        </tr>
-        ${d.handoverDate ? `<tr><td style="padding:4pt 0;color:#5c5b54">วันส่งมอบ</td><td colspan="3" style="padding:4pt 0">${d.handoverDate}</td></tr>` : ''}
-      </table>
-      ${d.description ? `
-        <div class="pdf-section" style="background:#f5f4ee;padding:8pt 10pt;margin-bottom:11pt;border-left:2.5pt solid #c8632c">
-          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">รายละเอียดเนื้องาน</div>
-          <div style="font-size:10pt">${escapeHtml(d.description)}</div>
-        </div>
-      ` : ''}
-      <table class="pdf-table" style="width:100%;font-size:10pt;border-collapse:collapse;margin-bottom:11pt">
-        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:6pt;text-align:left">รายการ</th><th style="padding:6pt;text-align:right;width:100pt">จำนวนเงิน (บาท)</th></tr></thead>
+      </table>`;
+    if (d.description) {
+      html += `<div class="pdf-section" style="background:#f5f4ee;padding:8pt;border-radius:4pt;margin-bottom:10pt;font-size:10pt;line-height:1.6">
+        <strong>รายละเอียดเนื้องาน:</strong><br>${escapeHtml(d.description)}
+      </div>`;
+    }
+    html += `
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:10pt">
+        <thead>
+          <tr style="background:#1a1a17;color:white">
+            <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">รายการ</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:120pt">จำนวนเงิน (บาท)</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:60pt">%</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt">มูลค่างานรวมตามสัญญา</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt">ผลงานสะสมยกมา</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt">ผลงานงวดนี้</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.curr)}</td></tr>
-          <tr style="background:#f5f4ee;border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt;font-weight:600">มูลค่างานขอเบิกงวดนี้</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt;color:#b3261e">หัก ประกันผลงาน ${d.retentionPct}%</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.retention)}</td></tr>
-          ${d.advance > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt;color:#b3261e">หัก เงินล่วงหน้า</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.advance)}</td></tr>` : ''}
-          ${d.material > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt;color:#b3261e">หัก ค่าวัสดุ</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.material)}</td></tr>` : ''}
-          ${d.penalty > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:5pt 6pt;color:#b3261e">หัก ค่าปรับ</td><td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.penalty)}</td></tr>` : ''}
-          <tr style="background:#1a1a17;color:#fff"><td style="padding:7pt;font-weight:600">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:7pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.net)}</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">มูลค่างานตามสัญญา</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">100%</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">ผลงานสะสมยกมา</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.prev/d.contract)*100).toFixed(1) : 0}%</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">ผลงานงวดนี้</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.curr/d.contract)*100).toFixed(1) : 0}%</td></tr>
+          <tr style="background:#f5f4ee"><td style="padding:6pt;border:1px solid #c8c5b6;font-weight:600">รวมผลงานสะสม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.total)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.total/d.contract)*100).toFixed(1) : 0}%</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ประกันผลงาน ${d.retentionPct}%</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.retention)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>
+          ${d.advance > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− เงินล่วงหน้า</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.advance)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
+          ${d.material > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าวัสดุ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.material)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
+          ${d.penalty > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าปรับ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.penalty)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
+          <tr style="background:#d8f0e1"><td style="padding:8pt;border:1px solid #2d6a4f;font-weight:700;font-size:11pt;color:#2d6a4f">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#2d6a4f">${fmt(d.net)}</td><td style="padding:8pt;border:1px solid #2d6a4f"></td></tr>
         </tbody>
       </table>
-      <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.net)})</div>
-      ${pdfSignatures(sigs)}
-      ${pdfFooter()}
-    `;
-    generatePdf(html, `${d.docNo}.pdf`);
+      <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.net)})</div>`;
+    html += pdfSignatures(d);
+    html += pdfFooter();
+    generatePdf(html);
   }
 
   function exportPurchasePdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
-    const sigs = [
-      { label: 'ผู้ซื้อ (ผู้ตั้งเบิก)', name: d.buyer, date: d.submittedBy ? d.submittedBy.at : null },
-      { label: 'ผู้คืนเงิน (PM/จัดซื้อ)', name: d.reimbursedBy ? d.reimbursedBy.name : '', date: d.reimbursedAt }
-    ];
-    const statusBadge = d.reimbursedAt
-      ? `<div style="display:inline-block;background:#d8f0e1;color:#2d6a4f;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;margin-bottom:12px">✓ เบิกคืนแล้ว · ${thaiDate(d.reimbursedAt)}</div>`
-      : `<div style="display:inline-block;background:#ffe9d6;color:#b8740a;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;margin-bottom:12px">○ จ่ายแล้ว · รอเบิกคืน</div>`;
-    const html = `
-      ${pdfHeader('ใบบันทึกการซื้อ', 'PURCHASE RECORD', d.docNo)}
-      ${statusBadge}
-      <table style="width:100%;font-size:11px;margin-bottom:14px;border-collapse:collapse">
-        <tr><td style="padding:4px 0;color:#5c5b54;width:90px">โครงการ</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:4px 0;color:#5c5b54;width:75px">วันที่ซื้อ</td><td style="padding:4px 0">${d.purchaseDate || '-'}</td></tr>
-        <tr><td style="padding:4px 0;color:#5c5b54">ผู้ซื้อ</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.buyer || '-')}</td><td style="padding:4px 0;color:#5c5b54">วิธีจ่าย</td><td style="padding:4px 0">${escapeHtml(d.method || '-')}${d.account ? ' · ' + escapeHtml(d.account) : ''}</td></tr>
-        <tr><td style="padding:4px 0;color:#5c5b54">ร้านค้า</td><td style="padding:4px 0" colspan="3">${escapeHtml(d.vendor || '-')}${d.invoiceNo ? ' · ใบเสร็จ ' + escapeHtml(d.invoiceNo) : ''}</td></tr>
+    let html = pdfHeader('ใบบันทึกการซื้อของ', d.docNo);
+    html += `
+      <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
+        <tr>
+          <td style="width:60%;vertical-align:top">
+            <div style="font-weight:600;font-size:11pt">${escapeHtml(d.project || '-')}</div>
+            <div style="color:#5c5b54;margin-top:2pt">ร้านค้า: <strong>${escapeHtml(d.vendor)}</strong></div>
+            <div style="color:#5c5b54">ผู้ซื้อ: <strong>${escapeHtml(d.buyer)}</strong></div>
+            ${d.invoiceNo ? `<div style="color:#5c5b54">เลขที่ใบเสร็จ: ${escapeHtml(d.invoiceNo)}</div>` : ''}
+          </td>
+          <td style="width:40%;vertical-align:top;text-align:right">
+            <div>วันที่ซื้อ: <strong>${thaiDate(d.purchaseDate)}</strong></div>
+            <div>วิธีจ่าย: ${escapeHtml(d.method)}${d.account ? ' · ' + escapeHtml(d.account) : ''}</div>
+          </td>
+        </tr>
       </table>
-      <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:14px">
-        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:7px;text-align:left;width:30px">#</th><th style="padding:7px;text-align:left">รายการ</th><th style="padding:7px;text-align:right;width:60px">จำนวน</th><th style="padding:7px;text-align:right;width:80px">ราคา/หน่วย</th><th style="padding:7px;text-align:right;width:90px">รวม</th></tr></thead>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:10pt">
+        <thead>
+          <tr style="background:#1a1a17;color:white">
+            <th style="padding:6pt;text-align:center;border:1px solid #1a1a17;width:30pt">#</th>
+            <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">รายการ</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:60pt">จำนวน</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:90pt">ราคา/หน่วย</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:100pt">รวม (บาท)</th>
+          </tr>
+        </thead>
         <tbody>
           ${(d.items || []).map((it, i) => `
-            <tr style="border-bottom:1px solid #e3e1d7;${i % 2 === 1 ? 'background:#fafaf7' : ''}">
-              <td style="padding:6px 7px">${i + 1}</td>
-              <td style="padding:6px 7px">${escapeHtml(it.name)}</td>
-              <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.qty)}</td>
-              <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.price)}</td>
-              <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.total)}</td>
+            <tr>
+              <td style="padding:6pt;text-align:center;border:1px solid #c8c5b6">${i + 1}</td>
+              <td style="padding:6pt;border:1px solid #c8c5b6">${escapeHtml(it.name)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.price)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
             </tr>
           `).join('')}
-          <tr style="background:#1a1a17;color:#fff"><td colspan="4" style="padding:8px;font-weight:600;text-align:right">ยอดรวมทั้งสิ้น</td><td style="padding:8px;text-align:right;font-family:monospace;font-weight:700;font-size:13px">${fmt(d.net)}</td></tr>
+          <tr style="background:#f5f4ee">
+            <td colspan="4" style="padding:8pt;text-align:right;border:1px solid #c8c5b6;font-weight:700">ยอดรวมทั้งสิ้น</td>
+            <td style="padding:8pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#c8632c">${fmt(d.net)}</td>
+          </tr>
         </tbody>
       </table>
-      <div style="font-size:10px;color:#5c5b54;margin-bottom:6px">(${bahtText(d.net)})</div>
-      ${pdfSignatures(sigs)}
-      ${pdfFooter()}
-    `;
-    generatePdf(html, `${d.docNo}.pdf`);
+      <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.net)})</div>`;
+    if (d.reimbursedAt) {
+      html += `<div class="pdf-section" style="background:#d8f0e1;padding:8pt;border-radius:4pt;margin-bottom:10pt;font-size:10pt;color:#2d6a4f">
+        ✓ <strong>เบิกคืนเรียบร้อยแล้ว</strong> โดย ${escapeHtml(d.reimbursedBy?.name || '-')} · ${thaiDate(d.reimbursedAt)}
+      </div>`;
+    }
+    html += pdfFooter();
+    generatePdf(html);
   }
 
   function exportFuelPdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
     const isMileage = d.mode === 'mileage';
-    const sigs = [
-      { label: 'ผู้ตั้งเบิก', name: d.driver, date: d.submittedBy ? d.submittedBy.at : null },
-      { label: 'ผู้คืนเงิน (PM/จัดซื้อ)', name: d.reimbursedBy ? d.reimbursedBy.name : '', date: d.reimbursedAt }
-    ];
-    const statusBadge = d.reimbursedAt
-      ? `<div style="display:inline-block;background:#d8f0e1;color:#2d6a4f;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;margin-bottom:12px">✓ เบิกคืนแล้ว · ${thaiDate(d.reimbursedAt)}</div>`
-      : `<div style="display:inline-block;background:#ffe9d6;color:#b8740a;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;margin-bottom:12px">○ จ่ายแล้ว · รอเบิกคืน</div>`;
-    const detailRows = isMileage ? `
-      ${d.tripStart ? `<tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">เลขไมล์เริ่มต้น</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.tripStart)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">km</td></tr>` : ''}
-      ${d.tripEnd ? `<tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">เลขไมล์สิ้นสุด</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.tripEnd)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">km</td></tr>` : ''}
-      <tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">ระยะทางรวม</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.distance)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">km</td></tr>
-      <tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">เรท</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.rate)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">บาท/km</td></tr>
-      ${d.tripNote ? `<tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px;color:#5c5b54;font-style:italic" colspan="3">หมายเหตุ: ${escapeHtml(d.tripNote)}</td></tr>` : ''}
-    ` : `
-      ${d.mileBefore ? `<tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">เลขไมล์ก่อนเติม</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.mileBefore)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">km</td></tr>` : ''}
-      ${d.mileAfter ? `<tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">เลขไมล์หลังเติม</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.mileAfter)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">km</td></tr>` : ''}
-      <tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">จำนวนลิตร</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.liters)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">L</td></tr>
-      <tr style="border-bottom:1px solid #e3e1d7"><td style="padding:7px 10px">ราคา/ลิตร</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${fmt(d.pricePerLiter)}</td><td style="padding:7px 10px;text-align:right;color:#8b8a82;font-family:monospace">บาท</td></tr>
-    `;
-    const title = isMileage ? 'ใบเบิกค่าระยะทาง' : 'ใบเบิกค่าน้ำมัน';
-    const subtitle = isMileage ? 'MILEAGE REIMBURSEMENT' : 'FUEL REIMBURSEMENT';
-    const html = `
-      ${pdfHeader(title, subtitle, d.docNo)}
-      ${statusBadge}
-      <table style="width:100%;font-size:11px;margin-bottom:14px;border-collapse:collapse">
-        <tr><td style="padding:4px 0;color:#5c5b54;width:90px">โครงการ</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:4px 0;color:#5c5b54;width:75px">วันที่</td><td style="padding:4px 0">${d.tripDate || '-'}</td></tr>
-        <tr><td style="padding:4px 0;color:#5c5b54">ผู้ตั้งเบิก</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.driver || '-')}</td><td style="padding:4px 0;color:#5c5b54">ทะเบียนรถ</td><td style="padding:4px 0;font-family:monospace">${escapeHtml(d.plate || '-')}</td></tr>
-        ${!isMileage ? `<tr><td style="padding:4px 0;color:#5c5b54">ปั๊ม</td><td style="padding:4px 0">${escapeHtml(d.station || '-')}</td><td style="padding:4px 0;color:#5c5b54">ประเภท</td><td style="padding:4px 0">${escapeHtml(d.fuelType || '-')}</td></tr>` : ''}
-        <tr><td style="padding:4px 0;color:#5c5b54">วิธีจ่าย</td><td style="padding:4px 0">${escapeHtml(d.method || '-')}</td>${d.receiptNo ? `<td style="padding:4px 0;color:#5c5b54">เลขใบเสร็จ</td><td style="padding:4px 0;font-family:monospace">${escapeHtml(d.receiptNo)}</td>` : '<td colspan="2"></td>'}</tr>
+    const isLump = d.mode === 'lump';
+    const title = isMileage ? 'ใบเบิกค่ารถ (ระยะทาง)' : 'ใบเบิกค่าน้ำมัน';
+    let html = pdfHeader(title, d.docNo);
+    html += `
+      <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
+        <tr>
+          <td style="width:60%;vertical-align:top">
+            <div style="font-weight:600;font-size:11pt">${escapeHtml(d.project || '-')}</div>
+            <div style="color:#5c5b54;margin-top:2pt">ผู้ขับ/ผู้เบิก: <strong>${escapeHtml(d.driver)}</strong></div>
+            <div style="color:#5c5b54">ทะเบียนรถ: <strong>${escapeHtml(d.plate)}</strong></div>
+            ${!isMileage && d.station ? `<div style="color:#5c5b54">ปั๊ม: ${escapeHtml(d.station)} · ${escapeHtml(d.fuelType || '')}</div>` : ''}
+          </td>
+          <td style="width:40%;vertical-align:top;text-align:right">
+            <div>วันที่: <strong>${thaiDate(d.tripDate)}</strong></div>
+            <div>วิธีจ่าย: ${escapeHtml(d.method || '-')}</div>
+            ${d.receiptNo ? `<div>เลขที่ใบเสร็จ: ${escapeHtml(d.receiptNo)}</div>` : ''}
+          </td>
+        </tr>
       </table>
-      <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:14px;border:1px solid #e3e1d7">
-        <thead><tr style="background:#f5f4ee;border-bottom:1px solid #e3e1d7"><th colspan="3" style="padding:8px 10px;text-align:left;font-size:10px;color:#5c5b54;text-transform:uppercase;letter-spacing:0.05em">รายละเอียดและการคำนวณ</th></tr></thead>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:10pt">
+        <thead>
+          <tr style="background:#1a1a17;color:white"><th style="padding:6pt;text-align:left;border:1px solid #1a1a17">รายการ</th><th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:130pt">จำนวน</th></tr>
+        </thead>
         <tbody>
-          ${detailRows}
-          <tr style="background:#1a1a17;color:#fff"><td style="padding:8px 10px;font-weight:600">ยอดเงินรวม</td><td style="padding:8px 10px;text-align:right;font-family:monospace;font-weight:700;font-size:13px">${fmt(d.net)}</td><td style="padding:8px 10px;text-align:right;color:#fff;font-family:monospace">บาท</td></tr>
+          ${isMileage ? `
+            ${d.tripStart ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์เริ่มต้น</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.tripStart)} km</td></tr>` : ''}
+            ${d.tripEnd ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์สิ้นสุด</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.tripEnd)} km</td></tr>` : ''}
+            <tr><td style="padding:6pt;border:1px solid #c8c5b6">ระยะทางรวม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.distance)} km</td></tr>
+            <tr><td style="padding:6pt;border:1px solid #c8c5b6">เรท</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.rate)} บาท/km</td></tr>
+            ${d.tripNote ? `<tr><td colspan="2" style="padding:6pt;border:1px solid #c8c5b6;font-style:italic;color:#5c5b54">${escapeHtml(d.tripNote)}</td></tr>` : ''}
+          ` : isLump ? `
+            ${d.mileBefore ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์ก่อนเติม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.mileBefore)} km</td></tr>` : ''}
+            ${d.mileAfter ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์หลังเติม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.mileAfter)} km</td></tr>` : ''}
+            <tr><td colspan="2" style="padding:6pt;border:1px solid #c8c5b6;font-style:italic;color:#5c5b54">บันทึกเป็นยอดรวม (ไม่ระบุลิตร × ราคา)</td></tr>
+          ` : `
+            ${d.mileBefore ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์ก่อนเติม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.mileBefore)} km</td></tr>` : ''}
+            ${d.mileAfter ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6">เลขไมล์หลังเติม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.mileAfter)} km</td></tr>` : ''}
+            <tr><td style="padding:6pt;border:1px solid #c8c5b6">จำนวนลิตร</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.liters)} L</td></tr>
+            <tr><td style="padding:6pt;border:1px solid #c8c5b6">ราคา/ลิตร</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.pricePerLiter)} บาท</td></tr>
+          `}
+          <tr style="background:#d8f0e1"><td style="padding:8pt;border:1px solid #2d6a4f;font-weight:700;font-size:11pt;color:#2d6a4f">ยอดเงินรวม</td><td style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#2d6a4f">${fmt(d.net)}</td></tr>
         </tbody>
       </table>
-      <div style="font-size:10px;color:#5c5b54;margin-bottom:6px">(${bahtText(d.net)})</div>
-      ${pdfSignatures(sigs)}
-      ${pdfFooter()}
-    `;
-    generatePdf(html, `${d.docNo}.pdf`);
+      <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.net)})</div>`;
+    if (d.reimbursedAt) {
+      html += `<div class="pdf-section" style="background:#d8f0e1;padding:8pt;border-radius:4pt;margin-bottom:10pt;font-size:10pt;color:#2d6a4f">
+        ✓ <strong>เบิกคืนเรียบร้อยแล้ว</strong> โดย ${escapeHtml(d.reimbursedBy?.name || '-')} · ${thaiDate(d.reimbursedAt)}
+      </div>`;
+    }
+    html += pdfFooter();
+    generatePdf(html);
   }
 
-  function exportProjectSummaryPdf(projectId) {
-    const p = getProjectById(projectId);
+  function exportProjectSummaryPdf(id) {
+    const p = getProjectById(id);
     if (!p) return;
-    const docsInProj = documents.filter(d => d.projectId === projectId);
+    const docsInProj = documents.filter(d => d.projectId === id);
     const installmentDocs = docsInProj.filter(d => (d.type || 'installment') === 'installment');
     const purchaseDocs = docsInProj.filter(d => d.type === 'purchase');
     const fuelDocs = docsInProj.filter(d => d.type === 'fuel');
-    const netInstallment = installmentDocs.filter(d => getCurrentStep(d) === 'done' && d.status !== 'rejected').reduce((s, d) => s + (Number(d.net) || 0), 0);
-    const netPurchase = purchaseDocs.reduce((s, d) => s + (Number(d.net) || 0), 0);
-    const netFuel = fuelDocs.reduce((s, d) => s + (Number(d.net) || 0), 0);
-    const grand = netInstallment + netPurchase + netFuel;
 
-    const docsRows = docsInProj
-      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
-      .map(d => {
-        const t = d.type || 'installment';
-        const tInfo = DOC_TYPES[t];
-        const status = getStatusInfo(d);
-        const desc = t === 'installment' ? `งวด ${d.period || '-'}/${d.periodTotal || '-'} · ${escapeHtml((d.description || '').slice(0, 40))}`
-                  : t === 'purchase' ? `${escapeHtml(d.vendor || '-')} (${(d.items || []).length} รายการ)`
-                  : (d.mode === 'mileage' ? `ระยะทาง ${d.distance || 0} km` : `${escapeHtml(d.station || '-')} · ${d.liters || 0}L`);
-        const typeColor = t === 'installment' ? '#8b3f15' : t === 'purchase' ? '#1f5582' : '#b8740a';
-        const typeBg = t === 'installment' ? '#f7ebe1' : t === 'purchase' ? '#d8e8f4' : '#fbeed3';
-        return `
-          <tr style="border-bottom:1px solid #e3e1d7">
-            <td style="padding:6px 8px;font-family:monospace;font-size:10px">${thaiDate(d.createdAt).slice(0, 12)}</td>
-            <td style="padding:6px 8px"><span style="background:${typeBg};color:${typeColor};padding:2px 6px;border-radius:3px;font-size:10px">${tInfo.label}</span></td>
-            <td style="padding:6px 8px;font-size:10px">${desc}</td>
-            <td style="padding:6px 8px;text-align:right;font-size:10px;color:${status.cls.includes('reimbursed') || status.cls.includes('approved') ? '#2d6a4f' : status.cls.includes('rejected') ? '#b3261e' : '#b8740a'}">${status.label}</td>
-            <td style="padding:6px 8px;text-align:right;font-family:monospace">${fmt(d.net)}</td>
-          </tr>
-        `;
-      }).join('');
+    const netApproved = installmentDocs.filter(d => getCurrentStep(d) === 'done' && d.status !== 'rejected').reduce((s, d) => s + (Number(d.net) || 0), 0);
+    const totalPurchase = purchaseDocs.reduce((s, d) => s + (Number(d.net) || 0), 0);
+    const totalFuel = fuelDocs.reduce((s, d) => s + (Number(d.net) || 0), 0);
+    const grandTotal = netApproved + totalPurchase + totalFuel;
+    const highestTotal = installmentDocs.reduce((m, d) => Math.max(m, Number(d.total) || 0), 0);
+    const progressPct = p.contractValue > 0 ? Math.min(100, (highestTotal / p.contractValue) * 100) : 0;
 
-    const html = `
-      ${pdfHeader('รายงานสรุปโครงการ', 'PROJECT SUMMARY REPORT', '')}
-      <div style="background:#f5f4ee;padding:12px 14px;margin-bottom:18px;border-radius:6px">
-        <div style="font-size:9px;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase">โครงการ</div>
-        <div style="font-size:14px;font-weight:600;margin-top:2px">${escapeHtml(p.name)}</div>
-        <div style="font-size:10px;color:#5c5b54;margin-top:6px">
-          ${p.location ? `📍 ${escapeHtml(p.location)} · ` : ''}
-          ${p.contractor ? `ผรม. ${escapeHtml(p.contractor)} · ` : ''}
-          ${p.contractValue > 0 ? `มูลค่าสัญญา ${fmt(p.contractValue)} บาท · ` : ''}
-          ณ วันที่ ${thaiDate(Date.now())}
-        </div>
+    let html = pdfHeader('สรุปโครงการ', p.id.slice(-12).toUpperCase());
+    html += `
+      <div class="pdf-section" style="background:#1a1a17;color:white;padding:12pt;border-radius:4pt;margin-bottom:14pt">
+        <div style="font-size:14pt;font-weight:700">${escapeHtml(p.name)}</div>
+        ${p.location ? `<div style="font-size:10pt;color:#c8c5b6;margin-top:4pt">📍 ${escapeHtml(p.location)}</div>` : ''}
+        ${p.contractor ? `<div style="font-size:10pt;color:#c8c5b6">👷 ผู้รับเหมา: ${escapeHtml(p.contractor)}</div>` : ''}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">
-        <div style="background:#f7ebe1;padding:10px;border-radius:6px">
-          <div style="font-size:9px;color:#8b3f15;text-transform:uppercase;letter-spacing:0.08em">งวดงาน (อนุมัติ)</div>
-          <div style="font-size:13px;font-weight:700;color:#8b3f15;font-family:monospace;margin-top:4px">${fmt(netInstallment)}</div>
-          <div style="font-size:9px;color:#8b3f15">${installmentDocs.length} รายการ</div>
-        </div>
-        <div style="background:#d8e8f4;padding:10px;border-radius:6px">
-          <div style="font-size:9px;color:#1f5582;text-transform:uppercase;letter-spacing:0.08em">ซื้อของ</div>
-          <div style="font-size:13px;font-weight:700;color:#1f5582;font-family:monospace;margin-top:4px">${fmt(netPurchase)}</div>
-          <div style="font-size:9px;color:#1f5582">${purchaseDocs.length} รายการ</div>
-        </div>
-        <div style="background:#fbeed3;padding:10px;border-radius:6px">
-          <div style="font-size:9px;color:#b8740a;text-transform:uppercase;letter-spacing:0.08em">ค่ารถ</div>
-          <div style="font-size:13px;font-weight:700;color:#b8740a;font-family:monospace;margin-top:4px">${fmt(netFuel)}</div>
-          <div style="font-size:9px;color:#b8740a">${fuelDocs.length} รายการ</div>
-        </div>
-        <div style="background:#1a1a17;color:#fff;padding:10px;border-radius:6px">
-          <div style="font-size:9px;opacity:0.7;text-transform:uppercase;letter-spacing:0.08em">รวมทั้งหมด</div>
-          <div style="font-size:13px;font-weight:700;color:#c8632c;font-family:monospace;margin-top:4px">${fmt(grand)}</div>
-          <div style="font-size:9px;opacity:0.7">${docsInProj.length} รายการ</div>
-        </div>
-      </div>
-      <div style="font-size:10px;font-weight:600;color:#5c5b54;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">รายการเอกสารทั้งหมด</div>
-      <table style="width:100%;font-size:10px;border-collapse:collapse">
+      <table class="pdf-section" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:14pt">
+        <tr>
+          <td style="width:50%;padding:8pt;border:1px solid #c8c5b6;background:#f5f4ee">
+            <div style="font-size:9pt;color:#8b8a82;text-transform:uppercase">มูลค่าสัญญา</div>
+            <div style="font-size:14pt;font-weight:700;font-family:'JetBrains Mono',monospace">${fmt(p.contractValue)}</div>
+          </td>
+          <td style="width:50%;padding:8pt;border:1px solid #c8c5b6">
+            <div style="font-size:9pt;color:#8b8a82;text-transform:uppercase">ความคืบหน้าผลงาน</div>
+            <div style="font-size:14pt;font-weight:700">${progressPct.toFixed(1)}%</div>
+            <div style="font-size:9pt;color:#5c5b54;margin-top:2pt">${fmt(highestTotal)} / ${fmt(p.contractValue)} บาท</div>
+          </td>
+        </tr>
+      </table>
+      <h3 style="font-size:11pt;font-weight:600;margin:14pt 0 8pt">สรุปยอดรวม</h3>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:14pt">
         <thead>
-          <tr style="background:#1a1a17;color:#fff">
-            <th style="padding:6px 8px;text-align:left;width:80px">วันที่</th>
-            <th style="padding:6px 8px;text-align:left;width:60px">ประเภท</th>
-            <th style="padding:6px 8px;text-align:left">รายละเอียด</th>
-            <th style="padding:6px 8px;text-align:right;width:75px">สถานะ</th>
-            <th style="padding:6px 8px;text-align:right;width:75px">ยอด (บาท)</th>
+          <tr style="background:#1a1a17;color:white">
+            <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">ประเภท</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:80pt">จำนวน</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:140pt">ยอดรวม (บาท)</th>
           </tr>
         </thead>
         <tbody>
-          ${docsRows || '<tr><td colspan="5" style="padding:14px;text-align:center;color:#8b8a82">ยังไม่มีเอกสาร</td></tr>'}
-          <tr style="background:#1a1a17;color:#fff"><td colspan="4" style="padding:8px;font-weight:600;text-align:right">ยอดรวมทั้งโครงการ</td><td style="padding:8px;text-align:right;font-family:monospace;font-weight:700;font-size:12px">${fmt(grand)}</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">งวดงาน (อนุมัติแล้ว)</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${installmentDocs.length}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#c8632c">${fmt(netApproved)}</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">ซื้อของ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${purchaseDocs.length}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#1f5582">${fmt(totalPurchase)}</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">ค่ารถ/น้ำมัน</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${fuelDocs.length}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b8740a">${fmt(totalFuel)}</td></tr>
+          <tr style="background:#d8f0e1"><td style="padding:8pt;border:1px solid #2d6a4f;font-weight:700">รวมทั้งหมด</td><td style="padding:8pt;text-align:right;border:1px solid #2d6a4f">${docsInProj.length}</td><td style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#2d6a4f">${fmt(grandTotal)}</td></tr>
         </tbody>
-      </table>
-      ${pdfFooter()}
-    `;
-    generatePdf(html, `summary-${p.name.replace(/[^a-zA-Z0-9ก-๙]/g, '_').slice(0, 30)}.pdf`);
+      </table>`;
+    if (docsInProj.length > 0) {
+      html += `<h3 style="font-size:11pt;font-weight:600;margin:14pt 0 8pt">รายการเอกสารทั้งหมด (${docsInProj.length})</h3>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:9pt">
+        <thead>
+          <tr style="background:#1a1a17;color:white">
+            <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:60pt">ประเภท</th>
+            <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:100pt">เลขที่</th>
+            <th style="padding:5pt;text-align:left;border:1px solid #1a1a17">รายละเอียด</th>
+            <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:70pt">วันที่</th>
+            <th style="padding:5pt;text-align:right;border:1px solid #1a1a17;width:100pt">ยอด</th>
+            <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:80pt">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${docsInProj.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(d => {
+            const type = d.type || 'installment';
+            const tInfo = DOC_TYPES[type] || DOC_TYPES.installment;
+            const status = getStatusInfo(d);
+            let desc = '';
+            if (type === 'installment') desc = `งวด ${d.period || '-'}/${d.periodTotal || '-'} · ${escapeHtml(d.contractor || '')}`;
+            else if (type === 'purchase') desc = `${escapeHtml(d.vendor || '-')} · ${(d.items || []).length} รายการ`;
+            else if (type === 'fuel') desc = d.mode === 'mileage' ? `ระยะทาง ${d.distance} km` : `${escapeHtml(d.station || '-')} · ${d.liters} L`;
+            const date = d.handoverDate || d.purchaseDate || d.tripDate || (d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '');
+            return `<tr>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${tInfo.label}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-size:8pt">${escapeHtml(d.docNo)}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${desc}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${thaiDate(date)}</td>
+              <td style="padding:5pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.net)}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6;font-size:8pt">${status.label}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+    html += pdfFooter();
+    generatePdf(html);
   }
 
-  // ============ EXPORT/IMPORT ============
+  // ============ IMPORT / EXPORT ============
   function exportData() {
-    const data = { documents, users, exportedAt: Date.now() };
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const data = { documents, users, projects, exportedAt: Date.now() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `payment-form-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `payment-flow-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast('สำรองข้อมูลเรียบร้อย', 'success');
+    toast('Export สำเร็จ', 'success');
   }
 
   function importData(event) {
@@ -5685,13 +5700,20 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (!confirm('การนำเข้าจะแทนที่ข้อมูลทั้งหมด ดำเนินการต่อ?')) return;
+        if (!confirm(`นำเข้าข้อมูล?\n• เอกสาร ${data.documents?.length || 0} รายการ\n• ผู้ใช้ ${data.users?.length || 0} คน\n• โครงการ ${data.projects?.length || 0}\n\nระบบจะรวมกับข้อมูลปัจจุบัน`)) return;
+
         if (data.documents) {
           for (const d of data.documents) await saveDocs(d);
         }
-        toast('นำเข้าข้อมูลเรียบร้อย', 'success');
+        if (data.users) {
+          for (const u of data.users) await saveUsers(u);
+        }
+        if (data.projects) {
+          for (const p of data.projects) await saveProjectToDb(p);
+        }
+        toast('นำเข้าข้อมูลสำเร็จ', 'success');
       } catch (err) {
-        toast('ไฟล์ไม่ถูกต้อง', 'error');
+        toast('ไฟล์ไม่ถูกต้อง: ' + err.message, 'error');
       }
     };
     reader.readAsText(file);
@@ -5705,34 +5727,33 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     if (users.length === 0) {
       container.innerHTML = `
         <div class="empty">
-          <i class="ti ti-users"></i>
+          <i class="ti ti-user-off"></i>
           <div class="empty-title">ยังไม่มีผู้ใช้งาน</div>
-          <div class="empty-sub">เพิ่มโดยให้ทีมสมัครผ่านหน้า login แล้วตั้งค่า role ที่นี่</div>
         </div>
       `;
       return;
     }
     container.innerHTML = users.map(u => {
       const isMe = currentUser && u.id === currentUser.id;
-      const role = migrateRole(u.role);
-      const userIsAdmin = (u.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase() || role === 'admin';
-      // PIN required for everyone except Foreman
-      const needsPin = role !== 'foreman';
-      const pinSet = !!u.pinHash;
-      const showAdminControls = canDeleteAnything();
+      const role = ROLES[u.role] || ROLES.foreman;
+      const isAdminUser = (u.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase() || u.role === 'admin';
+      // Phase 2: Hide actions for non-managers
+      const canEditUser = isAdmin() || (canManageUsers() && !isAdminUser); // Admin can edit anyone; others can't edit Admin
+      const canDeleteUser = isAdmin() && !isMe; // Only Admin can delete, can't delete self
       return `
         <div class="user-row">
           <div class="user-avatar">${initials(u.name)}</div>
           <div class="user-row-info">
-            <div class="user-row-name">${escapeHtml(u.name)} ${isMe ? '<span style="font-size:11px;color:var(--text-3);font-weight:400">(คุณ)</span>' : ''}${userIsAdmin ? ' <span style="font-size:10px;background:#1a1a17;color:#ffd166;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px">ADMIN</span>' : ''}</div>
+            <div class="user-row-name">${escapeHtml(u.name)} ${isMe ? '<span style="color:var(--text-3);font-size:11px;font-weight:400">(คุณ)</span>' : ''}</div>
             <div class="user-row-meta">
-              ${escapeHtml(u.email || '')} · ${escapeHtml(u.title || '-')}
-              ${needsPin ? `· <span class="pin-status ${pinSet ? 'set' : ''}"><i class="ti ti-${pinSet ? 'lock-check' : 'lock-exclamation'}"></i> ${pinSet ? 'ตั้ง PIN แล้ว' : 'ยังไม่ได้ตั้ง PIN'}</span>` : ''}
+              <span class="role-tag ${role.cls}">${role.label}</span>
+              ${u.title ? '<span style="margin-left:8px">' + escapeHtml(u.title) + '</span>' : ''}
+              ${u.email ? '<span style="margin-left:8px;color:var(--text-3)">· ' + escapeHtml(u.email) + '</span>' : ''}
+              <span class="pin-status ${u.pinHash ? 'set' : ''}" style="margin-left:8px"><i class="ti ti-${u.pinHash ? 'lock-check' : 'lock-off'}"></i> PIN ${u.pinHash ? 'ตั้งแล้ว' : 'ยังไม่ตั้ง'}</span>
             </div>
           </div>
-          <span class="role-tag ${(ROLES[userIsAdmin ? 'admin' : role]||ROLES.foreman).cls}">${(ROLES[userIsAdmin ? 'admin' : role]||ROLES.foreman).label}</span>
-          ${canManageUsers() ? `<button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')" title="แก้ไข"><i class="ti ti-edit"></i></button>` : ''}
-          ${showAdminControls && !userIsAdmin ? `<button class="btn btn-ghost btn-sm" onclick="deleteUser('${u.id}')" title="ลบ" ${isMe ? 'disabled style="opacity:0.3;cursor:not-allowed"' : ''}><i class="ti ti-trash"></i></button>` : ''}
+          ${canEditUser ? `<button class="btn btn-ghost btn-sm" onclick="editUser('${u.id}')" title="แก้ไข"><i class="ti ti-edit"></i></button>` : ''}
+          ${canDeleteUser ? `<button class="btn btn-ghost btn-sm" onclick="deleteUser('${u.id}')" title="ลบ"><i class="ti ti-trash"></i></button>` : ''}
         </div>
       `;
     }).join('');
@@ -5740,16 +5761,11 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
 
   function showAddUser() {
     if (!canManageUsers()) { toast('เฉพาะ Project Manager / Executive เท่านั้น', 'error'); return; }
-    document.getElementById('user-modal-title').textContent = 'เพิ่มผู้ใช้งาน (Firebase)';
-    document.getElementById('u-id').value = '';
-    document.getElementById('u-name').value = '';
-    document.getElementById('u-email').value = '';
-    document.getElementById('u-password').value = '';
+    document.getElementById('user-modal-title').textContent = 'เพิ่มผู้ใช้งาน';
+    ['u-id', 'u-name', 'u-email', 'u-password', 'u-title', 'u-pin'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('u-role').value = 'foreman';
-    document.getElementById('u-title').value = '';
-    document.getElementById('u-pin').value = '';
-    document.getElementById('u-email-row').style.display = 'flex';
-    document.getElementById('u-password-row').style.display = 'flex';
+    document.getElementById('u-email-row').style.display = 'block';
+    document.getElementById('u-password-row').style.display = 'block';
     document.getElementById('user-modal').classList.add('show');
   }
 
@@ -5761,20 +5777,21 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
     document.getElementById('u-id').value = u.id;
     document.getElementById('u-name').value = u.name;
     document.getElementById('u-email').value = u.email || '';
-    document.getElementById('u-password').value = '';
     document.getElementById('u-role').value = u.role;
     document.getElementById('u-title').value = u.title || '';
     document.getElementById('u-pin').value = '';
-    document.getElementById('u-email-row').style.display = 'none';
-    document.getElementById('u-password-row').style.display = 'none';
+    document.getElementById('u-password').value = '';
+    document.getElementById('u-email-row').style.display = 'none';  // can't change email after creation
+    document.getElementById('u-password-row').style.display = 'none';  // password change only via Firebase
     document.getElementById('user-modal').classList.add('show');
   }
 
   async function saveUser() {
+    if (!canManageUsers()) return;
     const id = document.getElementById('u-id').value;
     const name = document.getElementById('u-name').value.trim();
-    const email = document.getElementById('u-email').value.trim();
-    const password = document.getElementById('u-password').value.trim();
+    const email = document.getElementById('u-email').value.trim().toLowerCase();
+    const password = document.getElementById('u-password').value;
     const role = document.getElementById('u-role').value;
     const title = document.getElementById('u-title').value.trim();
     const pin = document.getElementById('u-pin').value.trim();
@@ -5784,815 +5801,695 @@ ${(d.status === 'approved' && canMarkPaid() && !d.paidAt) ? `
       toast('PIN ต้องเป็นตัวเลข 4-6 หลัก', 'error'); return;
     }
 
-    let pinHash = id ? (users.find(u => u.id === id)?.pinHash || null) : null;
-    if (pin) pinHash = await hashPin(pin);
+    if (!id) {
+      // CREATE NEW USER — must create Firebase auth account first
+      if (!email) { toast('กรุณากรอก Email', 'error'); return; }
+      if (!password || password.length < 6) { toast('Password ต้องอย่างน้อย 6 ตัวอักษร', 'error'); return; }
 
-    if (id) {
-      // Edit existing
-      const u = users.find(x => x.id === id);
-      if (u) {
-        const updated = { ...u, name, role, title, pinHash };
-        await saveUsers(updated);
-        if (currentUser && id === currentUser.id) {
-          currentUser = updated;
-          document.getElementById('topbar-name').textContent = currentUser.name;
-          document.getElementById('topbar-role').textContent = (ROLES[currentUser.role] || ROLES.foreman).label + (currentUser.title ? ' · ' + currentUser.title : '');
-          document.getElementById('topbar-avatar').textContent = initials(currentUser.name);
-        }
-      }
-    } else {
-      // Create new Firebase Auth user
-      if (!email || !password) { toast('กรุณากรอก Email และ Password', 'error'); return; }
-      if (password.length < 6) { toast('Password ต้องมีอย่างน้อย 6 ตัวอักษร', 'error'); return; }
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const profile = {
-          id: cred.user.uid, uid: cred.user.uid,
-          email, name, role, title, pinHash, createdAt: Date.now()
+        const newUid = cred.user.uid;
+        const userObj = {
+          id: newUid, uid: newUid, email, name, role, title,
+          pinHash: pin ? await hashPin(pin) : null,
+          createdAt: Date.now()
         };
-        await saveUsers(profile);
-        // Sign back in as current user (createUserWithEmailAndPassword signs in as new user)
-        toast(`สร้างบัญชี ${email} เรียบร้อย`, 'success');
-        // Note: Firebase auto-signs-in new user — need to re-sign in as original user
-        toast('ระบบจะ sign out — กรุณา login ใหม่ด้วยบัญชีของคุณ', 'error');
-        return;
+        await saveUsers(userObj);
+        // Note: Firebase auto-signs in the new user. We need to sign back in as currentUser
+        // This is tricky - in practice, admin should create users via separate session
+        toast(`เพิ่ม ${name} เรียบร้อย — กรุณา login ใหม่`, 'info');
+        await signOut(auth);
       } catch (e) {
-        toast('สร้างบัญชีไม่สำเร็จ: ' + e.message, 'error');
+        toast('สร้าง user ไม่สำเร็จ: ' + e.message, 'error');
         return;
       }
+    } else {
+      // EDIT EXISTING USER (no email/password change here)
+      const existing = users.find(u => u.id === id);
+      if (!existing) return;
+      const userObj = {
+        ...existing,
+        name, role, title,
+        pinHash: pin ? await hashPin(pin) : existing.pinHash
+      };
+      await saveUsers(userObj);
+      toast(`บันทึก ${name} เรียบร้อย`, 'success');
     }
-
     closeUserModal();
-    toast('บันทึกผู้ใช้งานเรียบร้อย', 'success');
   }
 
   async function deleteUser(id) {
-    if (!canDeleteAnything()) { toast('เฉพาะ Admin เท่านั้นที่สามารถลบผู้ใช้งานได้', 'error'); return; }
+    if (!canDeleteAnything()) { toast('เฉพาะ Admin เท่านั้นที่สามารถลบ user ได้', 'error'); return; }
     if (currentUser && id === currentUser.id) { toast('ไม่สามารถลบตัวเองได้', 'error'); return; }
-    // Cannot delete the admin account
-    const targetUser = users.find(u => u.id === id);
-    if (targetUser && (targetUser.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      toast('ไม่สามารถลบบัญชี Admin ได้', 'error'); return;
-    }
-    if (!confirm('ต้องการลบผู้ใช้งานนี้?')) return;
-    await deleteUserFromDb(id);
-    toast('ลบเรียบร้อย', 'success');
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    if (!confirm(`ลบ ${u.name}?\n\nหมายเหตุ: บัญชี Firebase Auth จะยังคงอยู่ (ต้องลบจาก Firebase Console เอง)`)) return;
+    const ok = await deleteUserFromDb(id);
+    if (ok) toast('ลบเรียบร้อย', 'success');
   }
 
-  function closeUserModal() { document.getElementById('user-modal').classList.remove('show'); }
+  function closeUserModal() {
+    document.getElementById('user-modal').classList.remove('show');
+  }
   function closeUserModalBg(e) { if (e.target.id === 'user-modal') closeUserModal(); }
 
   // ============ POCKET MONEY (Phase 2 Batch 3) ============
   const POCKET_TARGET = 10000;
-  const PM_CATEGORY_LABELS = { fuel: 'ค่าน้ำมัน', consumable: 'วัสดุสิ้นเปลือง', other: 'อื่นๆ', topup: 'เติมเงิน' };
 
   function pocketBalance() {
-    return pocketTransactions.reduce((s, t) => s + (t.kind === 'topup' ? Number(t.amount) : -Number(t.amount)), 0);
+    return pocketTransactions.reduce((s, tx) => s + (tx.type === 'topup' ? tx.amount : -tx.amount), 0);
   }
-
-  function getMonday(d) {
-    const date = new Date(d);
-    date.setHours(0,0,0,0);
-    const day = date.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    date.setDate(date.getDate() + diff);
-    return date.getTime();
+  function getMonday(date) {
+    const d = new Date(date);
+    const dow = d.getDay() || 7; // Sun=0 -> 7
+    d.setDate(d.getDate() - (dow - 1));
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
   }
-
   function periodStart(period) {
     const now = new Date();
     if (period === 'week') return getMonday(now);
     if (period === 'month') {
-      const d = new Date(now.getFullYear(), now.getMonth(), 1);
-      return d.getTime();
+      now.setDate(1); now.setHours(0, 0, 0, 0);
+      return now.getTime();
     }
     return 0;
   }
-
-  function pocketSpendByCategory(period = 'week') {
-    const start = periodStart(period);
-    const txs = pocketTransactions.filter(t => t.kind === 'spend' && (t.spentAt || t.createdAt) >= start);
-    const totals = { fuel: 0, consumable: 0, other: 0 };
-    txs.forEach(t => {
-      const cat = t.category || 'other';
-      totals[cat] = (totals[cat] || 0) + Number(t.amount);
-    });
-    return { ...totals, total: totals.fuel + totals.consumable + totals.other };
+  function pocketSpendByCategory(category, since) {
+    return pocketTransactions
+      .filter(tx => tx.type === 'spend' && tx.category === category && (tx.createdAt >= since || since === 0))
+      .reduce((s, tx) => s + tx.amount, 0);
   }
 
   function getNextFridayTopupSuggestion() {
     const balance = pocketBalance();
-    const need = POCKET_TARGET - balance;
-    const today = new Date();
-    const dow = today.getDay();
-    const daysToFri = dow === 5 ? 0 : (5 + 7 - dow) % 7;
-    const friday = new Date(today);
-    friday.setHours(0,0,0,0);
-    friday.setDate(today.getDate() + daysToFri);
-    return { need: Math.max(0, need), balance, target: POCKET_TARGET, fridayDate: friday.getTime(), isToday: daysToFri === 0 };
+    const need = Math.max(0, POCKET_TARGET - balance);
+    if (need <= 0) return null;
+    // Find next Friday
+    const now = new Date();
+    const daysToFri = (5 - now.getDay() + 7) % 7 || 7;
+    const nextFri = new Date(now);
+    nextFri.setDate(now.getDate() + daysToFri);
+    return { amount: need, date: nextFri };
   }
 
   function renderPocket() {
-    if (!document.getElementById('pm-balance')) return;
-    const isProc = currentUser && currentUser.role === 'procurement';
-    const canSee = isProc || canSeeAllProjects();
-    const btnSpend = document.getElementById('btn-pm-spend');
-    const btnTopup = document.getElementById('btn-pm-topup');
-    if (btnSpend) btnSpend.style.display = isProc ? 'inline-flex' : 'none';
-    if (btnTopup) btnTopup.style.display = isProc ? 'inline-flex' : 'none';
-
     const balance = pocketBalance();
-    const pct = Math.max(0, Math.min(100, (balance / POCKET_TARGET) * 100));
-    document.getElementById('pm-balance').textContent = fmt(balance) + ' บาท';
-    document.getElementById('pm-balance-sub').textContent = `${pct.toFixed(0)}% ของเป้าหมาย ${fmt(POCKET_TARGET)} บาท`;
-    document.getElementById('pm-progress-fill').style.width = pct + '%';
+    const balEl = document.getElementById('pm-balance');
+    if (balEl) balEl.textContent = fmt(balance) + ' บาท';
+    const subEl = document.getElementById('pm-balance-sub');
+    if (subEl) subEl.textContent = `เป้าหมาย ${fmt(POCKET_TARGET)} บาท · เติมเพิ่ม ${fmt(Math.max(0, POCKET_TARGET - balance))} บาท`;
+    const fillEl = document.getElementById('pm-progress-fill');
+    if (fillEl) fillEl.style.width = Math.min(100, (balance / POCKET_TARGET) * 100) + '%';
 
-    // Topup alert (Procurement only)
+    // Spend buttons
+    const role = currentUser?.role;
+    const canSpend = role === 'procurement' || isAdmin();
+    const canTopup = canViewDashboard() || isAdmin();
+    const btnSpend = document.getElementById('btn-pm-spend');
+    if (btnSpend) btnSpend.style.display = canSpend ? '' : 'none';
+    const btnTopup = document.getElementById('btn-pm-topup');
+    if (btnTopup) btnTopup.style.display = canTopup ? '' : 'none';
+
+    // Friday top-up alert
+    const sug = getNextFridayTopupSuggestion();
     const alertEl = document.getElementById('pm-topup-alert');
-    const detailEl = document.getElementById('pm-topup-detail');
-    if (isProc) {
-      const sug = getNextFridayTopupSuggestion();
-      if (sug.need > 0) {
-        alertEl.style.display = 'block';
-        const fridayLabel = sug.isToday ? 'วันนี้ (ศุกร์)' : 'ศุกร์ที่ ' + fmtDate(sug.fridayDate);
-        detailEl.innerHTML = `${fridayLabel} ต้องเติมเงินเข้ากระเป๋าอีก <strong>${fmt(sug.need)} บาท</strong> ให้ครบเป้า ${fmt(POCKET_TARGET)} บาท`;
-      } else {
-        alertEl.style.display = 'none';
-      }
-    } else {
+    if (alertEl && sug) {
+      alertEl.style.display = '';
+      document.getElementById('pm-topup-detail').innerHTML =
+        `เติมเงินครั้งถัดไป <strong>${sug.date.toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'short' })}</strong> · จำนวน <strong>${fmt(sug.amount)} บาท</strong> เพื่อให้กลับสู่ยอด ${fmt(POCKET_TARGET)} บาท`;
+    } else if (alertEl) {
       alertEl.style.display = 'none';
     }
 
-    // Weekly summary
-    const week = pocketSpendByCategory('week');
-    document.getElementById('pm-week-fuel').textContent = fmt(week.fuel);
-    document.getElementById('pm-week-consumable').textContent = fmt(week.consumable);
-    document.getElementById('pm-week-total').textContent = fmt(week.total);
+    // Weekly stats
+    const weekStart = getMonday(new Date());
+    const fuel = pocketSpendByCategory('fuel', weekStart);
+    const cons = pocketSpendByCategory('consumable', weekStart);
+    const other = pocketSpendByCategory('other', weekStart);
+    document.getElementById('pm-week-fuel').textContent = fmt(fuel);
+    document.getElementById('pm-week-consumable').textContent = fmt(cons);
+    document.getElementById('pm-week-total').textContent = fmt(fuel + cons + other);
 
+    // Project select for spend
+    refreshPocketProjectSelect();
     renderPocketHistory();
     renderPocketFuelSummary();
-    refreshPocketProjectSelect();
   }
-
   function refreshPocketProjectSelect() {
     const sel = document.getElementById('pms-project');
     if (!sel) return;
     const cur = sel.value;
     sel.innerHTML = '<option value="">— ไม่ระบุ —</option>' +
-      projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
-    sel.value = cur;
+      projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}${p.code ? ' (' + p.code + ')' : ''}</option>`).join('');
+    if (cur) sel.value = cur;
   }
-
   function renderPocketHistory() {
-    const list = document.getElementById('pm-tx-list');
-    if (!list) return;
     const period = document.getElementById('pm-tx-period')?.value || 'week';
-    const start = periodStart(period);
-    const txs = pocketTransactions
-      .filter(t => (t.spentAt || t.topupAt || t.createdAt) >= start)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-    if (txs.length === 0) {
-      list.innerHTML = `<div class="empty"><i class="ti ti-list-off"></i><div class="empty-title">ไม่มีรายการ</div></div>`;
+    const since = periodStart(period);
+    const list = pocketTransactions
+      .filter(tx => tx.createdAt >= since || since === 0)
+      .sort((a, b) => b.createdAt - a.createdAt);
+    const box = document.getElementById('pm-tx-list');
+    if (!box) return;
+    if (list.length === 0) {
+      box.innerHTML = `<div class="empty"><i class="ti ti-cash-off"></i><div class="empty-title">ยังไม่มีรายการ</div></div>`;
       return;
     }
-
-    list.innerHTML = txs.map(t => {
-      const date = t.spentAt || t.topupAt || t.createdAt;
-      if (t.kind === 'topup') {
-        return `
-          <div class="pm-tx-row">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:500"><span class="pm-tx-cat pm-cat-topup">เติมเงิน</span> ${escapeHtml(t.note || 'เติมเงินเข้ากระเป๋า')}</div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">${fmtDate(date)} · โดย ${escapeHtml(t.byName || '-')}</div>
-            </div>
-            <div class="pm-tx-amt-in">+${fmt(t.amount)}</div>
-          </div>`;
-      }
-      const catCls = t.category === 'fuel' ? 'pm-cat-fuel' : t.category === 'consumable' ? 'pm-cat-consumable' : 'pm-cat-other';
-      const catLabel = PM_CATEGORY_LABELS[t.category] || 'อื่นๆ';
-      return `
-        <div class="pm-tx-row">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:500"><span class="pm-tx-cat ${catCls}">${catLabel}</span> ${escapeHtml(t.description || '-')}</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px">
-              ${fmtDate(date)} · โดย ${escapeHtml(t.byName || '-')}
-              ${t.projectName ? ' · ' + escapeHtml(t.projectName) : ''}
-              ${t.plate ? ' · ทะเบียน ' + escapeHtml(t.plate) : ''}
-            </div>
+    box.innerHTML = list.map(tx => {
+      const catLabel = { fuel: 'ค่าน้ำมัน', consumable: 'วัสดุสิ้นเปลือง', other: 'อื่นๆ', topup: 'เติมเงิน' }[tx.category || tx.type];
+      const catCls = { fuel: 'pm-cat-fuel', consumable: 'pm-cat-consumable', other: 'pm-cat-other', topup: 'pm-cat-topup' }[tx.category || tx.type];
+      const isOut = tx.type === 'spend';
+      const proj = tx.projectId ? getProjectById(tx.projectId) : null;
+      return `<div class="pm-tx-row">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="pm-tx-cat ${catCls}">${catLabel}</span>
+            ${tx.plate ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3)">${escapeHtml(tx.plate)}</span>` : ''}
+            ${proj ? `<span style="font-size:11px;color:var(--text-3)">· ${escapeHtml(proj.name)}</span>` : ''}
           </div>
-          <div class="pm-tx-amt-out">-${fmt(t.amount)}</div>
-        </div>`;
+          <div style="font-size:13px;margin-top:2px">${escapeHtml(tx.desc || tx.note || '-')}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${escapeHtml(tx.createdByName || '-')} · ${fmtDateTime(tx.createdAt)}</div>
+        </div>
+        <div class="${isOut ? 'pm-tx-amt-out' : 'pm-tx-amt-in'}">${isOut ? '−' : '+'}${fmt(tx.amount)}</div>
+      </div>`;
     }).join('');
   }
-
   function renderPocketFuelSummary() {
-    const container = document.getElementById('pm-fuel-summary');
-    if (!container) return;
-    // Group fuel transactions by plate, last 30 days
-    const cutoff = Date.now() - 30 * 86400000;
-    const fuelTxs = pocketTransactions.filter(t => t.kind === 'spend' && t.category === 'fuel' && (t.spentAt || t.createdAt) >= cutoff);
-    if (fuelTxs.length === 0) {
-      container.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-3);font-size:13px">ไม่มีรายการน้ำมันในช่วง 30 วันที่ผ่านมา</div>`;
+    // Sum fuel spend by plate (last 30 days)
+    const since = Date.now() - 30 * 86400000;
+    const fuelTx = pocketTransactions.filter(tx => tx.type === 'spend' && tx.category === 'fuel' && tx.createdAt >= since);
+    const byPlate = {};
+    fuelTx.forEach(tx => {
+      const plate = tx.plate || '(ไม่ระบุ)';
+      byPlate[plate] = (byPlate[plate] || 0) + tx.amount;
+    });
+    const list = Object.entries(byPlate).sort((a,b) => b[1] - a[1]);
+    const box = document.getElementById('pm-fuel-summary');
+    if (!box) return;
+    if (list.length === 0) {
+      box.innerHTML = '<div style="color:var(--text-3);font-size:13px">ยังไม่มีรายการค่าน้ำมัน 30 วันล่าสุด</div>';
       return;
     }
-    const byPlate = {};
-    fuelTxs.forEach(t => {
-      const plate = t.plate || '(ไม่ระบุ)';
-      byPlate[plate] = byPlate[plate] || { count: 0, total: 0, last: 0 };
-      byPlate[plate].count++;
-      byPlate[plate].total += Number(t.amount);
-      const d = t.spentAt || t.createdAt;
-      if (d > byPlate[plate].last) byPlate[plate].last = d;
-    });
-    const grand = Object.values(byPlate).reduce((s, p) => s + p.total, 0);
-    const rows = Object.entries(byPlate)
-      .sort((a, b) => b[1].total - a[1].total)
-      .map(([plate, info]) => `
-        <tr>
-          <td style="font-family:'JetBrains Mono',monospace;font-weight:600">${escapeHtml(plate)}</td>
-          <td class="right">${info.count}</td>
-          <td class="right">${fmtDate(info.last)}</td>
-          <td class="right" style="font-weight:600;color:var(--warning)">${fmt(info.total)}</td>
-        </tr>`).join('');
-    container.innerHTML = `
-      <table class="items-tbl">
-        <thead><tr>
-          <th>ทะเบียนรถ</th>
-          <th class="right" style="width:80px">ครั้ง</th>
-          <th class="right" style="width:140px">ครั้งล่าสุด</th>
-          <th class="right" style="width:140px">รวม (30 วัน)</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="grand-total"><td colspan="3" style="text-align:right">รวมทั้งหมด</td><td class="row-total">${fmt(grand)}</td></tr></tfoot>
-      </table>`;
+    box.innerHTML = list.map(([plate, amt]) => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:500">${escapeHtml(plate)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;color:var(--warning);font-weight:600">${fmt(amt)} บาท</span>
+      </div>`).join('');
   }
 
   function showPocketSpend() {
-    if (currentUser?.role !== 'procurement') { toast('เฉพาะ Procurement', 'error'); return; }
-    document.getElementById('pms-amount').value = '';
-    document.getElementById('pms-desc').value = '';
-    document.getElementById('pms-plate').value = '';
-    document.getElementById('pms-project').value = '';
-    document.getElementById('pms-category').value = 'fuel';
-    document.getElementById('pms-date').value = new Date().toISOString().slice(0, 10);
+    if (!(currentUser?.role === 'procurement' || isAdmin())) { toast('เฉพาะ Procurement / Admin', 'error'); return; }
+    const dt = document.getElementById('pms-date');
+    if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
     refreshPocketProjectSelect();
     document.getElementById('pocket-spend-modal').classList.add('show');
   }
-
   function showPocketTopup() {
-    if (currentUser?.role !== 'procurement') { toast('เฉพาะ Procurement', 'error'); return; }
-    document.getElementById('pmt-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('pmt-note').value = '';
+    if (!(canViewDashboard() || isAdmin())) { toast('เฉพาะ PM / Executive / Admin', 'error'); return; }
+    const dt = document.getElementById('pmt-date');
+    if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
     const sug = getNextFridayTopupSuggestion();
-    const sugEl = document.getElementById('pmt-suggestion');
-    if (sug.need > 0) {
-      sugEl.style.display = 'block';
-      sugEl.innerHTML = `<i class="ti ti-bulb"></i> แนะนำเติม <strong>${fmt(sug.need)} บาท</strong> เพื่อให้ครบ ${fmt(POCKET_TARGET)} บาท`;
-      document.getElementById('pmt-amount').value = sug.need.toFixed(2);
-    } else {
-      sugEl.style.display = 'none';
-      document.getElementById('pmt-amount').value = '';
+    const sugBox = document.getElementById('pmt-suggestion');
+    if (sug && sugBox) {
+      sugBox.style.display = '';
+      sugBox.innerHTML = `แนะนำเติม <strong>${fmt(sug.amount)} บาท</strong> เพื่อให้ครบ ${fmt(POCKET_TARGET)}`;
+      const amtIn = document.getElementById('pmt-amount');
+      if (amtIn && !amtIn.value) amtIn.value = sug.amount;
     }
     document.getElementById('pocket-topup-modal').classList.add('show');
   }
-
   function closePocketModals() {
     document.getElementById('pocket-spend-modal').classList.remove('show');
     document.getElementById('pocket-topup-modal').classList.remove('show');
   }
-
   async function submitPocketSpend() {
-    if (currentUser?.role !== 'procurement') return;
-    const amount = Number(document.getElementById('pms-amount').value);
-    const date = document.getElementById('pms-date').value;
-    const desc = document.getElementById('pms-desc').value.trim();
-    if (!amount || amount <= 0) { toast('กรุณาใส่จำนวนเงิน', 'error'); return; }
-    if (!date) { toast('กรุณาเลือกวันที่', 'error'); return; }
-    if (!desc) { toast('กรุณากรอกรายละเอียด', 'error'); return; }
-    const balance = pocketBalance();
-    if (amount > balance) {
-      if (!confirm(`ยอดในกระเป๋ามีเพียง ${fmt(balance)} บาท แต่จะจ่าย ${fmt(amount)} บาท ทำให้ติดลบ — ยืนยัน?`)) return;
+    if (!(currentUser?.role === 'procurement' || isAdmin())) return;
+    const category = document.getElementById('pms-category').value;
+    const amount = num('pms-amount');
+    const date = val('pms-date');
+    const desc = val('pms-desc');
+    const projectId = val('pms-project');
+    const plate = val('pms-plate');
+    if (amount <= 0) { toast('กรุณากรอกจำนวนเงิน', 'error'); return; }
+    if (!desc) { toast('กรุณาใส่รายละเอียด', 'error'); return; }
+    if (amount > pocketBalance()) {
+      if (!confirm(`ยอดในกระเป๋ามี ${fmt(pocketBalance())} บาท\nต้องการบันทึกการจ่ายเกินยอด ${fmt(amount)} บาท?`)) return;
     }
-    const projectId = document.getElementById('pms-project').value;
-    const project = projectId ? getProjectById(projectId) : null;
     const tx = {
-      id: 'pmt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      kind: 'spend',
-      category: document.getElementById('pms-category').value,
-      amount,
-      description: desc,
-      spentAt: new Date(date + 'T12:00:00').getTime(),
-      projectId: projectId || null,
-      projectName: project ? project.name : null,
-      plate: document.getElementById('pms-plate').value.trim(),
-      byId: currentUser.id,
-      byName: currentUser.name,
-      createdAt: Date.now()
+      id: 'pm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'spend', category, amount, date, desc,
+      projectId: projectId || null, plate: plate || null,
+      createdAt: Date.now(),
+      createdById: currentUser.id, createdByName: currentUser.name
     };
     try {
       await setDoc(doc(db, 'pocket_transactions', tx.id), tx);
-      logActivity('pocket-spend', `จ่าย ${PM_CATEGORY_LABELS[tx.category]} ${fmt(amount)} บาท · ${desc}`);
-      toast('บันทึกการจ่ายเรียบร้อย', 'success');
+      logActivity('pocket-spend', `จ่ายจาก Pocket: ${fmt(amount)} บาท · ${desc}`);
+      toast('บันทึกเรียบร้อย', 'success');
       closePocketModals();
+      ['pms-amount','pms-desc','pms-plate','pms-project'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     } catch (e) {
-      console.error(e);
+      toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+    }
+  }
+  async function submitPocketTopup() {
+    if (!(canViewDashboard() || isAdmin())) return;
+    const amount = num('pmt-amount');
+    const date = val('pmt-date');
+    const note = val('pmt-note');
+    if (amount <= 0) { toast('กรุณากรอกจำนวนเงิน', 'error'); return; }
+    const tx = {
+      id: 'pm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: 'topup', category: 'topup', amount, date, note,
+      createdAt: Date.now(),
+      createdById: currentUser.id, createdByName: currentUser.name
+    };
+    try {
+      await setDoc(doc(db, 'pocket_transactions', tx.id), tx);
+      logActivity('pocket-topup', `เติม Pocket Money: ${fmt(amount)} บาท`);
+      toast('เติมเงินเรียบร้อย', 'success');
+      closePocketModals();
+      ['pmt-amount','pmt-note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    } catch (e) {
       toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
     }
   }
 
-  async function submitPocketTopup() {
-    if (currentUser?.role !== 'procurement') return;
-    const amount = Number(document.getElementById('pmt-amount').value);
-    const date = document.getElementById('pmt-date').value;
-    if (!amount || amount <= 0) { toast('กรุณาใส่จำนวนเงิน', 'error'); return; }
-    if (!date) { toast('กรุณาเลือกวันที่', 'error'); return; }
-    const tx = {
-      id: 'pmt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      kind: 'topup',
-      amount,
-      topupAt: new Date(date + 'T12:00:00').getTime(),
-      note: document.getElementById('pmt-note').value.trim(),
-      byId: currentUser.id,
-      byName: currentUser.name,
-      createdAt: Date.now()
-    };
-    try {
-      await setDoc(doc(db, 'pocket_transactions', tx.id), tx);
-      logActivity('pocket-topup', `เติมเงิน Pocket Money ${fmt(amount)} บาท`);
-      toast('เติมเงินเรียบร้อย', 'success');
-      closePocketModals();
-    } catch (e) {
-      console.error(e);
-      toast('เติมเงินไม่สำเร็จ: ' + e.message, 'error');
-    }
-  }
-
   // ============ ACTIVITY LOG ============
-  async function logActivity(type, message) {
-    if (!currentUser) return;
+  async function logActivity(action, description) {
     try {
-      const a = {
-        id: 'act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        type,
-        message,
-        byId: currentUser.id,
-        byName: currentUser.name,
-        byRole: currentUser.role,
-        at: Date.now()
-      };
-      await setDoc(doc(db, 'activity_log', a.id), a);
-    } catch (e) {
-      // Silent fail — don't block main action
-      console.warn('Activity log failed:', e);
-    }
+      const id = 'act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      await setDoc(doc(db, 'activity', id), {
+        id, action, description,
+        userId: currentUser?.id || 'unknown',
+        userName: currentUser?.name || 'unknown',
+        userRole: currentUser?.role || 'unknown',
+        createdAt: Date.now()
+      });
+    } catch (e) { /* silent */ }
   }
 
-  // ============ OVERVIEW DASHBOARD (PM/Executive) ============
+  // ============ OVERVIEW PAGE ============
   function renderOverview() {
-    const noAccess = document.getElementById('overview-no-access');
-    const content = document.getElementById('overview-content');
     if (!canSeeAllProjects()) {
-      if (noAccess) noAccess.style.display = 'block';
-      if (content) content.style.display = 'none';
+      document.getElementById('overview-no-access').style.display = '';
+      document.getElementById('overview-content').style.display = 'none';
       return;
     }
-    if (noAccess) noAccess.style.display = 'none';
-    if (content) content.style.display = 'block';
+    document.getElementById('overview-no-access').style.display = 'none';
+    document.getElementById('overview-content').style.display = '';
 
-    // Compute stats
-    let overdue = 0, pendingCount = 0, toPayAmount = 0;
-    const overdueList = [];
-    const payDays = []; // {date, items[]}
-    const payByDate = new Map();
-
-    documents.forEach(d => {
+    // Aggregate
+    const overdueDocs = documents.filter(d => {
       const sla = getSlaForDoc(d);
-      if (sla && sla.sla) {
-        if (sla.sla.status === 'overdue') {
-          overdue++;
-          overdueList.push({ doc: d, sla });
-        }
-        if (sla.sla.status === 'pending' || sla.sla.status === 'overdue') pendingCount++;
-      }
-      // Executive payment due: installment fully approved but not paid
-      if ((d.type || 'installment') === 'installment' && getCurrentStep(d) === 'done' && !d.paidAt) {
-        const exec2 = getApprovalSlot(d, 'exec2');
-        const submittedAt = exec2?.at || d.submittedBy?.at;
-        const payDate = nextPayDate(submittedAt);
-        const key = new Date(payDate).toISOString().slice(0, 10);
-        if (!payByDate.has(key)) payByDate.set(key, { date: payDate, label: payDayLabel(payDate), items: [] });
-        const amt = Number(d.net) || 0;
-        payByDate.get(key).items.push({ doc: d, amount: amt });
-        toPayAmount += amt;
-      }
+      return sla && sla.sla && sla.sla.status === 'overdue';
     });
+    const pendingDocs = documents.filter(d => isPendingDoc(d));
+    const toPayDocs = documents.filter(d => {
+      const t = d.type || 'installment';
+      if (d.paidAt) return false;
+      if (t === 'installment') return getCurrentStep(d) === 'done' && d.status !== 'rejected';
+      if (t === 'po') return d.status === 'approved';
+      return false;
+    });
+    const toPayTotal = toPayDocs.reduce((s, d) => {
+      if (d.type === 'po') return s + (Number(d.total) || 0);
+      return s + (Number(d.net) || 0);
+    }, 0);
 
-    document.getElementById('ov-overdue').textContent = overdue;
-    document.getElementById('ov-pending').textContent = pendingCount;
-    document.getElementById('ov-to-pay').textContent = fmt(toPayAmount);
+    document.getElementById('ov-overdue').textContent = overdueDocs.length;
+    document.getElementById('ov-pending').textContent = pendingDocs.length;
+    document.getElementById('ov-pending-sub').textContent = `งวด ${pendingDocs.filter(d => (d.type||'installment')==='installment').length} · เบิกคืน ${pendingDocs.filter(d => d.type==='purchase'||d.type==='fuel').length} · PR/PO ${pendingDocs.filter(d => d.type==='pr'||d.type==='po').length}`;
+    document.getElementById('ov-to-pay').textContent = fmt(toPayTotal);
+    document.getElementById('ov-to-pay-sub').textContent = `${toPayDocs.length} รายการ`;
     document.getElementById('ov-pocket').textContent = fmt(pocketBalance());
 
-    // Pay days list
-    const payDaysEl = document.getElementById('ov-paydays');
-    const sortedDays = [...payByDate.values()].sort((a, b) => a.date - b.date);
+    // Group to-pay docs by next pay date
+    const grouped = {};
+    toPayDocs.forEach(d => {
+      const submittedAt = d.submittedBy?.at || d.createdAt;
+      const payDate = nextPayDate(submittedAt);
+      const key = new Date(payDate).toISOString().slice(0, 10);
+      if (!grouped[key]) grouped[key] = { date: payDate, docs: [], total: 0 };
+      grouped[key].docs.push(d);
+      const amount = d.type === 'po' ? d.total : d.net;
+      grouped[key].total += Number(amount) || 0;
+    });
+    const sortedDays = Object.values(grouped).sort((a, b) => a.date - b.date);
+    const payBox = document.getElementById('ov-paydays');
     if (sortedDays.length === 0) {
-      payDaysEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-3);font-size:13px">ไม่มีรายการรอจ่าย</div>`;
+      payBox.innerHTML = '<div style="padding:14px;color:var(--text-3);text-align:center">ไม่มีรายการรอจ่าย</div>';
     } else {
-      payDaysEl.innerHTML = sortedDays.map(day => `
-        <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+      payBox.innerHTML = sortedDays.map(g => {
+        const dateStr = new Date(g.date).toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'short' });
+        return `<div style="padding:12px 16px;border-bottom:1px solid var(--border)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong>${day.label} ${fmtDate(day.date)}</strong>
-            <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#5b3a8a">${fmt(day.items.reduce((s,i)=>s+i.amount,0))} บาท</span>
+            <div style="font-weight:600">${escapeHtml(dateStr)} <span style="color:var(--text-3);font-size:12px;font-weight:400">(${payDayLabel(g.date)})</span></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:#5b3a8a">${fmt(g.total)} บาท</div>
           </div>
-          ${day.items.map(it => `
-            <div style="font-size:12px;color:var(--text-2);padding:2px 0;cursor:pointer" onclick="showDetail('${it.doc.id}')">
-              · ${it.doc.docNo} ${escapeHtml(it.doc.project || '-')} <span style="color:var(--text-3)">${fmt(it.amount)}</span>
-            </div>`).join('')}
-        </div>`).join('');
+          <div style="font-size:12px;color:var(--text-2)">${g.docs.length} รายการ: ${g.docs.slice(0,3).map(d => escapeHtml(d.docNo)).join(', ')}${g.docs.length>3 ? ' ...' : ''}</div>
+        </div>`;
+      }).join('');
     }
 
     // Overdue list
-    const overdueEl = document.getElementById('ov-overdue-list');
-    if (overdueList.length === 0) {
-      overdueEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--success);font-size:13px"><i class="ti ti-check"></i> ไม่มีรายการเลย SLA</div>`;
+    const overdueBox = document.getElementById('ov-overdue-list');
+    if (overdueDocs.length === 0) {
+      overdueBox.innerHTML = '<div style="padding:14px;color:var(--text-3);text-align:center"><i class="ti ti-check"></i> ไม่มีรายการเลย SLA</div>';
     } else {
-      overdueEl.innerHTML = overdueList.slice(0, 10).map(({doc: d, sla}) => `
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="showDetail('${d.id}')">
-          <div>
-            <div style="font-weight:500"><span class="type-badge ${DOC_TYPES[d.type||'installment'].cls}"><i class="ti ti-${DOC_TYPES[d.type||'installment'].icon}"></i> ${DOC_TYPES[d.type||'installment'].label}</span> ${d.docNo}</div>
-            <div style="font-size:12px;color:var(--text-3);margin-top:2px">รอ ${sla.who} · ${escapeHtml(d.project || '-')}</div>
+      overdueBox.innerHTML = overdueDocs.slice(0, 8).map(d => {
+        const sla = getSlaForDoc(d);
+        const t = d.type || 'installment';
+        const tInfo = DOC_TYPES[t];
+        return `<div style="padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="showDetail('${d.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <span class="type-badge ${tInfo.cls}"><i class="ti ti-${tInfo.icon}"></i> ${tInfo.label}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;margin-left:6px">${d.docNo}</span>
+            </div>
+            <span class="sla-badge sla-overdue">รอ ${sla.who}</span>
           </div>
-          <span class="sla-badge sla-overdue"><i class="ti ti-alarm"></i> ${sla.sla.label}</span>
-        </div>`).join('');
+          <div style="font-size:13px;margin-top:4px">${escapeHtml(d.project || '-')}</div>
+        </div>`;
+      }).join('');
     }
-
-    // Activity feed
-    renderActivityFeed();
   }
 
-  let _activityCache = [];
-  let _unsubActivity = null;
+  // ============ ACTIVITY LOG (subscribe + render) ============
+  let _activitySub = null;
+  let _activities = [];
   function subscribeActivity() {
-    if (_unsubActivity) return;
-    if (!canSeeAllProjects()) return;
+    if (_activitySub) return;
     try {
-      const qAct = query(collection(db, 'activity_log'), orderBy('at', 'desc'));
-      _unsubActivity = onSnapshot(qAct, snap => {
-        _activityCache = snap.docs.map(d => d.data()).slice(0, 50);
-        const tab = document.querySelector('.tab.active[data-tab]');
-        if (tab && tab.dataset.tab === 'overview') renderActivityFeed();
+      const qAct = query(collection(db, 'activity'), orderBy('createdAt', 'desc'));
+      _activitySub = onSnapshot(qAct, snap => {
+        _activities = snap.docs.map(d => d.data()).slice(0, 30);
+        renderActivity();
       });
-    } catch (e) { console.warn('Activity subscribe failed:', e); }
+    } catch (e) { /* silent */ }
+  }
+  function renderActivity() {
+    const box = document.getElementById('ov-activity');
+    if (!box) return;
+    if (_activities.length === 0) {
+      box.innerHTML = '<div style="color:var(--text-3);font-size:13px">ยังไม่มีกิจกรรม</div>';
+      return;
+    }
+    const ICON_MAP = {
+      'doc-approve': { icon: 'check', bg: 'var(--success-soft)', color: 'var(--success)' },
+      'doc-reject':  { icon: 'x', bg: 'var(--danger-soft)', color: 'var(--danger)' },
+      'doc-pay':     { icon: 'cash', bg: 'var(--accent-soft)', color: 'var(--accent)' },
+      'pocket-spend':{ icon: 'minus', bg: 'var(--warning-soft)', color: 'var(--warning)' },
+      'pocket-topup':{ icon: 'plus', bg: 'var(--success-soft)', color: 'var(--success)' },
+      'income-add':  { icon: 'arrow-down-circle', bg: 'var(--success-soft)', color: 'var(--success)' }
+    };
+    box.innerHTML = _activities.slice(0, 12).map(a => {
+      const icon = ICON_MAP[a.action] || { icon: 'info-circle', bg: 'var(--surface-2)', color: 'var(--text-2)' };
+      const role = ROLES[a.userRole]?.label || a.userRole || '';
+      return `<div class="activity-row">
+        <div class="activity-icon" style="background:${icon.bg};color:${icon.color}"><i class="ti ti-${icon.icon}"></i></div>
+        <div class="activity-content">
+          <div>${escapeHtml(a.description)}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${escapeHtml(a.userName)} (${escapeHtml(role)})</div>
+        </div>
+        <div class="activity-time">${fmtDateTime(a.createdAt)}</div>
+      </div>`;
+    }).join('');
   }
 
-  // ============ PROJECT BUDGET DASHBOARD ============
+  // ============ DASHBOARD (Project budget) ============
   function getProjectExpense(projectId) {
-    // sum of all PAID outflows: installment.net (paid), purchase.net, fuel.net, po.total (paid)
-    let total = 0;
-    documents.filter(d => d.projectId === projectId).forEach(d => {
-      const t = d.type || 'installment';
-      if (t === 'installment' && d.paidAt) total += Number(d.net) || 0;
-      else if (t === 'purchase') total += Number(d.net) || 0;
-      else if (t === 'fuel') total += Number(d.net) || 0;
-      else if (t === 'po' && d.paidAt) total += Number(d.total) || 0;
-    });
-    return total;
+    return documents
+      .filter(d => d.projectId === projectId)
+      .reduce((s, d) => {
+        const t = d.type || 'installment';
+        // count installment when paid OR approved
+        if (t === 'installment') {
+          const step = getCurrentStep(d);
+          if (step === 'done' && d.status !== 'rejected') return s + (Number(d.net) || 0);
+          return s;
+        }
+        if (t === 'pr') return s; // PR is just a request, not money out
+        if (t === 'po') {
+          if (d.status === 'approved' || d.paidAt) return s + (Number(d.total) || 0);
+          return s;
+        }
+        // purchase/fuel: count when reimbursed/paid
+        if (d.reimbursedAt || d.paidAt) return s + (Number(d.net) || 0);
+        return s;
+      }, 0);
   }
   function getProjectIncome(projectId) {
     return _incomeTransactions
-      .filter(t => t.projectId === projectId)
-      .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      .filter(tx => tx.projectId === projectId)
+      .reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
   }
 
   function renderDashboard() {
-    const noAccess = document.getElementById('dashboard-no-access');
-    const content = document.getElementById('dashboard-content');
-    const btnAdd = document.getElementById('btn-add-income');
-    const btnPrint = document.getElementById('btn-print-report');
     if (!canViewDashboard()) {
-      if (noAccess) noAccess.style.display = 'block';
-      if (content) content.style.display = 'none';
-      if (btnAdd) btnAdd.style.display = 'none';
-      if (btnPrint) btnPrint.style.display = 'none';
+      document.getElementById('dashboard-no-access').style.display = '';
+      document.getElementById('dashboard-content').style.display = 'none';
       return;
     }
-    if (noAccess) noAccess.style.display = 'none';
-    if (content) content.style.display = 'block';
-    if (btnAdd) btnAdd.style.display = canManageIncome() ? 'inline-flex' : 'none';
-    if (btnPrint) btnPrint.style.display = 'inline-flex';
+    document.getElementById('dashboard-no-access').style.display = 'none';
+    document.getElementById('dashboard-content').style.display = '';
+
+    const btnInc = document.getElementById('btn-add-income');
+    if (btnInc) btnInc.style.display = canManageIncome() ? '' : 'none';
+    const btnPrint = document.getElementById('btn-print-report');
+    if (btnPrint) btnPrint.style.display = '';
 
     let totalIncome = 0, totalExpense = 0;
-    projects.forEach(p => {
-      totalIncome += getProjectIncome(p.id);
-      totalExpense += getProjectExpense(p.id);
+    const perProject = projects.map(p => {
+      const inc = getProjectIncome(p.id);
+      const exp = getProjectExpense(p.id);
+      totalIncome += inc;
+      totalExpense += exp;
+      return { ...p, income: inc, expense: exp, balance: inc - exp };
     });
-    const balance = totalIncome - totalExpense;
-
     document.getElementById('db-total-income').textContent = fmt(totalIncome);
     document.getElementById('db-total-expense').textContent = fmt(totalExpense);
-    const balEl = document.getElementById('db-balance');
-    balEl.textContent = fmt(balance);
-    balEl.style.color = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+    document.getElementById('db-balance').textContent = fmt(totalIncome - totalExpense);
 
-    // Per-project list
-    const projList = document.getElementById('db-projects-list');
-    if (projects.length === 0) {
-      projList.innerHTML = `<div class="empty"><i class="ti ti-building"></i><div class="empty-title">ยังไม่มีโครงการ</div></div>`;
+    const list = document.getElementById('db-projects-list');
+    if (perProject.length === 0) {
+      list.innerHTML = '<div class="empty"><i class="ti ti-building"></i><div class="empty-title">ยังไม่มีโครงการ</div></div>';
     } else {
-      projList.innerHTML = projects.map(p => {
-        const income = getProjectIncome(p.id);
-        const expense = getProjectExpense(p.id);
-        const bal = income - expense;
-        const docsInProj = documents.filter(d => d.projectId === p.id);
-        const installmentExp = docsInProj.filter(d => (d.type || 'installment') === 'installment' && d.paidAt).reduce((s, d) => s + (Number(d.net) || 0), 0);
-        const purchaseExp = docsInProj.filter(d => d.type === 'purchase').reduce((s, d) => s + (Number(d.net) || 0), 0);
-        const fuelExp = docsInProj.filter(d => d.type === 'fuel').reduce((s, d) => s + (Number(d.net) || 0), 0);
-        const poExp = docsInProj.filter(d => d.type === 'po' && d.paidAt).reduce((s, d) => s + (Number(d.total) || 0), 0);
-        const incomePct = p.contractValue > 0 ? Math.min(100, (income / p.contractValue) * 100) : 0;
-        const balColor = bal >= 0 ? 'var(--success)' : 'var(--danger)';
-        return `
-          <div class="card" style="margin-bottom:12px">
-            <div class="card-head" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-              <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
-                <i class="ti ti-building-skyscraper" style="color:var(--accent)"></i>
-                <h3 style="font-size:15px">${escapeHtml(p.name)}</h3>
-                ${p.code ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--accent-soft);color:var(--accent-dark);padding:1px 7px;border-radius:4px;font-weight:600">${escapeHtml(p.code)}</span>` : ''}
-              </div>
-              <button class="btn btn-sm" onclick="printProjectReport('${p.id}')"><i class="ti ti-printer"></i> Report</button>
+      list.innerHTML = perProject.map(p => {
+        const docs = documents.filter(d => d.projectId === p.id);
+        const installment = docs.filter(d => (d.type||'installment')==='installment' && getCurrentStep(d)==='done').reduce((s,d)=>s+Number(d.net||0),0);
+        const purchase = docs.filter(d => d.type==='purchase' && (d.reimbursedAt||d.paidAt)).reduce((s,d)=>s+Number(d.net||0),0);
+        const fuel = docs.filter(d => d.type==='fuel' && (d.reimbursedAt||d.paidAt)).reduce((s,d)=>s+Number(d.net||0),0);
+        const po = docs.filter(d => d.type==='po' && (d.status==='approved'||d.paidAt)).reduce((s,d)=>s+Number(d.total||0),0);
+        const balanceClr = p.balance >= 0 ? 'var(--success)' : 'var(--danger)';
+        return `<div class="card" style="margin-bottom:10px">
+          <div class="card-head" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <i class="ti ti-building-skyscraper" style="color:var(--accent)"></i>
+              <h3 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.name)}${p.code ? ' <span style="color:var(--text-3);font-weight:400">(' + escapeHtml(p.code) + ')</span>' : ''}</h3>
             </div>
-            <div class="card-body">
-              ${p.contractValue > 0 ? `
-                <div style="margin-bottom:12px">
-                  <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:4px">
-                    <span>มูลค่าสัญญา ${fmt(p.contractValue)} บาท</span>
-                    <span>เบิกแล้ว ${incomePct.toFixed(1)}%</span>
-                  </div>
-                  <div class="progress-bar"><div class="progress-fill" style="width:${incomePct}%;background:var(--success)"></div></div>
-                </div>
-              ` : ''}
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
-                <div style="background:var(--success-soft);padding:10px;border-radius:8px;text-align:center">
-                  <div style="font-size:11px;color:var(--text-2)">รายรับ</div>
-                  <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--success);font-size:15px">${fmt(income)}</div>
-                </div>
-                <div style="background:var(--danger-soft);padding:10px;border-radius:8px;text-align:center">
-                  <div style="font-size:11px;color:var(--text-2)">รายจ่าย</div>
-                  <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger);font-size:15px">${fmt(expense)}</div>
-                </div>
-                <div style="background:${bal>=0?'var(--accent-soft)':'var(--danger-soft)'};padding:10px;border-radius:8px;text-align:center">
-                  <div style="font-size:11px;color:var(--text-2)">คงเหลือ</div>
-                  <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${balColor};font-size:15px">${fmt(bal)}</div>
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--text-2);display:grid;grid-template-columns:repeat(2,1fr);gap:6px 16px">
-                <div>งวดงาน: <strong style="color:var(--text)">${fmt(installmentExp)}</strong></div>
-                <div>ซื้อของ: <strong style="color:var(--text)">${fmt(purchaseExp)}</strong></div>
-                <div>ค่ารถ: <strong style="color:var(--text)">${fmt(fuelExp)}</strong></div>
-                <div>PO: <strong style="color:var(--text)">${fmt(poExp)}</strong></div>
-              </div>
+            <button class="btn btn-ghost btn-sm" onclick="printProjectReport('${p.id}')" title="Print Report"><i class="ti ti-printer"></i></button>
+          </div>
+          <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+            <div>
+              <div style="font-size:11px;color:var(--text-3);text-transform:uppercase">รายรับ</div>
+              <div style="font-size:18px;font-weight:600;color:var(--success);font-family:'JetBrains Mono',monospace">${fmt(p.income)}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-3);text-transform:uppercase">รายจ่าย</div>
+              <div style="font-size:18px;font-weight:600;color:var(--danger);font-family:'JetBrains Mono',monospace">${fmt(p.expense)}</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">งวดงาน ${fmt(installment)} · ซื้อ ${fmt(purchase)} · รถ ${fmt(fuel)} · PO ${fmt(po)}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-3);text-transform:uppercase">คงเหลือ</div>
+              <div style="font-size:18px;font-weight:700;color:${balanceClr};font-family:'JetBrains Mono',monospace">${fmt(p.balance)}</div>
             </div>
           </div>
-        `;
+        </div>`;
       }).join('');
     }
 
-    // Consumables by project (PR + Pocket Money "consumable")
-    const consEl = document.getElementById('db-consumables-by-project');
-    const byProj = new Map();
-    // From PR with category=consumable
-    documents.filter(d => d.type === 'pr' && d.category === 'consumable').forEach(d => {
-      if (!byProj.has(d.projectId)) byProj.set(d.projectId, { project: d.project || '-', items: [], total: 0 });
-      const tot = Number(d.totalEst) || 0;
-      byProj.get(d.projectId).items.push({ source: 'PR', docNo: d.docNo, amount: tot, date: d.requestDate || fmtDate(d.createdAt) });
-      byProj.get(d.projectId).total += tot;
+    // Consumables by project (Phase 2 Batch 3 spec)
+    const consBox = document.getElementById('db-consumables-by-project');
+    const consByProj = {};
+    pocketTransactions.filter(tx => tx.type === 'spend' && tx.category === 'consumable').forEach(tx => {
+      const k = tx.projectId || '_none';
+      consByProj[k] = (consByProj[k] || 0) + tx.amount;
     });
-    // From Pocket Money consumable transactions
-    pocketTransactions.filter(t => t.kind === 'spend' && t.category === 'consumable' && t.projectId).forEach(t => {
-      if (!byProj.has(t.projectId)) byProj.set(t.projectId, { project: t.project || '-', items: [], total: 0 });
-      const amt = Number(t.amount) || 0;
-      byProj.get(t.projectId).items.push({ source: 'Pocket', docNo: t.id.slice(-6), amount: amt, date: fmtDate(t.at) });
-      byProj.get(t.projectId).total += amt;
-    });
-
-    if (byProj.size === 0) {
-      consEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-3);font-size:13px">ยังไม่มีข้อมูลวัสดุสิ้นเปลือง</div>`;
+    const consEntries = Object.entries(consByProj).sort((a,b) => b[1] - a[1]);
+    if (consEntries.length === 0) {
+      consBox.innerHTML = '<div style="padding:14px;color:var(--text-3);text-align:center">ยังไม่มีรายการ</div>';
     } else {
-      consEl.innerHTML = [...byProj.entries()].map(([pid, info]) => `
-        <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong style="font-size:13px">${escapeHtml(info.project)}</strong>
-            <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--info)">${fmt(info.total)} บาท</span>
-          </div>
-          <div style="font-size:11px;color:var(--text-3)">${info.items.length} รายการ</div>
-          <div style="margin-top:6px;font-size:12px">
-            ${info.items.slice(0, 5).map(it => `
-              <div style="display:flex;justify-content:space-between;padding:2px 0;color:var(--text-2)">
-                <span>· [${it.source}] ${escapeHtml(it.docNo)} · ${escapeHtml(it.date)}</span>
-                <span class="mono">${fmt(it.amount)}</span>
-              </div>
-            `).join('')}
-            ${info.items.length > 5 ? `<div style="font-size:11px;color:var(--text-3);font-style:italic">… อีก ${info.items.length - 5} รายการ</div>` : ''}
-          </div>
-        </div>
-      `).join('');
+      consBox.innerHTML = consEntries.map(([pid, amt]) => {
+        const p = pid !== '_none' ? getProjectById(pid) : null;
+        return `<div style="display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)">
+          <span>${p ? escapeHtml(p.name) + (p.code ? ' (' + p.code + ')' : '') : '<i style="color:var(--text-3)">ไม่ระบุโครงการ</i>'}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--info)">${fmt(amt)}</span>
+        </div>`;
+      }).join('');
     }
 
-    // Income list
-    const incEl = document.getElementById('db-income-list');
-    const sortedIncomes = [..._incomeTransactions].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    if (sortedIncomes.length === 0) {
-      incEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-3);font-size:13px">ยังไม่มีรายรับ — กดปุ่ม "เพิ่มรายรับ" เพื่อบันทึก</div>`;
+    // Income history list
+    const incBox = document.getElementById('db-income-list');
+    if (_incomeTransactions.length === 0) {
+      incBox.innerHTML = '<div style="padding:14px;color:var(--text-3);text-align:center">ยังไม่มีรายรับ</div>';
     } else {
-      const INC_LABELS = { installment: 'งวดงาน', advance: 'เงินล่วงหน้า', extra: 'งานเพิ่ม', other: 'อื่นๆ' };
-      incEl.innerHTML = sortedIncomes.slice(0, 30).map(t => `
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+      incBox.innerHTML = _incomeTransactions.map(tx => {
+        const proj = getProjectById(tx.projectId);
+        const CAT = { installment: 'งวดงาน', advance: 'เงินล่วงหน้า', extra: 'งานเพิ่ม', other: 'อื่นๆ' };
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:500;font-size:13px">${escapeHtml(t.project || '-')}</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px">${INC_LABELS[t.category] || t.category} · ${escapeHtml(t.date || '-')} · ${escapeHtml(t.createdBy ? t.createdBy.name : '-')}</div>
-            ${t.note ? `<div style="font-size:11px;color:var(--text-2);margin-top:2px;font-style:italic">${escapeHtml(t.note)}</div>` : ''}
+            <div><strong>${proj ? escapeHtml(proj.name) : '-'}</strong> <span style="font-size:11px;color:var(--text-3);background:var(--surface-2);padding:1px 8px;border-radius:4px;margin-left:4px">${CAT[tx.category]||tx.category}</span></div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">${escapeHtml(tx.createdBy?.name||'-')} · ${tx.date} · ${tx.note ? escapeHtml(tx.note) : ''}</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--success);font-size:14px">+${fmt(t.amount)}</div>
-            ${canDeleteAnything() ? `<button class="btn btn-ghost btn-sm" onclick="deleteIncome('${t.id}')" style="margin-top:2px;padding:2px 6px"><i class="ti ti-trash" style="font-size:13px;color:var(--danger)"></i></button>` : ''}
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--success)">+${fmt(tx.amount)}</span>
+            ${canDeleteAnything() ? `<button class="btn btn-ghost btn-sm" onclick="deleteIncome('${tx.id}')" title="ลบ"><i class="ti ti-trash"></i></button>` : ''}
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
   }
 
-  // ============ PRINT REPORT ============
+  // ============ PRINT REPORTS ============
+  function buildReportHtml(scope, projectId) {
+    const company = companySettings.name || 'Home Delight Co.,Ltd';
+    const now = new Date();
+    const targetProjects = projectId ? projects.filter(p => p.id === projectId) : projects;
+    let totalInc = 0, totalExp = 0;
+    const projRows = targetProjects.map(p => {
+      const inc = getProjectIncome(p.id);
+      const exp = getProjectExpense(p.id);
+      totalInc += inc; totalExp += exp;
+      return { p, inc, exp, balance: inc - exp };
+    });
+
+    let html = pdfHeader(scope === 'all' ? 'รายงานงบประมาณภาพรวม' : `รายงานโครงการ`, `RPT-${now.toISOString().slice(0,10).replace(/-/g,'')}`);
+
+    if (scope === 'project' && projRows.length === 1) {
+      const p = projRows[0].p;
+      html += `<div style="background:#1a1a17;color:white;padding:12pt;border-radius:4pt;margin-bottom:14pt">
+        <div style="font-size:14pt;font-weight:700">${escapeHtml(p.name)}</div>
+        ${p.code ? `<div style="font-size:10pt;color:#c8c5b6;margin-top:4pt">รหัส: ${escapeHtml(p.code)}</div>` : ''}
+        ${p.location ? `<div style="font-size:10pt;color:#c8c5b6">📍 ${escapeHtml(p.location)}</div>` : ''}
+        ${p.contractor ? `<div style="font-size:10pt;color:#c8c5b6">ผู้รับเหมา: ${escapeHtml(p.contractor)}</div>` : ''}
+      </div>`;
+    }
+
+    // Summary
+    html += `<table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:14pt">
+      <thead>
+        <tr style="background:#1a1a17;color:white">
+          <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">โครงการ</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17">รายรับ</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17">รายจ่าย</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17">คงเหลือ</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${projRows.map(r => `<tr>
+          <td style="padding:6pt;border:1px solid #c8c5b6">${escapeHtml(r.p.name)}${r.p.code ? ` <span style="color:#8b8a82">(${escapeHtml(r.p.code)})</span>` : ''}</td>
+          <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#2d6a4f">${fmt(r.inc)}</td>
+          <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(r.exp)}</td>
+          <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:700;color:${r.balance>=0?'#2d6a4f':'#b3261e'}">${fmt(r.balance)}</td>
+        </tr>`).join('')}
+        <tr style="background:#f5f4ee">
+          <td style="padding:8pt;border:1px solid #1a1a17;font-weight:700">รวม</td>
+          <td style="padding:8pt;text-align:right;border:1px solid #1a1a17;font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(totalInc)}</td>
+          <td style="padding:8pt;text-align:right;border:1px solid #1a1a17;font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(totalExp)}</td>
+          <td style="padding:8pt;text-align:right;border:1px solid #1a1a17;font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(totalInc - totalExp)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+
+    // Income details (filtered)
+    const filteredInc = projectId ? _incomeTransactions.filter(t => t.projectId === projectId) : _incomeTransactions;
+    if (filteredInc.length > 0) {
+      html += `<h3 style="font-size:11pt;font-weight:600;margin:14pt 0 8pt">รายการรายรับ (${filteredInc.length})</h3>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:14pt">
+        <thead><tr style="background:#1a1a17;color:white">
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:80pt">วันที่</th>
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17">โครงการ</th>
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:80pt">หมวด</th>
+          <th style="padding:5pt;text-align:right;border:1px solid #1a1a17;width:100pt">จำนวน</th>
+        </tr></thead>
+        <tbody>
+          ${filteredInc.map(tx => {
+            const p = getProjectById(tx.projectId);
+            const CAT = { installment: 'งวดงาน', advance: 'เงินล่วงหน้า', extra: 'งานเพิ่ม', other: 'อื่นๆ' };
+            return `<tr>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${tx.date || '-'}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${p ? escapeHtml(p.name) : '-'}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${CAT[tx.category]||tx.category}</td>
+              <td style="padding:5pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(tx.amount)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    // Expense docs (filtered)
+    const filteredDocs = projectId ? documents.filter(d => d.projectId === projectId) : documents;
+    if (filteredDocs.length > 0) {
+      html += `<h3 style="font-size:11pt;font-weight:600;margin:14pt 0 8pt">รายการเอกสาร (${filteredDocs.length})</h3>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:9pt">
+        <thead><tr style="background:#1a1a17;color:white">
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:60pt">ประเภท</th>
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:110pt">เลขที่</th>
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17">รายละเอียด</th>
+          <th style="padding:5pt;text-align:right;border:1px solid #1a1a17;width:90pt">ยอด</th>
+          <th style="padding:5pt;text-align:left;border:1px solid #1a1a17;width:90pt">สถานะ</th>
+        </tr></thead>
+        <tbody>
+          ${filteredDocs.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)).map(d => {
+            const t = d.type || 'installment';
+            const tInfo = DOC_TYPES[t] || DOC_TYPES.installment;
+            const status = getStatusInfo(d);
+            let desc = '';
+            if (t === 'installment') desc = `งวด ${d.period||'-'}/${d.periodTotal||'-'} · ${escapeHtml(d.contractor || '')}`;
+            else if (t === 'purchase') desc = `${escapeHtml(d.vendor||'-')} · ${(d.items||[]).length} รายการ`;
+            else if (t === 'fuel') desc = d.mode==='mileage' ? `${d.distance||0} km` : `${escapeHtml(d.station||'-')} · ${d.liters||0} L`;
+            else if (t === 'pr') desc = `PR · ${(d.items||[]).length} รายการ · ${escapeHtml(d.suggestedVendor||'')}`;
+            else if (t === 'po') desc = `PO · ${escapeHtml(d.vendor||'-')} · ${(d.items||[]).length} รายการ`;
+            const amt = t === 'pr' ? d.totalEst : (t === 'po' ? d.total : d.net);
+            return `<tr>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${tInfo.label}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-size:8pt">${escapeHtml(d.docNo)}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6">${desc}</td>
+              <td style="padding:5pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(amt)}</td>
+              <td style="padding:5pt;border:1px solid #c8c5b6;font-size:8pt">${status.label}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    html += pdfFooter();
+    return html;
+  }
+
   function printDashboardReport() {
     if (!canViewDashboard()) return;
-    const html = buildReportHtml(null);
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => { win.print(); }, 400);
+    generatePdf(buildReportHtml('all'));
   }
   function printProjectReport(projectId) {
     if (!canViewDashboard()) return;
-    const html = buildReportHtml(projectId);
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => { win.print(); }, 400);
+    generatePdf(buildReportHtml('project', projectId));
   }
 
-  function buildReportHtml(projectId) {
-    const targetProjects = projectId ? projects.filter(p => p.id === projectId) : projects;
-    const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
-    let totalInc = 0, totalExp = 0;
-    targetProjects.forEach(p => { totalInc += getProjectIncome(p.id); totalExp += getProjectExpense(p.id); });
-
-    const projectsHtml = targetProjects.map(p => {
-      const income = getProjectIncome(p.id);
-      const expense = getProjectExpense(p.id);
-      const bal = income - expense;
-      const docs = documents.filter(d => d.projectId === p.id);
-      const insExp = docs.filter(d => (d.type||'installment') === 'installment' && d.paidAt).reduce((s,d)=>s+(Number(d.net)||0), 0);
-      const purExp = docs.filter(d => d.type === 'purchase').reduce((s,d)=>s+(Number(d.net)||0), 0);
-      const fuExp = docs.filter(d => d.type === 'fuel').reduce((s,d)=>s+(Number(d.net)||0), 0);
-      const poExp = docs.filter(d => d.type === 'po' && d.paidAt).reduce((s,d)=>s+(Number(d.total)||0), 0);
-      const incomeRows = _incomeTransactions.filter(t => t.projectId === p.id).map(t => `
-        <tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml({installment:'งวดงาน',advance:'เงินล่วงหน้า',extra:'งานเพิ่ม',other:'อื่นๆ'}[t.category]||t.category||'-')}</td><td>${escapeHtml(t.note||'-')}</td><td class="r mono">+${fmt(t.amount)}</td></tr>
-      `).join('');
-      const expenseRows = docs.filter(d => {
-        const t = d.type || 'installment';
-        if (t === 'installment') return !!d.paidAt;
-        if (t === 'po') return !!d.paidAt;
-        return t === 'purchase' || t === 'fuel';
-      }).map(d => {
-        const t = d.type || 'installment';
-        const amount = t === 'po' ? Number(d.total)||0 : Number(d.net)||0;
-        const desc = t === 'installment' ? `งวดที่ ${d.period||'-'}/${d.periodTotal||'-'} · ${escapeHtml(d.contractor||'-')}`
-          : t === 'purchase' ? `ซื้อของ · ${escapeHtml(d.vendor||'-')}`
-          : t === 'fuel' ? `ค่ารถ · ${escapeHtml(d.plate||'-')}`
-          : `PO · ${escapeHtml(d.vendor||'-')}`;
-        const tLabel = ({installment:'งวดงาน', purchase:'ซื้อของ', fuel:'ค่ารถ', po:'PO'})[t] || t;
-        return `<tr><td>${escapeHtml(fmtDate(d.paidAt||d.createdAt))}</td><td>${tLabel}</td><td>${desc}</td><td class="r mono" style="color:#b3261e">−${fmt(amount)}</td></tr>`;
-      }).join('');
-
-      return `
-        <div class="proj-block">
-          <h2>${escapeHtml(p.name)}${p.code ? ` <span style="font-size:11pt;color:#666">(${escapeHtml(p.code)})</span>` : ''}</h2>
-          <div class="proj-meta">
-            ${p.contractor ? `ผู้รับเหมา: ${escapeHtml(p.contractor)}` : ''}
-            ${p.contractValue > 0 ? ` · มูลค่าสัญญา: ${fmt(p.contractValue)} บาท` : ''}
-          </div>
-          <div class="summary-grid">
-            <div class="sum-cell" style="background:#d8f0e1"><div class="sum-lbl">รายรับ</div><div class="sum-val" style="color:#2d6a4f">${fmt(income)}</div></div>
-            <div class="sum-cell" style="background:#fcdfdc"><div class="sum-lbl">รายจ่าย</div><div class="sum-val" style="color:#b3261e">${fmt(expense)}</div></div>
-            <div class="sum-cell" style="background:${bal>=0?'#f7ebe1':'#fcdfdc'}"><div class="sum-lbl">คงเหลือ</div><div class="sum-val" style="color:${bal>=0?'#8b3f15':'#b3261e'}">${fmt(bal)}</div></div>
-          </div>
-          <div class="break-grid">
-            <div>งวดงาน: <strong>${fmt(insExp)}</strong></div>
-            <div>ซื้อของ: <strong>${fmt(purExp)}</strong></div>
-            <div>ค่ารถ: <strong>${fmt(fuExp)}</strong></div>
-            <div>PO: <strong>${fmt(poExp)}</strong></div>
-          </div>
-          ${incomeRows ? `
-            <h3>รายรับ</h3>
-            <table class="rep-tbl"><thead><tr><th>วันที่</th><th>หมวด</th><th>หมายเหตุ</th><th class="r">จำนวน</th></tr></thead><tbody>${incomeRows}</tbody></table>
-          ` : '<h3>รายรับ</h3><div class="empty-row">— ไม่มีรายรับ —</div>'}
-          ${expenseRows ? `
-            <h3>รายจ่าย</h3>
-            <table class="rep-tbl"><thead><tr><th>วันที่</th><th>ประเภท</th><th>รายละเอียด</th><th class="r">จำนวน</th></tr></thead><tbody>${expenseRows}</tbody></table>
-          ` : '<h3>รายจ่าย</h3><div class="empty-row">— ไม่มีรายจ่าย —</div>'}
-        </div>
-      `;
-    }).join('');
-
-    const grandBal = totalInc - totalExp;
-    return `<!DOCTYPE html>
-<html lang="th"><head><meta charset="UTF-8"><title>Budget Report - ${projectId ? escapeHtml(targetProjects[0]?.name || '') : 'ทุกโครงการ'}</title>
-<style>
-  body { font-family: 'Sarabun','Tahoma',sans-serif; padding:24pt; color:#1a1a17; font-size:11pt; }
-  h1 { font-size:18pt; margin:0 0 4pt; }
-  h2 { font-size:14pt; margin:18pt 0 4pt; padding-bottom:4pt; border-bottom:2px solid #c8632c; }
-  h3 { font-size:12pt; margin:12pt 0 4pt; color:#5c5b54; }
-  .header-bar { border-bottom:2px solid #1a1a17; padding-bottom:10pt; margin-bottom:14pt; }
-  .meta { font-size:10pt; color:#666; }
-  .proj-meta { font-size:10pt; color:#666; margin-bottom:8pt; }
-  .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8pt; margin:8pt 0; }
-  .sum-cell { padding:8pt; border-radius:6pt; text-align:center; border:1px solid #e3e1d7; }
-  .sum-lbl { font-size:9pt; color:#5c5b54; }
-  .sum-val { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14pt; margin-top:2pt; }
-  .break-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6pt; margin:6pt 0 10pt; font-size:10pt; padding:6pt 10pt; background:#f5f4ee; border-radius:4pt; }
-  .rep-tbl { width:100%; border-collapse:collapse; margin:4pt 0 10pt; font-size:10pt; }
-  .rep-tbl th, .rep-tbl td { border:1px solid #d8d5c8; padding:4pt 6pt; text-align:left; }
-  .rep-tbl th { background:#ebeae3; font-weight:600; }
-  .rep-tbl .r { text-align:right; }
-  .rep-tbl .mono { font-family:'JetBrains Mono',monospace; }
-  .empty-row { font-size:10pt; color:#888; font-style:italic; padding:4pt 0; }
-  .proj-block { page-break-inside:avoid; margin-bottom:14pt; }
-  .grand-summary { background:#1a1a17; color:white; padding:14pt; border-radius:6pt; margin:14pt 0; display:grid; grid-template-columns:repeat(3,1fr); gap:10pt; }
-  .grand-summary .sum-lbl { color:#c8c5b6; }
-  .grand-summary .sum-val { color:#fff; font-size:16pt; }
-  @media print { body { padding:14pt; } }
-</style></head><body>
-<div class="header-bar">
-  <h1>${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')}</h1>
-  <div class="meta">รายงานสรุปงบโครงการ${projectId ? '' : ' · ทุกโครงการ'} · พิมพ์เมื่อ ${today}</div>
-</div>
-<div class="grand-summary">
-  <div><div class="sum-lbl">รายรับรวม</div><div class="sum-val">${fmt(totalInc)}</div></div>
-  <div><div class="sum-lbl">รายจ่ายรวม</div><div class="sum-val">${fmt(totalExp)}</div></div>
-  <div><div class="sum-lbl">คงเหลือ</div><div class="sum-val">${fmt(grandBal)}</div></div>
-</div>
-${projectsHtml || '<div class="empty-row">— ไม่มีโครงการ —</div>'}
-<div style="margin-top:24pt;padding-top:10pt;border-top:1px solid #ccc;font-size:9pt;color:#888;text-align:center">
-  สร้างโดย ${escapeHtml(currentUser ? currentUser.name : '-')} · ${(ROLES[currentUser?.role]||{}).label || ''}
-</div>
-</body></html>`;
-  }
-
-  function renderActivityFeed() {
-    const el = document.getElementById('ov-activity');
-    if (!el) return;
-    if (_activityCache.length === 0) {
-      el.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-3);font-size:13px">ยังไม่มีกิจกรรม</div>`;
-      return;
-    }
-    const ICONS = {
-      'pocket-spend': { ic: 'minus', bg: 'var(--danger-soft)', col: 'var(--danger)' },
-      'pocket-topup': { ic: 'plus', bg: 'var(--success-soft)', col: 'var(--success)' },
-      'doc-create': { ic: 'plus', bg: 'var(--info-soft)', col: 'var(--info)' },
-      'doc-approve': { ic: 'check', bg: 'var(--success-soft)', col: 'var(--success)' },
-      'doc-reject': { ic: 'x', bg: 'var(--danger-soft)', col: 'var(--danger)' },
-      'doc-pay': { ic: 'cash', bg: 'var(--accent-soft)', col: 'var(--accent-dark)' }
-    };
-    el.innerHTML = _activityCache.slice(0, 20).map(a => {
-      const ic = ICONS[a.type] || { ic: 'circle', bg: 'var(--surface-3)', col: 'var(--text-2)' };
-      return `
-        <div class="activity-row">
-          <div class="activity-icon" style="background:${ic.bg};color:${ic.col}"><i class="ti ti-${ic.ic}"></i></div>
-          <div class="activity-content">
-            <div style="font-size:13px">${escapeHtml(a.message || '')}</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px">${escapeHtml(a.byName || '-')} · ${escapeHtml((ROLES[a.byRole]||{}).label || '')}</div>
-          </div>
-          <div class="activity-time">${fmtDateTime(a.at)}</div>
-        </div>`;
-    }).join('');
-  }
-
-  // ============ INIT ============
-  // Firebase handles auth state via onAuthStateChanged above
-
-  // Phase 2 Batch 3: Auto-refresh SLA labels every minute
+  // ============ SLA AUTO REFRESH ============
   setInterval(() => {
     if (!currentUser) return;
-    const tab = document.querySelector('.tab.active[data-tab]');
-    if (!tab) return;
-    if (tab.dataset.tab === 'history') renderHistory();
-    if (tab.dataset.tab === 'overview') renderOverview();
-    if (tab.dataset.tab === 'dashboard') renderDashboard();
-  }, 60000);
+    const activeTab = document.querySelector('.tab.active[data-tab]');
+    if (!activeTab) return;
+    if (activeTab.dataset.tab === 'history') renderHistory();
+    if (activeTab.dataset.tab === 'overview') renderOverview();
+  }, 60000); // every 60 seconds
 
-  // ============ GLOBAL EXPORTS (required for type="module") ============
+  // ============ EXPORT ALL FUNCTIONS TO WINDOW ============
   window.login = login;
   window.logout = logout;
-  window.saveNewProfile = saveNewProfile;
   window.switchTab = switchTab;
   window.calc = calc;
   window.handleFiles = handleFiles;
@@ -6621,48 +6518,38 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.openImageViewer = openImageViewer;
   window.closeImageViewer = closeImageViewer;
   window.openPdf = openPdf;
-
-  // New for Home Delight v2
   window.showAddProject = showAddProject;
   window.editProject = editProject;
-  window.deleteProject = deleteProject;
   window.saveProject = saveProject;
+  window.deleteProject = deleteProject;
   window.closeProjectModal = closeProjectModal;
   window.closeProjectModalBg = closeProjectModalBg;
-
-  window.switchSettingsTab = switchSettingsTab;
   window.saveCompanySettings = saveCompanySettings;
   window.handleLogoUpload = handleLogoUpload;
   window.removeLogo = removeLogo;
-
+  window.switchSettingsTab = switchSettingsTab;
   window.addPurchaseItem = addPurchaseItem;
   window.removePurchaseItem = removePurchaseItem;
   window.updatePurchaseItem = updatePurchaseItem;
   window.submitPurchase = submitPurchase;
   window.resetPurchaseForm = resetPurchaseForm;
-
   window.switchFuelMode = switchFuelMode;
   window.calcFuel = calcFuel;
   window.calcMileage = calcMileage;
   window.submitFuel = submitFuel;
   window.resetFuelForm = resetFuelForm;
-
   window.initiateReimburse = initiateReimburse;
   window.confirmReimburse = confirmReimburse;
   window.closeReimburseModal = closeReimburseModal;
-
   window.filterByType = filterByType;
-
   window.exportInstallmentPdf = exportInstallmentPdf;
   window.exportPurchasePdf = exportPurchasePdf;
   window.exportFuelPdf = exportFuelPdf;
   window.exportProjectSummaryPdf = exportProjectSummaryPdf;
-
-  // Phase 2 additions
   window.prefillFromPreviousInstallment = prefillFromPreviousInstallment;
   window.applyTabPermissions = applyTabPermissions;
-
-  // Phase 2 Batch 2: PR/PO
+  window.saveNewProfile = saveNewProfile;
+  // PR / PO
   window.addPrItem = addPrItem;
   window.removePrItem = removePrItem;
   window.updatePrItem = updatePrItem;
@@ -6670,47 +6557,46 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.resetPrForm = resetPrForm;
   window.approvePR = approvePR;
   window.rejectPR = rejectPR;
-
+  window.refreshPoFromPrSelect = refreshPoFromPrSelect;
+  window.prefillPoFromPr = prefillPoFromPr;
   window.addPoItem = addPoItem;
   window.removePoItem = removePoItem;
   window.updatePoItem = updatePoItem;
   window.submitPo = submitPo;
   window.resetPoForm = resetPoForm;
-  window.prefillPoFromPr = prefillPoFromPr;
-  window.refreshPoFromPrSelect = refreshPoFromPrSelect;
   window.approvePO = approvePO;
   window.rejectPO = rejectPO;
+  window.rejectPOByExec = rejectPOByExec;
   window.confirmPoVendorDoc = confirmPoVendorDoc;
-
-  // Phase 2 Batch 3: Pocket Money + Overview
+  // Pocket money
   window.showPocketSpend = showPocketSpend;
   window.showPocketTopup = showPocketTopup;
   window.closePocketModals = closePocketModals;
   window.submitPocketSpend = submitPocketSpend;
   window.submitPocketTopup = submitPocketTopup;
   window.renderPocketHistory = renderPocketHistory;
+  // Overview / Dashboard
   window.renderOverview = renderOverview;
-  // New exports — payment, income, dashboard, history project filter
-  window.initiatePayment = initiatePayment;
-  window.confirmPayment = confirmPayment;
-  window.closePaymentModal = closePaymentModal;
-  window.onPayMethodChange = onPayMethodChange;
-  window.onPayFlagPaidChange = onPayFlagPaidChange;
-  window.handlePaymentFiles = handlePaymentFiles;
-  window.removePaymentFile = removePaymentFile;
+  window.renderDashboard = renderDashboard;
   window.showIncomeModal = showIncomeModal;
   window.closeIncomeModal = closeIncomeModal;
   window.saveIncome = saveIncome;
   window.deleteIncome = deleteIncome;
-  window.renderDashboard = renderDashboard;
+  // Payment
+  window.initiatePayment = initiatePayment;
+  window.onPayMethodChange = onPayMethodChange;
+  window.onPayFlagPaidChange = onPayFlagPaidChange;
+  window.handlePaymentFiles = handlePaymentFiles;
+  window.removePaymentFile = removePaymentFile;
+  window.confirmPayment = confirmPayment;
+  window.closePaymentModal = closePaymentModal;
+  // Reports
   window.printDashboardReport = printDashboardReport;
   window.printProjectReport = printProjectReport;
+  // History
   window.onHistoryProjectChange = onHistoryProjectChange;
-  window.rejectPOByExec = rejectPOByExec;
 </script>
 
-<!-- Phase 2 Batch 4: Print area for high-quality vector PDF via browser print -->
 <div id="print-area"></div>
-
 </body>
 </html>
