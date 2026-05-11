@@ -5006,10 +5006,12 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
   let pendingPaymentFiles = [];
 
   function initiatePayment(docId, scope) {
-    if (!canMarkPaid()) { toast('คุณไม่มีสิทธิ์บันทึกการจ่ายเงิน', 'error'); return; }
-    const d = documents.find(x => x.id === docId);
-    if (!d) return;
-    if (d.paidAt) { toast('เอกสารนี้บันทึกการจ่ายแล้ว', 'info'); return; }
+  const d = documents.find(x => x.id === docId);
+  if (!d) return;
+
+  if (!canMarkPaidFor(d.type)) { toast('คุณไม่มีสิทธิ์บันทึกการจ่ายเงิน', 'error'); return; }
+  
+  if (d.paidAt) { toast('เอกสารนี้บันทึกการจ่ายแล้ว', 'info'); return; }
     pendingPayment = { docId, scope };
     pendingPaymentFiles = [];
 
