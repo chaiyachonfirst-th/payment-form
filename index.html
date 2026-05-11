@@ -4736,6 +4736,7 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
 
       <div class="modal-foot">
         <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="exportPoPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>
           ${canDeleteAnything() ? `
             <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
           ` : ''}
@@ -5534,7 +5535,63 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
     html += pdfFooter();
     generatePdf(html);
   }
+function exportPoPdf(id) {
+  const d = documents.find(x => x.id === id);
+  if (!d) return;
+  
+  const PAYMENT_LABELS = {
+    cod: 'เงินสด ณ จุดส่งของ (COD)', prepaid: 'โอนล่วงหน้า',
+    'credit-7': 'เครดิต 7 วัน', 'credit-15': 'เครดิต 15 วัน', 'credit-30': 'เครดิต 30 วัน', other: 'อื่นๆ'
+  };
 
+  let html = pdfHeader('ใบสั่งซื้อ (Purchase Order)', d.docNo);
+  html += `
+    <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
+      <tr>
+        <td style="width:60%;vertical-align:top">
+          <div style="font-weight:600;font-size:11pt">${escapeHtml(d.project || '-')}</div>
+          <div style="color:#5c5b54;margin-top:2pt">ผู้ขาย: <strong>${escapeHtml(d.vendor)}</strong></div>
+          <div style="color:#5c5b54">อ้างอิง PR: <strong>${escapeHtml(d.prDocNo || '-')}</strong></div>
+          <div style="color:#5c5b54">เงื่อนไขชำระ: ${PAYMENT_LABELS[d.paymentTerms] || d.paymentTerms}</div>
+        </td>
+        <td style="width:40%;vertical-align:top;text-align:right">
+          <div>วันที่สั่งซื้อ: <strong>${thaiDate(d.orderDate)}</strong></div>
+          <div>กำหนดส่ง: <strong>${thaiDate(d.deliveryDate)}</strong></div>
+        </td>
+      </tr>
+    </table>
+    <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:10pt">
+      <thead>
+        <tr style="background:#1a1a17;color:white">
+          <th style="padding:6pt;text-align:center;border:1px solid #1a1a17;width:30pt">#</th>
+          <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">รายการ</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:60pt">จำนวน</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:90pt">ราคา/หน่วย</th>
+          <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:100pt">รวม (บาท)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${(d.items || []).map((it, i) => `
+          <tr>
+            <td style="padding:6pt;text-align:center;border:1px solid #c8c5b6">${i + 1}</td>
+            <td style="padding:6pt;border:1px solid #c8c5b6">${escapeHtml(it.name)}</td>
+            <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.qty)} ${escapeHtml(it.unit)}</td>
+            <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.price)}</td>
+            <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
+          </tr>
+        `).join('')}
+        <tr style="background:#f5f4ee">
+          <td colspan="4" style="padding:8pt;text-align:right;border:1px solid #c8c5b6;font-weight:700">ยอดรวมสุทธิ</td>
+          <td style="padding:8pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#5b3a8a">${fmt(d.total)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.total)})</div>`;
+  
+  html += pdfSignatures(d); 
+  html += pdfFooter();
+  generatePdf(html);
+}
   function exportFuelPdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
@@ -6597,6 +6654,7 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
   window.printProjectReport = printProjectReport;
   // History
   window.onHistoryProjectChange = onHistoryProjectChange;
+  window.exportPoPdf = exportPoPdf;
 </script>
 
 <div id="print-area"></div>
