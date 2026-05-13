@@ -738,10 +738,25 @@
           <tr class="deduction"><td>เงินเบิกล่วงหน้า / แอดวานซ์</td><td class="amount-col"><input type="number" id="f-advance" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
           <tr class="deduction"><td>ค่าวัสดุที่บริษัทจ่ายแทน</td><td class="amount-col"><input type="number" id="f-material" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
           <tr class="deduction"><td>ค่าปรับ / ความเสียหาย</td><td class="amount-col"><input type="number" id="f-penalty" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
+          <tr class="deduction"><td>ค่าแรง / เบิกย่อย</td><td class="amount-col readonly" id="o-labor">0</td><td class="pct-col" style="color:var(--text-3);font-size:11px">อัตโนมัติ</td></tr>
           <tr class="net-row"><td>ยอดเงินสุทธิที่ขอเบิกจ่ายงวดนี้</td><td class="amount-col readonly" id="o-net">0</td><td class="pct-col"></td></tr>
         </table>
       </div>
 
+  <div class="card" id="labor-card">
+        <div class="card-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-users"></i><h3>ค่าแรง / เบิกย่อย (หักจากยอดสุทธิ)</h3></div>
+          <button class="btn btn-ghost btn-sm" onclick="addLaborItem()" id="btn-add-labor"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
+        </div>
+        <div class="card-body">
+          <div id="labor-items-container"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-3)">รายการค่าแรงทั้งหมดจะถูกหักออกจากยอดสุทธิที่จ่าย</span>
+            <span style="font-weight:600;font-size:14px">รวม: <span class="mono" id="labor-total" style="color:var(--danger);margin-left:8px">0.00</span> บาท</span>
+          </div>
+        </div>
+      </div>
+ 
       <div class="card">
         <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบประกอบการเบิกจ่าย</h3></div>
         <div class="card-body">
@@ -2019,10 +2034,13 @@
   let pendingReimburse = null;
   let selectedProject = null;
   let pendingFiles = [];
-  let purchaseItems = [];
+ let purchaseItems = [];
   // Phase 2 Batch 2: PR/PO state
   let prItems = [];
   let poItems = [];
+  // ★ ใหม่: ค่าแรง/เบิกย่อยในงวดงาน + edit mode
+  let laborItems = [];
+  let editingDocId = null;
   // Phase 2 Batch 3: pocket money transactions cache
   let pocketTransactions = [];
   let unsubPocket = null;
@@ -2724,32 +2742,35 @@
     }
   }
 
-  // ============ CALCULATIONS ============
+ // ============ CALCULATIONS ============
   function calc() {
     const contract = num('f-contract');
     const prev = num('f-prev');
     const curr = num('f-curr');
     const total = prev + curr;
     const remain = contract - total;
-
+ 
     document.getElementById('o-total').textContent = fmt(total);
     document.getElementById('o-remain').textContent = fmt(remain);
     document.getElementById('o-billed').textContent = fmt(curr);
-
+ 
     const pct = (v) => contract > 0 ? `${((v / contract) * 100).toFixed(1)}%` : '0%';
     document.getElementById('o-prev-pct').textContent = pct(prev);
     document.getElementById('o-curr-pct').textContent = pct(curr);
     document.getElementById('o-total-pct').textContent = pct(total);
     document.getElementById('o-remain-pct').textContent = pct(remain);
-
+ 
     const retentionPct = num('f-retention-pct');
     const retention = curr * (retentionPct / 100);
     const advance = num('f-advance');
     const material = num('f-material');
     const penalty = num('f-penalty');
-    const net = curr - retention - advance - material - penalty;
-
+    // ★ ใหม่: รวมค่าแรง/เบิกย่อยทั้งหมด (ทุกสถานะ — เพราะถูกผูกกับงวดนี้แล้ว)
+    const laborTotal = (laborItems || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    const net = curr - retention - advance - material - penalty - laborTotal;
+ 
     document.getElementById('o-retention').textContent = fmt(retention);
+    document.getElementById('o-labor').textContent = fmt(laborTotal);
     document.getElementById('o-net').textContent = fmt(net);
   }
 
@@ -2805,13 +2826,206 @@
     }
   }
 
+   // ============ LABOR ITEMS (ค่าแรง/เบิกย่อยในงวดงาน) ============
+  const LABOR_STATUS = {
+    pending:  { label: 'รออนุมัติ', cls: 'pill-pending',  icon: 'clock' },
+    approved: { label: 'อนุมัติแล้ว', cls: 'pill-approved', icon: 'check' },
+    paid:     { label: 'จ่ายแล้ว',   cls: 'pill-reimbursed', icon: 'cash-banknote' }
+  };
+ 
+  function addLaborItem() {
+    laborItems.push({
+      id: 'lab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name: '',
+      desc: '',
+      amount: 0,
+      status: 'pending',
+      addedAt: Date.now(),
+      addedBy: currentUser ? { id: currentUser.id, name: currentUser.name } : null,
+      statusHistory: []
+    });
+    renderLaborItems();
+  }
+ 
+  function removeLaborItem(id) {
+    const it = laborItems.find(x => x.id === id);
+    if (!it) return;
+    if (it.status === 'paid' && !confirm('รายการนี้จ่ายเงินไปแล้ว — ลบจริงๆ?')) return;
+    laborItems = laborItems.filter(x => x.id !== id);
+    renderLaborItems();
+    calc();
+  }
+ 
+  function updateLaborItem(id, field, value) {
+    const it = laborItems.find(x => x.id === id);
+    if (!it) return;
+    if (field === 'amount') it.amount = Number(value) || 0;
+    else it[field] = value;
+    if (field === 'amount') calc();
+  }
+ 
+  function changeLaborStatus(id, newStatus) {
+    const it = laborItems.find(x => x.id === id);
+    if (!it) return;
+    if (!LABOR_STATUS[newStatus]) return;
+    const oldStatus = it.status;
+    it.status = newStatus;
+    it.statusHistory = it.statusHistory || [];
+    it.statusHistory.push({
+      from: oldStatus, to: newStatus,
+      at: Date.now(),
+      by: currentUser ? { id: currentUser.id, name: currentUser.name } : null
+    });
+    renderLaborItems();
+  }
+ 
+  function renderLaborItems() {
+    const box = document.getElementById('labor-items-container');
+    if (!box) return;
+    if (laborItems.length === 0) {
+      box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">ยังไม่มีรายการค่าแรง — กดปุ่ม "เพิ่มรายการ"</div>';
+      document.getElementById('labor-total').textContent = '0.00';
+      return;
+    }
+    box.innerHTML = `
+      <table class="items-tbl">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>ชื่อคนงาน / ผู้รับเงิน</th>
+            <th>รายละเอียด</th>
+            <th class="right" style="width:120px">จำนวนเงิน</th>
+            <th style="width:130px">สถานะ</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${laborItems.map((it, i) => {
+            const st = LABOR_STATUS[it.status] || LABOR_STATUS.pending;
+            return `<tr>
+              <td>${i + 1}</td>
+              <td><input type="text" value="${escapeHtml(it.name)}" placeholder="ชื่อ-นามสกุล" oninput="updateLaborItem('${it.id}','name',this.value)"></td>
+              <td><input type="text" value="${escapeHtml(it.desc)}" placeholder="เช่น ค่าแรง 3 วัน" oninput="updateLaborItem('${it.id}','desc',this.value)"></td>
+              <td><input type="number" value="${it.amount}" min="0" step="0.01" oninput="updateLaborItem('${it.id}','amount',this.value)"></td>
+              <td>
+                <select onchange="changeLaborStatus('${it.id}',this.value)" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:12px">
+                  <option value="pending"  ${it.status==='pending'?'selected':''}>🟡 รออนุมัติ</option>
+                  <option value="approved" ${it.status==='approved'?'selected':''}>🔵 อนุมัติแล้ว</option>
+                  <option value="paid"     ${it.status==='paid'?'selected':''}>🟢 จ่ายแล้ว</option>
+                </select>
+              </td>
+              <td><button class="icon-btn-danger" onclick="removeLaborItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+    const total = laborItems.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    document.getElementById('labor-total').textContent = fmt(total);
+  }
+ 
+  // ============ EDIT INSTALLMENT (แก้งวดงานที่ค้างไว้) ============
+  function editInstallment(id) {
+    const d = documents.find(x => x.id === id);
+    if (!d || (d.type || 'installment') !== 'installment') return;
+ 
+    // Permission: Admin หรือ ผู้สร้างเอง หรือ PM
+    const canEdit = isAdmin()
+      || (currentUser && d.submittedBy && d.submittedBy.id === currentUser.id)
+      || (currentUser && currentUser.role === 'projectManager');
+    if (!canEdit) { toast('คุณไม่มีสิทธิ์แก้ไขงวดงานนี้', 'error'); return; }
+ 
+    // Warn if approved/paid
+    if (d.paidAt) {
+      if (!confirm('⚠️ เอกสารนี้จ่ายเงินไปแล้ว — แก้ไขจะกระทบบัญชี\n\nแก้ต่อ?')) return;
+    } else if (getCurrentStep(d) === 'done') {
+      if (!confirm('เอกสารนี้อนุมัติครบแล้ว — แก้ไขจะรีเซ็ตการอนุมัติทั้งหมด\n\nแก้ต่อ?')) return;
+    }
+ 
+    // Switch to form tab
+    closeModal();
+    switchTab('form');
+ 
+    // Load data into form
+    editingDocId = id;
+    document.getElementById('f-project').value = d.projectId || '';
+    document.getElementById('f-docno').value = d.docNo || '';
+    document.getElementById('f-contractor').value = d.contractor || '';
+    document.getElementById('f-date').value = d.handoverDate || '';
+    document.getElementById('f-period').value = d.period || '';
+    document.getElementById('f-period-total').value = d.periodTotal || '';
+    document.getElementById('f-desc').value = d.description || '';
+    document.getElementById('f-contract').value = d.contract || '';
+    document.getElementById('f-prev').value = d.prev || '';
+    document.getElementById('f-curr').value = d.curr || '';
+    document.getElementById('f-retention-pct').value = (d.retentionPct != null ? d.retentionPct : 5);
+    document.getElementById('f-advance').value = d.advance || '';
+    document.getElementById('f-material').value = d.material || '';
+    document.getElementById('f-penalty').value = d.penalty || '';
+    // Attachments checkboxes
+    if (d.attachments) {
+      document.getElementById('f-att-qc').checked = !!d.attachments.qc;
+      document.getElementById('f-att-photo').checked = !!d.attachments.photo;
+      document.getElementById('f-att-bank').checked = !!d.attachments.bank;
+      document.getElementById('f-att-other').checked = !!d.attachments.other;
+    }
+    // Load files + labor items
+    pendingFiles = (d.files || []).slice();
+    laborItems = (d.laborItems || []).map(it => ({ ...it }));
+    renderFilesPreview();
+    renderLaborItems();
+    calc();
+ 
+    // Show edit banner
+    showEditBanner(d);
+    toast(`โหลดข้อมูล ${d.docNo} เข้าฟอร์มแล้ว — แก้เสร็จกด "บันทึกการแก้ไข"`, 'info', 4000);
+  }
+ 
+  function showEditBanner(d) {
+    let banner = document.getElementById('edit-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'edit-banner';
+      banner.style.cssText = 'background:linear-gradient(135deg,#fbeed3,#fff);border:2px solid var(--warning);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap';
+      const page = document.getElementById('page-form');
+      page.insertBefore(banner, page.firstChild);
+    }
+    banner.innerHTML = `
+      <div>
+        <div style="font-weight:600;color:var(--warning);display:flex;align-items:center;gap:6px">
+          <i class="ti ti-edit"></i> กำลังแก้ไขงวดงาน: ${escapeHtml(d.docNo)}
+        </div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">
+          ${escapeHtml(d.project || '-')} · งวด ${d.period || '-'}/${d.periodTotal || '-'}
+          ${d.paidAt ? ' · <span style="color:var(--danger);font-weight:600">⚠️ จ่ายเงินแล้ว</span>' : ''}
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="cancelEdit()"><i class="ti ti-x"></i> ยกเลิกการแก้ไข</button>
+    `;
+  }
+ 
+  function hideEditBanner() {
+    const banner = document.getElementById('edit-banner');
+    if (banner) banner.remove();
+  }
+ 
+  function cancelEdit() {
+    if (!confirm('ยกเลิกการแก้ไข? ข้อมูลที่กรอกจะหายไป')) return;
+    editingDocId = null;
+    hideEditBanner();
+    resetForm();
+    laborItems = [];
+    renderLaborItems();
+    toast('ยกเลิกการแก้ไขแล้ว', 'info');
+  }
+ 
   // ============ FORM SUBMIT ============
   async function submitForm() {
     const projectId = val('f-project');
     if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
     if (!val('f-contractor')) { toast('กรุณากรอกชื่อผู้รับเหมา', 'error'); return; }
-    if (num('f-curr') <= 0) { toast('กรุณากรอกผลงานงวดนี้', 'error'); return; }
-
+    if (num('f-curr') < 0) { toast('ผลงานงวดนี้ต้องไม่ติดลบ', 'error'); return; }
+ 
     const proj = getProjectById(projectId);
     const contract = num('f-contract');
     const prev = num('f-prev');
@@ -2821,8 +3035,85 @@
     const advance = num('f-advance');
     const material = num('f-material');
     const penalty = num('f-penalty');
-    const net = curr - retention - advance - material - penalty;
-
+    const laborTotal = (laborItems || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    const net = curr - retention - advance - material - penalty - laborTotal;
+ 
+    // ★ EDIT MODE: update existing document
+    if (editingDocId) {
+      const existing = documents.find(x => x.id === editingDocId);
+      if (!existing) { toast('ไม่พบเอกสารที่กำลังแก้ไข', 'error'); return; }
+ 
+      const wasApproved = getCurrentStep(existing) === 'done';
+      const wasPaid = !!existing.paidAt;
+ 
+      // Audit log entry
+      const auditEntry = {
+        at: Date.now(),
+        by: { id: currentUser.id, name: currentUser.name, role: currentUser.role },
+        action: 'edit',
+        note: wasPaid ? 'แก้ไขหลังจ่ายเงิน' : (wasApproved ? 'แก้ไขหลังอนุมัติครบ — รีเซ็ตการอนุมัติ' : 'แก้ไขก่อนอนุมัติ'),
+        before: {
+          contract: existing.contract, prev: existing.prev, curr: existing.curr,
+          net: existing.net, advance: existing.advance, material: existing.material,
+          penalty: existing.penalty,
+          laborCount: (existing.laborItems || []).length
+        }
+      };
+ 
+      // Apply changes
+      existing.projectId = projectId;
+      existing.project = proj ? proj.name : '';
+      existing.contractor = val('f-contractor');
+      existing.handoverDate = val('f-date');
+      existing.period = val('f-period');
+      existing.periodTotal = val('f-period-total');
+      existing.description = val('f-desc');
+      existing.contract = contract;
+      existing.prev = prev;
+      existing.curr = curr;
+      existing.retentionPct = retentionPct;
+      existing.retention = retention;
+      existing.advance = advance;
+      existing.material = material;
+      existing.penalty = penalty;
+      existing.net = net;
+      existing.total = prev + curr;
+      existing.remain = contract - prev - curr;
+      existing.attachments = { qc: chk('f-att-qc'), photo: chk('f-att-photo'), bank: chk('f-att-bank'), other: chk('f-att-other') };
+      existing.files = pendingFiles.slice();
+      existing.laborItems = laborItems.slice();
+      existing.laborTotal = laborTotal;
+      existing.updatedAt = Date.now();
+      existing.updatedBy = { id: currentUser.id, name: currentUser.name };
+      existing.editHistory = existing.editHistory || [];
+      existing.editHistory.push(auditEntry);
+ 
+      // If approved/paid already, reset approvals (user confirmed in editInstallment)
+      if (wasApproved && !wasPaid) {
+        existing.approvals = { pm: null, exec1: null, exec2: null };
+        existing.status = 'pending';
+      }
+ 
+      const ok = await saveDocs(existing);
+      if (ok) {
+        logActivity('doc-edit', `แก้ไขงวดงาน ${existing.docNo} (${auditEntry.note})`);
+        toast(`บันทึกการแก้ไข ${existing.docNo} สำเร็จ`, 'success');
+        editingDocId = null;
+        hideEditBanner();
+        resetForm();
+        laborItems = [];
+        renderLaborItems();
+        switchTab('history');
+      }
+      return;
+    }
+ 
+    // ★ CREATE MODE: new document
+    if (curr <= 0 && laborTotal <= 0) {
+      toast('กรุณากรอกผลงานงวดนี้ หรือมีรายการค่าแรงอย่างน้อย 1 รายการ', 'error');
+      return;
+    }
+ 
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const doc = {
       id,
@@ -2840,17 +3131,22 @@
       remain: contract - prev - curr,
       attachments: { qc: chk('f-att-qc'), photo: chk('f-att-photo'), bank: chk('f-att-bank'), other: chk('f-att-other') },
       files: pendingFiles.slice(),
+      laborItems: laborItems.slice(),
+      laborTotal,
       submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
       approvals: { pm: null, exec1: null, exec2: null },
       status: 'pending',
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      editHistory: []
     };
-
+ 
     documents.unshift(doc);
     const ok = await saveDocs(doc);
     if (ok) {
       toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
       resetForm();
+      laborItems = [];
+      renderLaborItems();
       switchTab('history');
     }
   }
@@ -2862,7 +3158,14 @@
       else el.value = '';
     });
     pendingFiles = [];
+    laborItems = [];  // ★ เคลียร์ labor items
     renderFilesPreview();
+    renderLaborItems();
+    // ★ ออกจาก edit mode ถ้ายังค้างอยู่
+    if (editingDocId) {
+      editingDocId = null;
+      hideEditBanner();
+    }
     const hint = document.getElementById('f-prefill-hint');
     if (hint) hint.textContent = '';
     calc();
@@ -4372,6 +4675,21 @@
           </div>
         ` : ''}
         ${renderFilesSection(d)}
+        ${renderLaborSectionForDetail(d)}
+        ${(d.editHistory && d.editHistory.length > 0) ? `
+          <div class="detail-section">
+            <div class="detail-section-title">ประวัติการแก้ไข (${d.editHistory.length} ครั้ง)</div>
+            ${d.editHistory.map(h => `
+              <div style="padding:8px 10px;background:var(--surface);border-left:3px solid var(--warning);border-radius:4px;margin-bottom:6px;font-size:12px">
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+                  <span><strong>${escapeHtml(h.by?.name || '-')}</strong> <span style="color:var(--text-3)">(${escapeHtml(h.by?.role || '-')})</span></span>
+                  <span style="color:var(--text-3);font-size:11px">${fmtDateTime(h.at)}</span>
+                </div>
+                <div style="color:var(--text-2);margin-top:2px">${escapeHtml(h.note || '')}</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
         <h4 style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 0">เส้นทางอนุมัติ</h4>
         <div class="timeline">${stepsHtml}</div>
         ${myTurn ? renderApprovalActions(d, currStep) : ''}
@@ -4385,9 +4703,13 @@
           </div>
         ` : ''}
       </div>
-      <div class="modal-foot">
+   <div class="modal-foot">
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-sm" onclick="exportInstallmentPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>
+          ${(() => {
+            const canEd = isAdmin() || (currentUser && d.submittedBy && d.submittedBy.id === currentUser.id) || (currentUser && currentUser.role === 'projectManager');
+            return canEd ? `<button class="btn btn-sm" onclick="editInstallment('${d.id}')" style="background:var(--warning-soft);border-color:var(--warning);color:var(--warning)"><i class="ti ti-edit"></i> แก้ไข</button>` : '';
+          })()}
           ${canDeleteAnything() ? `
             <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
           ` : ''}
@@ -4397,7 +4719,80 @@
     `;
     document.getElementById('detail-modal').classList.add('show');
   }
-
+ 
+  // ★ render รายการค่าแรงใน detail modal (เรียกจาก showInstallmentDetail)
+  function renderLaborSectionForDetail(d) {
+    const items = d.laborItems || [];
+    if (items.length === 0) return '';
+    const total = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    // ผู้สร้างงวดเท่านั้นที่กดเปลี่ยนสถานะได้ (หรือ Admin)
+    const canManage = isAdmin() || (currentUser && d.submittedBy && d.submittedBy.id === currentUser.id);
+    return `
+      <div class="detail-section">
+        <div class="detail-section-title">ค่าแรง / เบิกย่อย (${items.length} รายการ · รวม ${fmt(total)} บาท)</div>
+        <table class="items-tbl" style="background:var(--surface)">
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>ชื่อ</th>
+              <th>รายละเอียด</th>
+              <th class="right">จำนวน</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((it, i) => {
+              const st = LABOR_STATUS[it.status] || LABOR_STATUS.pending;
+              const dropdown = canManage
+                ? `<select onchange="changeLaborStatusInDetail('${d.id}','${it.id}',this.value)" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:inherit">
+                     <option value="pending"  ${it.status==='pending'?'selected':''}>🟡 รออนุมัติ</option>
+                     <option value="approved" ${it.status==='approved'?'selected':''}>🔵 อนุมัติแล้ว</option>
+                     <option value="paid"     ${it.status==='paid'?'selected':''}>🟢 จ่ายแล้ว</option>
+                   </select>`
+                : `<span class="pill ${st.cls}">${st.label}</span>`;
+              return `<tr>
+                <td>${i + 1}</td>
+                <td style="font-weight:500">${escapeHtml(it.name || '-')}</td>
+                <td>${escapeHtml(it.desc || '-')}</td>
+                <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.amount)}</td>
+                <td>${dropdown}</td>
+              </tr>`;
+            }).join('')}
+            <tr style="background:var(--surface-2)">
+              <td colspan="3" style="text-align:right;font-weight:600">รวมค่าแรง (หักจาก net)</td>
+              <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger)">${fmt(total)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+ 
+  // ★ เปลี่ยนสถานะ labor item จาก detail modal — save ลง DB ทันที
+  async function changeLaborStatusInDetail(docId, laborId, newStatus) {
+    const d = documents.find(x => x.id === docId);
+    if (!d || !d.laborItems) return;
+    const it = d.laborItems.find(x => x.id === laborId);
+    if (!it) return;
+    const canManage = isAdmin() || (currentUser && d.submittedBy && d.submittedBy.id === currentUser.id);
+    if (!canManage) { toast('เฉพาะผู้สร้างงวดงานเท่านั้น', 'error'); return; }
+    const oldStatus = it.status;
+    it.status = newStatus;
+    it.statusHistory = it.statusHistory || [];
+    it.statusHistory.push({
+      from: oldStatus, to: newStatus,
+      at: Date.now(),
+      by: { id: currentUser.id, name: currentUser.name }
+    });
+    const ok = await saveDocs(d);
+    if (ok) {
+      logActivity('labor-status', `${d.docNo}: ${it.name || '-'} → ${LABOR_STATUS[newStatus].label}`);
+      toast(`เปลี่ยนสถานะ ${it.name || 'รายการ'} เป็น ${LABOR_STATUS[newStatus].label}`, 'success');
+      showDetail(docId);  // refresh modal
+    }
+  }
+ 
   function showPurchaseDetail(d) {
     const status = getStatusInfo(d);
     const canConfirm = canConfirmReimburse() && !d.reimbursedAt;
@@ -6692,6 +7087,14 @@ function exportPoPdf(id) {
   // History
   window.onHistoryProjectChange = onHistoryProjectChange;
   window.exportPoPdf = exportPoPdf;
+  // ★ Labor + Edit Installment
+  window.addLaborItem = addLaborItem;
+  window.removeLaborItem = removeLaborItem;
+  window.updateLaborItem = updateLaborItem;
+  window.changeLaborStatus = changeLaborStatus;
+  window.changeLaborStatusInDetail = changeLaborStatusInDetail;
+  window.editInstallment = editInstallment;
+  window.cancelEdit = cancelEdit;
 </script>
 
 <div id="print-area"></div>
