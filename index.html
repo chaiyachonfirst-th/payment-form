@@ -5418,7 +5418,32 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
         ออกโดยระบบเบิกจ่าย Home Delight · พิมพ์ ณ ${thaiDate(Date.now())} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
       </div>`;
   }
-
+ 
+  // ============ ATTACH IMAGES TO PDF (สลิป/รูปแนบ ต่อท้ายเอกสาร) ============
+  function pdfAttachedImages(files, title = 'เอกสารแนบ (รูปภาพ)') {
+    if (!files || files.length === 0) return '';
+    // กรองเอาเฉพาะไฟล์ที่เป็นรูปภาพ (PDF ไม่สามารถ embed ผ่าน window.print() ได้)
+    const images = files.filter(f => f && f.type && f.type.startsWith('image/') && f.dataUrl);
+    if (images.length === 0) return '';
+ 
+    // บังคับขึ้นหน้ากระดาษใหม่
+    let html = `<div class="pdf-page-break"></div>`;
+    html += `<h3 style="font-size:12pt;font-weight:600;margin-bottom:10pt;border-bottom:1px solid #1a1a17;padding-bottom:4pt;color:#1a1a17">${escapeHtml(title)} (${images.length} ภาพ)</h3>`;
+ 
+    images.forEach((img, idx) => {
+      // page-break-inside: avoid ป้องกันรูปถูกตัดครึ่งหน้า
+      html += `
+        <div style="margin-bottom:20pt;page-break-inside:avoid;text-align:center">
+          <div style="font-size:9pt;color:#5c5b54;margin-bottom:6pt;text-align:left">
+            <strong>${idx + 1}.</strong> ${escapeHtml(img.name || 'ไฟล์แนบ')}
+            ${img.size ? `<span style="color:#8b8a82;margin-left:6pt">(${fmtSize(img.size)})</span>` : ''}
+          </div>
+          <img src="${img.dataUrl}" style="max-width:100%;max-height:850px;border:1px solid #c8c5b6;border-radius:4pt;display:block;margin:0 auto">
+        </div>
+      `;
+    });
+    return html;
+  }
   function generatePdf(html) {
     const printArea = document.getElementById('print-area');
     if (!printArea) {
@@ -5477,10 +5502,13 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
       </table>
       <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.net)})</div>`;
     html += pdfSignatures(d);
+    // เพิ่มรูปภาพแนบและสลิปการชำระเงินต่อท้าย PDF
+    html += pdfAttachedImages(d.files, 'เอกสารแนบประกอบการเบิกจ่าย');
+    if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการชำระเงิน (สลิป)');
     html += pdfFooter();
     generatePdf(html);
   }
-
+ 
   function exportPurchasePdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
@@ -5532,6 +5560,9 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
         ✓ <strong>เบิกคืนเรียบร้อยแล้ว</strong> โดย ${escapeHtml(d.reimbursedBy?.name || '-')} · ${thaiDate(d.reimbursedAt)}
       </div>`;
     }
+    // เพิ่มรูปภาพแนบและสลิปการชำระเงินต่อท้าย PDF
+    html += pdfAttachedImages(d.files, 'เอกสารแนบ (ใบเสร็จ/รูปสินค้า)');
+    if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการจ่ายเบิกคืน (สลิป)');
     html += pdfFooter();
     generatePdf(html);
   }
@@ -5588,7 +5619,10 @@ function exportPoPdf(id) {
     </table>
     <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.total)})</div>`;
   
-  html += pdfSignatures(d); 
+ html += pdfSignatures(d); 
+  // เพิ่มรูปภาพแนบและสลิปการชำระเงินต่อท้าย PDF
+  html += pdfAttachedImages(d.files, 'เอกสารแนบอ้างอิงจากร้านค้า');
+  if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการชำระเงิน (สลิป)');
   html += pdfFooter();
   generatePdf(html);
 }
@@ -5645,10 +5679,13 @@ function exportPoPdf(id) {
         ✓ <strong>เบิกคืนเรียบร้อยแล้ว</strong> โดย ${escapeHtml(d.reimbursedBy?.name || '-')} · ${thaiDate(d.reimbursedAt)}
       </div>`;
     }
+    // เพิ่มรูปภาพแนบและสลิปการจ่ายเบิกคืนต่อท้าย PDF
+    html += pdfAttachedImages(d.files, 'เอกสารแนบ (สลิปเติมน้ำมัน/หลักฐาน)');
+    if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการจ่ายเบิกคืน (สลิป)');
     html += pdfFooter();
     generatePdf(html);
   }
-
+ 
   function exportProjectSummaryPdf(id) {
     const p = getProjectById(id);
     if (!p) return;
