@@ -649,6 +649,9 @@
       <button class="tab" data-tab="fuel" onclick="switchTab('fuel')">
         <i class="ti ti-gas-station"></i> ค่ารถ
       </button>
+      <button class="tab" data-tab="labor" onclick="switchTab('labor')">
+        <i class="ti ti-users"></i> เบิกย่อย/ค่าแรง
+      </button>
       <button class="tab" data-tab="pr" onclick="switchTab('pr')">
         <i class="ti ti-clipboard-list"></i> PR ขอซื้อ
       </button>
@@ -684,7 +687,7 @@
           <div class="grid">
             <div class="field">
               <label>โครงการ <span class="req">*</span></label>
-              <select class="select" id="f-project" onchange="prefillFromPreviousInstallment()"><option value="">— เลือกโครงการ —</option></select>
+              <select class="select" id="f-project" onchange="prefillFromPreviousInstallment();refreshDeductLaborCard()"><option value="">— เลือกโครงการ —</option></select>
               <span class="field-hint">หากไม่มีโครงการ ให้สร้างที่แท็บ "โครงการ" ก่อน · <span style="color:var(--info)" id="f-prefill-hint"></span></span>
             </div>
             <div class="field">
@@ -701,7 +704,7 @@
             </div>
             <div class="field">
               <label>งวดงานที่</label>
-              <input type="number" class="input" id="f-period" placeholder="1" min="1">
+              <input type="number" class="input" id="f-period" placeholder="1" min="1" oninput="refreshDeductLaborCard()">
             </div>
             <div class="field">
               <label>จากทั้งหมด (งวด)</label>
@@ -729,6 +732,18 @@
         </table>
       </div>
 
+      <div class="card" id="card-deduct-labor" style="display:none">
+        <div class="card-head" style="background:#fbeed3"><i class="ti ti-users" style="color:#b8740a"></i><h3>เบิกย่อยที่ค้าง — เลือกหักจากงวดนี้</h3></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:12px"><i class="ti ti-info-circle"></i> มีใบเบิกย่อยที่จ่ายเงินไปแล้วแต่ยังไม่ได้หักจากงวด — เลือกรายการที่ต้องการหักจากงวดนี้</p>
+          <div id="deduct-labor-list"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text-3)">ยอดที่จะถูกหักออกจาก net</span>
+            <span style="font-weight:600;font-size:14px">รวม: <span class="mono" id="deduct-labor-total" style="color:var(--danger);margin-left:8px">0.00</span> บาท</span>
+          </div>
+        </div>
+      </div>
+ 
       <div class="card">
         <div class="card-head"><i class="ti ti-coin"></i><h3>สรุปยอดเงินขอเบิก</h3></div>
         <table class="money-tbl">
@@ -738,7 +753,7 @@
           <tr class="deduction"><td>เงินเบิกล่วงหน้า / แอดวานซ์</td><td class="amount-col"><input type="number" id="f-advance" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
           <tr class="deduction"><td>ค่าวัสดุที่บริษัทจ่ายแทน</td><td class="amount-col"><input type="number" id="f-material" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
           <tr class="deduction"><td>ค่าปรับ / ความเสียหาย</td><td class="amount-col"><input type="number" id="f-penalty" oninput="calc()" placeholder="0"></td><td class="pct-col"></td></tr>
-          <tr class="deduction"><td>ค่าแรง / เบิกย่อย</td><td class="amount-col readonly" id="o-labor">0</td><td class="pct-col" style="color:var(--text-3);font-size:11px">อัตโนมัติ</td></tr>
+          <tr class="deduction"><td>เบิกย่อยที่หักจากงวดนี้</td><td class="amount-col readonly" id="o-deduct-labor">0</td><td class="pct-col" style="color:var(--text-3);font-size:11px">อัตโนมัติ</td></tr>
           <tr class="net-row"><td>ยอดเงินสุทธิที่ขอเบิกจ่ายงวดนี้</td><td class="amount-col readonly" id="o-net">0</td><td class="pct-col"></td></tr>
         </table>
       </div>
@@ -1072,6 +1087,96 @@
       </div>
     </div>
 
+    <!-- LABOR (เบิกย่อย/ค่าแรง) PAGE -->
+    <div class="page" id="page-labor">
+      <div class="card">
+        <div class="card-head" style="background:#fbeed3"><i class="ti ti-users" style="color:#b8740a"></i><h3>เบิกย่อย/ค่าแรง — จ่ายระหว่างงวด</h3></div>
+        <div class="card-body">
+          <div class="grid">
+            <div class="field">
+              <label>โครงการ <span class="req">*</span></label>
+              <select class="select" id="lb-project" onchange="updateLaborPeriodHint()"><option value="">— เลือกโครงการ —</option></select>
+            </div>
+            <div class="field">
+              <label>เลขที่เอกสาร</label>
+              <input type="text" class="input mono" id="lb-docno" readonly placeholder="สร้างอัตโนมัติเมื่อบันทึก">
+            </div>
+            <div class="field">
+              <label>วันที่ขอเบิก <span class="req">*</span></label>
+              <input type="date" class="input" id="lb-date">
+            </div>
+            <div class="field">
+              <label>หักจากงวดที่ <span class="req">*</span> <span style="color:var(--text-3);font-size:11px">(งวดที่จะนำไปหักเงิน)</span></label>
+              <input type="number" class="input" id="lb-ref-period" min="1" placeholder="เช่น 2">
+              <span class="field-hint" id="lb-period-hint" style="color:var(--info)"></span>
+            </div>
+            <div class="field">
+              <label>ผู้รับเหมา <span class="req">*</span></label>
+              <input type="text" class="input" id="lb-contractor" placeholder="ชื่อผู้รับเหมาที่จะถูกหัก">
+            </div>
+            <div class="field">
+              <label>หมวด</label>
+              <select class="select" id="lb-category">
+                <option value="labor">ค่าแรงคนงาน</option>
+                <option value="petty">ค่าใช้จ่ายเบ็ดเตล็ด</option>
+                <option value="advance">ขอเบิกล่วงหน้า</option>
+                <option value="other">อื่นๆ</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <div class="card">
+        <div class="card-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-list"></i><h3>รายการ</h3></div>
+          <button class="btn btn-ghost btn-sm" onclick="addLbItem()"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
+        </div>
+        <div class="card-body">
+          <div id="lb-items"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px;font-weight:600;font-size:15px;color:var(--text)">
+            ยอดรวมที่ขอเบิก: <span class="mono" id="lb-total" style="margin-left:8px;color:#b8740a">0.00</span> บาท
+          </div>
+        </div>
+      </div>
+ 
+      <div class="card">
+        <div class="card-head"><i class="ti ti-message"></i><h3>เหตุผล</h3></div>
+        <div class="card-body">
+          <div class="field">
+            <label>เหตุผลที่ขอเบิกล่วงหน้า <span class="req">*</span></label>
+            <textarea class="textarea" id="lb-reason" placeholder="เช่น คนงาน 5 คน ขอเบิกค่าแรงรายสัปดาห์ก่อนถึงงวด 2"></textarea>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label>หมายเหตุ</label>
+            <textarea class="textarea" id="lb-note" placeholder="ข้อมูลเพิ่มเติม"></textarea>
+          </div>
+        </div>
+      </div>
+ 
+      <div class="card">
+        <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบ (สลิป/รูปคนงาน — ถ้ามี)</h3></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-size:13px;font-weight:500">อัพโหลดไฟล์ (PDF / รูปภาพ)</div>
+              <div class="field-hint">รูป ≤ 1 MB · PDF ≤ 2 MB · รวมทุกไฟล์ ≤ 5 MB</div>
+            </div>
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('lb-files').click()">
+              <i class="ti ti-upload"></i> เลือกไฟล์
+            </button>
+            <input type="file" id="lb-files" accept="image/*,.pdf" multiple style="display:none" onchange="handleFiles(event,'labor')">
+          </div>
+          <div id="lb-files-preview" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+ 
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="resetLbForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
+        <button class="btn btn-primary" onclick="submitLb()" style="background:#b8740a;border-color:#b8740a"><i class="ti ti-send"></i> ส่งขออนุมัติ</button>
+      </div>
+    </div>
+ 
     <!-- PR (PURCHASE REQUEST) PAGE -->
     <div class="page" id="page-pr">
       <div class="card">
@@ -1459,6 +1564,7 @@
         <button class="filter-btn type-filter-btn" data-type="installment" data-installment-only onclick="filterByType('installment')"><i class="ti ti-edit"></i> งวดงาน</button>
         <button class="filter-btn type-filter-btn" data-type="purchase" onclick="filterByType('purchase')"><i class="ti ti-shopping-cart"></i> ซื้อของ</button>
         <button class="filter-btn type-filter-btn" data-type="fuel" onclick="filterByType('fuel')"><i class="ti ti-gas-station"></i> ค่ารถ</button>
+        <button class="filter-btn type-filter-btn" data-type="labor" onclick="filterByType('labor')"><i class="ti ti-users"></i> เบิกย่อย</button>
         <button class="filter-btn type-filter-btn" data-type="pr" onclick="filterByType('pr')"><i class="ti ti-clipboard-list"></i> PR</button>
         <button class="filter-btn type-filter-btn" data-type="po" onclick="filterByType('po')"><i class="ti ti-truck-delivery"></i> PO</button>
       </div>
@@ -2011,6 +2117,7 @@
     installment: { label: 'งวดงาน',  icon: 'edit',          cls: 'type-installment', color: '#c8632c' },
     purchase:    { label: 'ซื้อของ', icon: 'shopping-cart', cls: 'type-purchase',    color: '#1f5582' },
     fuel:        { label: 'ค่ารถ',   icon: 'gas-station',   cls: 'type-fuel',        color: '#b8740a' },
+    labor:       { label: 'เบิกย่อย', icon: 'users',         cls: 'type-fuel',        color: '#b8740a' },
     pr:          { label: 'PR ขอซื้อ', icon: 'clipboard-list', cls: 'type-pr',         color: '#0e7c66' },
     po:          { label: 'PO สั่งซื้อ', icon: 'truck-delivery', cls: 'type-po',       color: '#5b3a8a' }
   };
@@ -2034,10 +2141,12 @@
   let pendingReimburse = null;
   let selectedProject = null;
   let pendingFiles = [];
- let purchaseItems = [];
+  let purchaseItems = [];
   // Phase 2 Batch 2: PR/PO state
   let prItems = [];
   let poItems = [];
+  // ★ Phase 3: เบิกย่อย/ค่าแรง
+  let laborFormItems = [];
   // ★ ใหม่: ค่าแรง/เบิกย่อยในงวดงาน + edit mode
   let laborItems = [];
   let editingDocId = null;
@@ -2281,7 +2390,7 @@
     const now = new Date();
     const ym = `${now.getFullYear().toString().slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
     // Phase 2 prefixes: installment=IN, purchase=PC, fuel=FU, pr=PR, po=PO
-    const PREFIX_MAP = { installment: 'IN', purchase: 'PC', fuel: 'FU', pr: 'PR', po: 'PO' };
+    const PREFIX_MAP = { installment: 'IN', purchase: 'PC', fuel: 'FU', labor: 'LBR', pr: 'PR', po: 'PO' };
     const typePrefix = PREFIX_MAP[type] || 'DOC';
     // Per-project sequence
     const project = projectId ? getProjectById(projectId) : null;
@@ -2438,7 +2547,9 @@
     const tabFuel = document.querySelector('.tab[data-tab="fuel"]');
     const tabPr = document.querySelector('.tab[data-tab="pr"]');
     const tabPo = document.querySelector('.tab[data-tab="po"]');
+    const tabLabor = document.querySelector('.tab[data-tab="labor"]');
     const tabPocket = document.querySelector('.tab[data-tab="pocket"]');
+    if (tabLabor) tabLabor.style.display = canCreateLabor() ? '' : 'none';
     const tabOverview = document.querySelector('.tab[data-tab="overview"]');
     // Procurement never sees installment tab (even if technically allowed elsewhere)
     if (tabInstall) tabInstall.style.display = (canCreateInstallment() && canSeeInstallments()) ? '' : 'none';
@@ -2742,7 +2853,22 @@
     }
   }
 
- // ============ CALCULATIONS ============
+  // ★ Phase 3: ดึงเบิกย่อย "ที่จ่ายแล้ว ยังไม่หัก" ของงวดนี้
+  function getDeductibleLaborForPeriod(projectId, periodNum) {
+    if (!projectId || !periodNum) return [];
+    const period = Number(periodNum);
+    return documents.filter(d =>
+      d.type === 'labor' &&
+      d.projectId === projectId &&
+      Number(d.refPeriod) === period &&
+      d.paidAt &&         // จ่ายเงินแล้ว
+      !d.deductedAt &&    // ยังไม่ถูกหัก
+      d.status !== 'rejected'
+    );
+  }
+ 
+  // ============ CALCULATIONS ============
+  function calc() {
   function calc() {
     const contract = num('f-contract');
     const prev = num('f-prev');
@@ -2765,13 +2891,84 @@
     const advance = num('f-advance');
     const material = num('f-material');
     const penalty = num('f-penalty');
-    // ★ ใหม่: รวมค่าแรง/เบิกย่อยทั้งหมด (ทุกสถานะ — เพราะถูกผูกกับงวดนี้แล้ว)
-    const laborTotal = (laborItems || []).reduce((s, it) => s + (Number(it.amount) || 0), 0);
-    const net = curr - retention - advance - material - penalty - laborTotal;
+    // ★ Phase 3: รวมเบิกย่อยที่ติ๊กเลือก
+    const deductLaborTotal = window._selectedLaborToDeduct
+      ? window._selectedLaborToDeduct.reduce((s, x) => s + Number(x.net || 0), 0)
+      : 0;
+    const net = curr - retention - advance - material - penalty - deductLaborTotal;
  
     document.getElementById('o-retention').textContent = fmt(retention);
-    document.getElementById('o-labor').textContent = fmt(laborTotal);
+    const dlEl = document.getElementById('o-deduct-labor');
+    if (dlEl) dlEl.textContent = fmt(deductLaborTotal);
     document.getElementById('o-net').textContent = fmt(net);
+  }
+ 
+  // ★ Phase 3: refresh "เบิกย่อยที่ค้าง" card เมื่อเปลี่ยนโครงการ/งวด
+  function refreshDeductLaborCard() {
+    const projectId = val('f-project');
+    const period = Number(val('f-period')) || 0;
+    const card = document.getElementById('card-deduct-labor');
+    const list = document.getElementById('deduct-labor-list');
+    if (!card || !list) return;
+    if (!projectId || !period) {
+      card.style.display = 'none';
+      window._selectedLaborToDeduct = [];
+      calc();
+      return;
+    }
+    const deductibles = getDeductibleLaborForPeriod(projectId, period);
+    if (deductibles.length === 0) {
+      card.style.display = 'none';
+      window._selectedLaborToDeduct = [];
+      calc();
+      return;
+    }
+    card.style.display = '';
+    // Default: ติ๊กทุกตัว
+    if (!window._selectedLaborToDeduct) window._selectedLaborToDeduct = deductibles.slice();
+    else {
+      // Filter เฉพาะที่ยังอยู่ในรายการ
+      window._selectedLaborToDeduct = window._selectedLaborToDeduct.filter(x =>
+        deductibles.some(d => d.id === x.id)
+      );
+    }
+    list.innerHTML = deductibles.map(lb => {
+      const isChecked = window._selectedLaborToDeduct.some(x => x.id === lb.id);
+      return `<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;cursor:pointer">
+        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleDeductLabor('${lb.id}', this.checked)" style="width:18px;height:18px;accent-color:var(--accent)">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3)">${lb.docNo}</div>
+          <div style="font-weight:500;margin-top:2px">${escapeHtml(lb.contractor || '-')} · ${escapeHtml(lb.reason || '').slice(0, 60)}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">จ่ายเงินเมื่อ ${fmtDateTime(lb.paidAt)}</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--danger)">-${fmt(lb.net)}</div>
+      </label>`;
+    }).join('');
+    updateDeductLaborTotal();
+    calc();
+  }
+ 
+  function toggleDeductLabor(laborId, checked) {
+    const projectId = val('f-project');
+    const period = Number(val('f-period')) || 0;
+    const all = getDeductibleLaborForPeriod(projectId, period);
+    if (!window._selectedLaborToDeduct) window._selectedLaborToDeduct = [];
+    if (checked) {
+      const found = all.find(x => x.id === laborId);
+      if (found && !window._selectedLaborToDeduct.some(x => x.id === laborId)) {
+        window._selectedLaborToDeduct.push(found);
+      }
+    } else {
+      window._selectedLaborToDeduct = window._selectedLaborToDeduct.filter(x => x.id !== laborId);
+    }
+    updateDeductLaborTotal();
+    calc();
+  }
+ 
+  function updateDeductLaborTotal() {
+    const total = (window._selectedLaborToDeduct || []).reduce((s, x) => s + Number(x.net || 0), 0);
+    const el = document.getElementById('deduct-labor-total');
+    if (el) el.textContent = fmt(total);
   }
 
   // ============ TABS ============
@@ -2799,6 +2996,20 @@
       if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
       const rateDisplay = document.getElementById('g-rate-display');
       if (rateDisplay) rateDisplay.textContent = (companySettings.mileageRate || 5).toFixed(2);
+    }
+    if (tab === 'labor') {
+      const dt = document.getElementById('lb-date');
+      if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
+      if (laborFormItems.length === 0) addLbItem();
+      else renderLbItems();
+      // Refresh project select
+      const sel = document.getElementById('lb-project');
+      if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— เลือกโครงการ —</option>' +
+          projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
+        sel.value = cur;
+      }
     }
     if (tab === 'pr') {
       if (prItems.length === 0) addPrItem();
@@ -3140,13 +3351,29 @@
       editHistory: []
     };
  
+    // ★ Phase 3: บันทึกข้อมูลการหักเบิกย่อย
+    const selectedLabors = (window._selectedLaborToDeduct || []).slice();
+    if (selectedLabors.length > 0) {
+      const deductedLaborTotal = selectedLabors.reduce((s, x) => s + Number(x.net || 0), 0);
+      doc.deductedLaborIds = selectedLabors.map(x => x.id);
+      doc.deductedLaborTotal = deductedLaborTotal;
+      doc.net = doc.net - deductedLaborTotal;  // หักเพิ่ม
+    }
+ 
     documents.unshift(doc);
     const ok = await saveDocs(doc);
     if (ok) {
-      toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
+      // ★ Update labor docs: mark as deducted
+      for (const lb of selectedLabors) {
+        lb.deductedAt = Date.now();
+        lb.deductedFromDocId = doc.id;
+        lb.deductedFromDocNo = doc.docNo;
+        lb.status = 'deducted';
+        await saveDocs(lb);
+      }
+      toast(`บันทึกสำเร็จ: ${doc.docNo}${selectedLabors.length > 0 ? ` (หักเบิกย่อย ${selectedLabors.length} รายการ)` : ''}`, 'success');
+      window._selectedLaborToDeduct = [];
       resetForm();
-      laborItems = [];
-      renderLaborItems();
       switchTab('history');
     }
   }
@@ -3827,6 +4054,212 @@
   }
 
 
+  // ============ LABOR (เบิกย่อย/ค่าแรง) — Phase 3 ============
+  function canCreateLabor() {
+    if (isAdmin()) return true;
+    return currentUser && (
+      currentUser.role === 'foreman' ||
+      currentUser.role === 'siteEng' ||
+      currentUser.role === 'projectManager'
+    );
+  }
+  function canApproveLabor() {
+    // PM อนุมัติ labor
+    if (isAdmin()) return true;
+    return currentUser && currentUser.role === 'projectManager';
+  }
+  function canPayLabor() {
+    // ★ Phase 3 fix: Executive เท่านั้นที่จ่ายเงิน (เมื่อ PM อนุมัติแล้ว)
+    if (isAdmin()) return true;
+    return currentUser && currentUser.role === 'executive';
+  }
+ 
+  function addLbItem(name = '', qty = 1, rate = 0, days = 1) {
+    laborFormItems.push({
+      id: 'lbi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name, qty, rate, days
+    });
+    renderLbItems();
+  }
+  function removeLbItem(id) {
+    laborFormItems = laborFormItems.filter(it => it.id !== id);
+    if (laborFormItems.length === 0) addLbItem();
+    renderLbItems();
+  }
+  function updateLbItem(id, field, value) {
+    const it = laborFormItems.find(x => x.id === id);
+    if (!it) return;
+    if (field === 'name') it.name = value;
+    else it[field] = Number(value) || 0;
+    calcLbTotal();
+  }
+  function renderLbItems() {
+    const body = document.getElementById('lb-items');
+    if (!body) return;
+    if (laborFormItems.length === 0) addLbItem();
+    body.innerHTML = `
+      <table class="items-tbl">
+        <thead><tr>
+          <th>ชื่อ-นามสกุล / รายการ</th>
+          <th class="right" style="width:70px">จำนวน</th>
+          <th class="right" style="width:90px">วัน</th>
+          <th class="right" style="width:110px">เรท/วัน</th>
+          <th class="right" style="width:120px">รวม</th>
+          <th style="width:36px"></th>
+        </tr></thead>
+        <tbody>
+          ${laborFormItems.map(it => {
+            const total = (Number(it.qty) || 0) * (Number(it.days) || 0) * (Number(it.rate) || 0);
+            return `<tr>
+              <td><input type="text" value="${escapeHtml(it.name)}" placeholder="ชื่อ-นามสกุล หรือ รายการ" oninput="updateLbItem('${it.id}','name',this.value)"></td>
+              <td><input type="number" value="${it.qty}" min="0" step="1" oninput="updateLbItem('${it.id}','qty',this.value)"></td>
+              <td><input type="number" value="${it.days}" min="0" step="0.5" oninput="updateLbItem('${it.id}','days',this.value)"></td>
+              <td><input type="number" value="${it.rate}" min="0" step="0.01" oninput="updateLbItem('${it.id}','rate',this.value)"></td>
+              <td class="row-total">${fmt(total)}</td>
+              <td><button class="icon-btn-danger" onclick="removeLbItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    calcLbTotal();
+  }
+  function calcLbTotal() {
+    const total = laborFormItems.reduce((s, it) =>
+      s + (Number(it.qty) || 0) * (Number(it.days) || 0) * (Number(it.rate) || 0), 0);
+    const el = document.getElementById('lb-total');
+    if (el) el.textContent = fmt(total);
+    return total;
+  }
+ 
+  function updateLaborPeriodHint() {
+    const projectId = val('lb-project');
+    const hint = document.getElementById('lb-period-hint');
+    if (!projectId || !hint) { if (hint) hint.textContent = ''; return; }
+    // นับงวดที่มีอยู่ในโครงการนี้
+    const periodsInProject = documents
+      .filter(d => d.projectId === projectId && (d.type || 'installment') === 'installment')
+      .map(d => Number(d.period) || 0)
+      .filter(p => p > 0);
+    if (periodsInProject.length === 0) {
+      hint.textContent = 'โครงการนี้ยังไม่มีงวด — สามารถระบุงวดล่วงหน้าได้ (เช่น งวด 1, 2)';
+    } else {
+      const max = Math.max(...periodsInProject);
+      hint.textContent = `โครงการนี้มีงวดถึง ${max} แล้ว — หากระบุงวดที่ยังไม่มี ระบบจะรอจนงวดนั้นถูกสร้างขึ้น`;
+    }
+    // Auto-fill contractor จากงวดล่าสุด
+    const lastInst = documents
+      .filter(d => d.projectId === projectId && (d.type || 'installment') === 'installment')
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+    if (lastInst && lastInst.contractor && !val('lb-contractor')) {
+      document.getElementById('lb-contractor').value = lastInst.contractor;
+    }
+  }
+ 
+  async function submitLb() {
+    if (!canCreateLabor()) { toast('คุณไม่มีสิทธิ์สร้างใบเบิกย่อย', 'error'); return; }
+    const projectId = val('lb-project');
+    if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
+    if (!val('lb-date')) { toast('กรุณาเลือกวันที่', 'error'); return; }
+    const refPeriod = Number(val('lb-ref-period')) || 0;
+    if (refPeriod < 1) { toast('กรุณาระบุงวดที่จะหัก (1 หรือมากกว่า)', 'error'); return; }
+    if (!val('lb-contractor')) { toast('กรุณากรอกชื่อผู้รับเหมา', 'error'); return; }
+    if (!val('lb-reason')) { toast('กรุณาระบุเหตุผล', 'error'); return; }
+    const validItems = laborFormItems.filter(it => it.name && Number(it.qty) > 0 && Number(it.rate) >= 0);
+    if (validItems.length === 0) { toast('กรุณาเพิ่มรายการอย่างน้อย 1 รายการ', 'error'); return; }
+    const total = validItems.reduce((s, it) => s + Number(it.qty) * Number(it.days) * Number(it.rate), 0);
+    if (total <= 0) { toast('ยอดรวมต้องมากกว่า 0', 'error'); return; }
+ 
+    const proj = getProjectById(projectId);
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const docObj = {
+      id,
+      type: 'labor',
+      docNo: generateDocNo('labor', projectId),
+      projectId,
+      project: proj ? proj.name : '',
+      // ★ Reference to installment period
+      refPeriod,
+      refInstallmentId: null,  // จะถูก link ตอนงวดถูกสร้าง/หัก
+      deductedAt: null,         // เวลาที่ถูกหักจากงวดจริง
+      deductedFromDocId: null,  // doc งวดที่หัก
+      // Form data
+      contractor: val('lb-contractor'),
+      category: val('lb-category') || 'labor',
+      requestDate: val('lb-date'),
+      reason: val('lb-reason'),
+      note: val('lb-note'),
+      items: validItems.map(it => ({
+        name: it.name,
+        qty: Number(it.qty),
+        days: Number(it.days),
+        rate: Number(it.rate),
+        total: Number(it.qty) * Number(it.days) * Number(it.rate)
+      })),
+      net: total,
+      files: pendingFiles.slice(),
+      submittedBy: { id: currentUser.id, name: currentUser.name, role: currentUser.role, at: Date.now() },
+      // Approval (PM only — ง่าย เร็ว)
+      status: 'pending',         // pending | approved | rejected | deducted
+      approvedBy: null,
+      rejectedBy: null,
+      // Payment (Procurement)
+      paidAt: null,
+      paidBy: null,
+      paymentMethod: null,
+      paymentEvidenceFiles: [],
+      paymentRemark: null,
+      createdAt: Date.now()
+    };
+ 
+    documents.unshift(docObj);
+    const ok = await saveDocs(docObj);
+    if (ok) {
+      toast(`บันทึก ${docObj.docNo} สำเร็จ — รอ PM อนุมัติ`, 'success');
+      resetLbForm();
+      switchTab('history');
+    }
+  }
+ 
+  function resetLbForm() {
+    ['lb-date','lb-ref-period','lb-contractor','lb-reason','lb-note'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('lb-project').value = '';
+    document.getElementById('lb-category').value = 'labor';
+    laborFormItems = [];
+    addLbItem();
+    pendingFiles = [];
+    renderFilesPreview();
+    document.getElementById('lb-period-hint').textContent = '';
+  }
+ 
+  // Approve / Reject Labor
+  async function approveLabor(docId) {
+    if (!canApproveLabor()) { toast('เฉพาะ Project Manager / Admin', 'error'); return; }
+    const d = documents.find(x => x.id === docId);
+    if (!d || d.type !== 'labor' || d.status !== 'pending') return;
+    if (!confirm(`อนุมัติใบเบิกย่อย ${d.docNo} ยอด ${fmt(d.net)} บาท?`)) return;
+    d.status = 'approved';
+    d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
+    await saveDocs(d);
+    logActivity('doc-approve', `อนุมัติ ${d.docNo} (เบิกย่อย)`);
+    toast('อนุมัติเรียบร้อย — Procurement จ่ายเงินได้', 'success');
+    closeModal();
+  }
+  async function rejectLabor(docId) {
+    if (!canApproveLabor()) { toast('เฉพาะ Project Manager / Admin', 'error'); return; }
+    const d = documents.find(x => x.id === docId);
+    if (!d || d.type !== 'labor' || d.status !== 'pending') return;
+    const reason = prompt('เหตุผลที่ไม่อนุมัติ:');
+    if (!reason) return;
+    d.status = 'rejected';
+    d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason };
+    await saveDocs(d);
+    logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} — ${reason}`);
+    toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
+    closeModal();
+  }
+ 
   // ============ PERMISSIONS ============
   // Phase 2 permission matrix (Admin always allowed everywhere)
   function canManageProjects() {
@@ -3927,7 +4360,8 @@
     if (isAdmin()) return true;
     if (!currentUser) return false;
     const t = docType || 'installment';
-    if (t === 'installment' || t === 'po') {
+    if (t === 'installment' || t === 'po' || t === 'labor') {
+      // ★ Phase 3 fix: labor ใช้ executive จ่าย (เหมือนงวดงาน/PO)
       return currentUser.role === 'executive';
     }
     if (t === 'purchase' || t === 'fuel') {
@@ -4071,6 +4505,14 @@
       if (doc.reimbursedAt) return { label: 'อนุมัติเบิกคืน · รอจัดซื้อจ่าย', cls: 'pill-paid-pending' };
       return { label: 'รออนุมัติเบิกคืน', cls: 'pill-pending' };
     }
+     // LABOR — PM approve → Procurement pay → deduct from installment
+    if (type === 'labor') {
+      if (doc.status === 'rejected') return { label: 'ไม่อนุมัติ', cls: 'pill-rejected' };
+      if (doc.deductedAt) return { label: 'หักจากงวดแล้ว', cls: 'pill-reimbursed' };
+      if (doc.paidAt) return { label: 'จ่ายแล้ว · รอหักจากงวด', cls: 'pill-info' };
+      if (doc.status === 'approved') return { label: 'อนุมัติ · รอ Procurement จ่าย', cls: 'pill-paid-pending' };
+      return { label: 'รอ PM อนุมัติ', cls: 'pill-pending' };
+    }
     // PR — Procurement approval flow
     if (type === 'pr') {
       if (doc.status === 'rejected') return { label: 'PR ไม่อนุมัติ', cls: 'pill-rejected' };
@@ -4136,6 +4578,10 @@
   if ((type === 'purchase' || type === 'fuel') && !doc.reimbursedAt && canConfirmReimburse()) return true;
   // Reimbursement step 2: approved but unpaid → Procurement needs to pay
   if ((type === 'purchase' || type === 'fuel') && doc.reimbursedAt && !doc.paidAt && canMarkPaidFor(type)) return true;
+  // LABOR pending PM approval
+  if (type === 'labor' && doc.status === 'pending' && canApproveLabor()) return true;
+  // LABOR approved but not paid → Procurement
+  if (type === 'labor' && doc.status === 'approved' && !doc.paidAt && canPayLabor()) return true;
   // PR pending Procurement approval
   if (type === 'pr' && doc.status === 'pending' && canApprovePR()) return true;
   // PR approved + no PO yet — Procurement needs to create PO
@@ -4564,9 +5010,11 @@
     const type = d.type || 'installment';
     if (type === 'purchase') return showPurchaseDetail(d);
     if (type === 'fuel') return showFuelDetail(d);
+    if (type === 'labor') return showLaborDetail(d);
     if (type === 'pr') return showPrDetail(d);
     if (type === 'po') return showPoDetail(d);
     return showInstallmentDetail(d);
+
   }
 
   function showInstallmentDetail(d) {
@@ -5141,6 +5589,113 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
     `;
     document.getElementById('detail-modal').classList.add('show');
   }
+  // ★ Phase 3: Labor Detail Modal
+  function showLaborDetail(d) {
+    const status = getStatusInfo(d);
+    const canAct = canApproveLabor() && d.status === 'pending';
+    const canPay = canPayLabor() && d.status === 'approved' && !d.paidAt;
+    const CAT_LABELS = { labor: 'ค่าแรงคนงาน', petty: 'เบ็ดเตล็ด', advance: 'ขอเบิกล่วงหน้า', other: 'อื่นๆ' };
+    const itemsHtml = (d.items || []).map((it, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(it.name)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.days)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.rate)}</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500">${fmt(it.total)}</td>
+      </tr>`).join('');
+ 
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-head">
+        <div style="flex:1;min-width:0">
+          <div class="mono" style="font-size:11px;color:var(--text-3);letter-spacing:0.04em">
+            <span class="type-badge type-fuel"><i class="ti ti-users"></i> เบิกย่อย</span> ${d.docNo}
+          </div>
+          <h3 style="margin:4px 0 6px;font-size:18px;font-weight:600">${escapeHtml(d.project || '(โครงการที่ถูกลบ)')}</h3>
+          <span class="pill ${status.cls}">${status.label}</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">ผู้รับเหมา (ที่จะถูกหัก)</div><div class="detail-value">${escapeHtml(d.contractor || '-')}</div></div>
+          <div class="detail-item"><div class="detail-label">หักจากงวดที่</div><div class="detail-value" style="color:var(--accent);font-weight:600">งวด ${d.refPeriod || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">วันที่ขอเบิก</div><div class="detail-value">${d.requestDate || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">หมวด</div><div class="detail-value">${CAT_LABELS[d.category] || d.category}</div></div>
+          <div class="detail-item"><div class="detail-label">ผู้ขอ</div><div class="detail-value">${escapeHtml(d.submittedBy?.name || '-')}</div></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">รายการ (${(d.items || []).length})</div>
+          <table class="items-tbl" style="background:var(--surface)">
+            <thead>
+              <tr>
+                <th style="width:30px">#</th>
+                <th>ชื่อ/รายการ</th>
+                <th class="right">จำนวน</th>
+                <th class="right">วัน</th>
+                <th class="right">เรท/วัน</th>
+                <th class="right">รวม</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+              <tr class="grand-total">
+                <td colspan="5" style="text-align:right">ยอดรวมที่ขอเบิก</td>
+                <td class="row-total">${fmt(d.net)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">เหตุผล</div>
+          <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(d.reason || '-')}</div>
+          ${d.note ? `<div style="margin-top:8px;color:var(--text-2)"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+        </div>
+        ${renderFilesSection(d)}
+        ${d.approvedBy ? `<div class="detail-section" style="background:var(--success-soft)">
+          <div class="detail-section-title" style="color:var(--success)">✓ อนุมัติแล้ว</div>
+          <div>${escapeHtml(d.approvedBy.name)} · ${fmtDateTime(d.approvedBy.at)}</div>
+        </div>` : ''}
+        ${d.rejectedBy ? `<div class="detail-section" style="background:var(--danger-soft)">
+          <div class="detail-section-title" style="color:var(--danger)">✗ ไม่อนุมัติ</div>
+          <div>${escapeHtml(d.rejectedBy.name)} · ${fmtDateTime(d.rejectedBy.at)}</div>
+          <div style="color:var(--danger);margin-top:6px">เหตุผล: ${escapeHtml(d.rejectedBy.reason || '-')}</div>
+        </div>` : ''}
+        ${renderPaymentInfo(d)}
+        ${d.deductedAt ? `<div class="detail-section" style="background:var(--info-soft);border:1px solid var(--info)">
+          <div class="detail-section-title" style="color:var(--info)">↩ หักจากงวดงานแล้ว</div>
+          <div>ถูกหักจากเอกสาร: <strong>${escapeHtml(d.deductedFromDocNo || '-')}</strong></div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:4px">${fmtDateTime(d.deductedAt)}</div>
+        </div>` : ''}
+        ${canAct ? `
+          <div class="approval-box">
+            <div class="approval-box-title"><i class="ti ti-pencil"></i> รอ Project Manager อนุมัติ (คุณ)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">ตรวจสอบและอนุมัติใบเบิกย่อยจำนวน <strong>${fmt(d.net)}</strong> บาท ของ <strong>${escapeHtml(d.contractor)}</strong></p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-success" onclick="approveLabor('${d.id}')" style="flex:1;justify-content:center"><i class="ti ti-check"></i> อนุมัติ</button>
+              <button class="btn btn-danger" onclick="rejectLabor('${d.id}')" style="background:transparent;flex:1;justify-content:center"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+            </div>
+          </div>
+        ` : ''}
+        ${canPay ? `
+          <div class="approval-box" style="background:linear-gradient(135deg,#d8f0e1,#fff);border-color:var(--success);margin-top:12px">
+            <div class="approval-box-title" style="color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน + แนบสลิป (Executive)</div>
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:12px">PM อนุมัติแล้ว — Executive จ่ายเงินจริง + แนบสลิป (โอน) หรือเลือกเงินสด</p>
+            <button class="btn btn-primary" onclick="initiatePayment('${d.id}', 'labor')" style="background:var(--success);border-color:var(--success)"><i class="ti ti-cash-banknote"></i> บันทึกจ่ายเงิน</button>
+          </div>
+        ` : ''}
+      </div>
+      <div class="modal-foot">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="exportLaborPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>
+          ${canDeleteAnything() ? `<button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>` : ''}
+        </div>
+        <button class="btn" onclick="closeModal()">ปิด</button>
+      </div>
+    `;
+    document.getElementById('detail-modal').classList.add('show');
+  }
+ 
   function renderFilesSection(d) {
     if (!d.files || d.files.length === 0) return '';
     return `
@@ -5762,14 +6317,72 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   }
 
-  function pdfHeader(title, docNo) {
+  function pdfHeader(title, docNo, doc) {
     const company = companySettings.name || 'Home Delight Co.,Ltd';
     const address = companySettings.address || '';
     const logoHtml = companySettings.logoDataUrl
       ? `<img src="${companySettings.logoDataUrl}" style="width:60px;height:60px;object-fit:contain">`
       : `<div style="width:60px;height:60px;background:#1a1a17;color:#c8632c;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700">${(company[0] || 'H').toUpperCase()}</div>`;
-    return `
-      <table style="width:100%;border-bottom:2px solid #1a1a17;padding-bottom:8pt;margin-bottom:12pt">
+ 
+    // ★ Approval status banner — แสดงเมื่อมี doc และอนุมัติแล้ว
+    let approvalBanner = '';
+    if (doc) {
+      const approvers = [];
+      const t = doc.type || 'installment';
+      if (t === 'installment') {
+        const pm = getApprovalSlot(doc, 'pm');
+        const e1 = getApprovalSlot(doc, 'exec1');
+        const e2 = getApprovalSlot(doc, 'exec2');
+        if (pm && !pm.rejected) approvers.push(`PM: ${pm.name}`);
+        if (e1 && !e1.rejected) approvers.push(`Exec1: ${e1.name}`);
+        if (e2 && !e2.rejected) approvers.push(`Exec2: ${e2.name}`);
+      } else if (doc.approvedBy) {
+        approvers.push(`อนุมัติ: ${doc.approvedBy.name}`);
+      }
+      if (doc.paidAt && doc.paidBy) {
+        approvers.push(`จ่ายเงิน: ${doc.paidBy.name}`);
+      }
+      const isComplete = doc.paidAt || (t === 'installment' && getCurrentStep(doc) === 'done');
+      const isRejected = doc.status === 'rejected' || (doc.approvals && Object.values(doc.approvals).some(a => a && a.rejected));
+ 
+      if (isRejected) {
+        approvalBanner = `
+          <div style="background:#fcdfdc;border:1px solid #b3261e;padding:6pt 10pt;border-radius:4pt;margin-bottom:10pt;font-size:9pt;color:#b3261e">
+            <strong style="font-size:11pt">✗ เอกสารไม่ได้รับอนุมัติ</strong>
+            ${approvers.length > 0 ? `<br><span style="font-size:8pt">${approvers.join(' · ')}</span>` : ''}
+          </div>`;
+      } else if (isComplete) {
+        approvalBanner = `
+          <div style="background:#d8f0e1;border:1px solid #2d6a4f;padding:6pt 10pt;border-radius:4pt;margin-bottom:10pt;font-size:9pt;color:#2d6a4f">
+            <strong style="font-size:11pt">✓ อนุมัติผ่านระบบเรียบร้อยแล้ว</strong>
+            ${approvers.length > 0 ? `<br><span style="font-size:8pt;color:#1a1a17">${approvers.join(' · ')}</span>` : ''}
+          </div>`;
+      } else if (approvers.length > 0) {
+        approvalBanner = `
+          <div style="background:#fbeed3;border:1px solid #b8740a;padding:6pt 10pt;border-radius:4pt;margin-bottom:10pt;font-size:9pt;color:#7a5d2e">
+            <strong style="font-size:10pt">⏳ อนุมัติบางส่วน — รอการอนุมัติเพิ่ม</strong>
+            ${approvers.length > 0 ? `<br><span style="font-size:8pt">${approvers.join(' · ')}</span>` : ''}
+          </div>`;
+      }
+    }
+ 
+    // ★ Watermark — แสดงเฉพาะเอกสารที่อนุมัติครบ
+    let watermark = '';
+    if (doc) {
+      const t = doc.type || 'installment';
+      const isFullyApproved = doc.paidAt
+        || (t === 'installment' && getCurrentStep(doc) === 'done' && doc.status !== 'rejected')
+        || (['labor','pr','po'].includes(t) && doc.status === 'approved');
+      if (isFullyApproved) {
+        watermark = `
+          <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:80pt;font-weight:900;color:rgba(45,106,79,0.08);z-index:0;pointer-events:none;white-space:nowrap;font-family:'IBM Plex Sans Thai',sans-serif">
+            อนุมัติผ่านระบบ
+          </div>`;
+      }
+    }
+ 
+    return watermark + `
+      <table style="width:100%;border-bottom:2px solid #1a1a17;padding-bottom:8pt;margin-bottom:12pt;position:relative;z-index:1">
         <tr>
           <td style="width:60px;vertical-align:middle">${logoHtml}</td>
           <td style="vertical-align:middle;padding-left:12pt">
@@ -5781,7 +6394,8 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
             <div style="font-size:10pt;font-family:'JetBrains Mono',monospace;color:#5c5b54;margin-top:2pt">${escapeHtml(docNo)}</div>
           </td>
         </tr>
-      </table>`;
+      </table>
+      ${approvalBanner}`;
   }
 
   function pdfSignatures(d) {
@@ -5855,7 +6469,7 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
     const d = documents.find(x => x.id === id);
     if (!d) return;
     const periodText = d.period ? `งวดที่ ${d.period}${d.periodTotal ? ' / ' + d.periodTotal : ''}` : '';
-    let html = pdfHeader('ใบเบิกจ่ายงวดงาน', d.docNo);
+    let html = pdfHeader('ใบเบิกจ่ายงวดงาน', d.docNo, d);
     html += `
       <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
         <tr>
@@ -5888,10 +6502,12 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
           <tr><td style="padding:6pt;border:1px solid #c8c5b6">ผลงานสะสมยกมา</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.prev/d.contract)*100).toFixed(1) : 0}%</td></tr>
           <tr><td style="padding:6pt;border:1px solid #c8c5b6">ผลงานงวดนี้</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.curr/d.contract)*100).toFixed(1) : 0}%</td></tr>
           <tr style="background:#f5f4ee"><td style="padding:6pt;border:1px solid #c8c5b6;font-weight:600">รวมผลงานสะสม</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.total)}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? ((d.total/d.contract)*100).toFixed(1) : 0}%</td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6">มูลค่างานคงเหลือ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(d.remain || (d.contract - d.total))}</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6">${d.contract > 0 ? (((d.contract - d.total)/d.contract)*100).toFixed(1) : 0}%</td></tr>
           <tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ประกันผลงาน ${d.retentionPct}%</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.retention)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>
-          ${d.advance > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− เงินล่วงหน้า</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.advance)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
-          ${d.material > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าวัสดุ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.material)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
-          ${d.penalty > 0 ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าปรับ</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.penalty)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− เงินเบิกล่วงหน้า / แอดวานซ์</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.advance || 0)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าวัสดุที่บริษัทจ่ายแทน</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.material || 0)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>
+          <tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− ค่าปรับ / ความเสียหาย</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.penalty || 0)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>
+          ${(d.deductedLaborTotal && d.deductedLaborTotal > 0) ? `<tr><td style="padding:6pt;border:1px solid #c8c5b6;color:#b3261e">− เบิกย่อยที่หักจากงวดนี้</td><td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace;color:#b3261e">${fmt(d.deductedLaborTotal)}</td><td style="padding:6pt;border:1px solid #c8c5b6"></td></tr>` : ''}
           <tr style="background:#d8f0e1"><td style="padding:8pt;border:1px solid #2d6a4f;font-weight:700;font-size:11pt;color:#2d6a4f">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#2d6a4f">${fmt(d.net)}</td><td style="padding:8pt;border:1px solid #2d6a4f"></td></tr>
         </tbody>
       </table>
@@ -5907,7 +6523,7 @@ ${(d.status === 'approved' && canMarkPaidFor('po') && !d.paidAt) ? `
   function exportPurchasePdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
-    let html = pdfHeader('ใบบันทึกการซื้อของ', d.docNo);
+    let html = pdfHeader('ใบบันทึกการซื้อของ', d.docNo, d);
     html += `
       <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
         <tr>
@@ -5970,7 +6586,7 @@ function exportPoPdf(id) {
     'credit-7': 'เครดิต 7 วัน', 'credit-15': 'เครดิต 15 วัน', 'credit-30': 'เครดิต 30 วัน', other: 'อื่นๆ'
   };
 
-  let html = pdfHeader('ใบสั่งซื้อ (Purchase Order)', d.docNo);
+  let html = pdfHeader('ใบสั่งซื้อ (Purchase Order)', d.docNo, d);
   html += `
     <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
       <tr>
@@ -6027,7 +6643,7 @@ function exportPoPdf(id) {
     const isMileage = d.mode === 'mileage';
     const isLump = d.mode === 'lump';
     const title = isMileage ? 'ใบเบิกค่ารถ (ระยะทาง)' : 'ใบเบิกค่าน้ำมัน';
-    let html = pdfHeader(title, d.docNo);
+    let html = pdfHeader(title, d.docNo, d);
     html += `
       <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
         <tr>
@@ -6077,6 +6693,73 @@ function exportPoPdf(id) {
     // เพิ่มรูปภาพแนบและสลิปการจ่ายเบิกคืนต่อท้าย PDF
     html += pdfAttachedImages(d.files, 'เอกสารแนบ (สลิปเติมน้ำมัน/หลักฐาน)');
     if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการจ่ายเบิกคืน (สลิป)');
+    html += pdfFooter();
+    generatePdf(html);
+  }
+ 
+  function exportLaborPdf(id) {
+    const d = documents.find(x => x.id === id);
+    if (!d) return;
+    const CAT_LABELS = { labor: 'ค่าแรงคนงาน', petty: 'เบ็ดเตล็ด', advance: 'ขอเบิกล่วงหน้า', other: 'อื่นๆ' };
+    let html = pdfHeader('ใบเบิกย่อย / ค่าแรง', d.docNo, d);
+    html += `
+      <table class="pdf-section" style="width:100%;font-size:10pt;margin-bottom:10pt">
+        <tr>
+          <td style="width:60%;vertical-align:top">
+            <div style="font-weight:600;font-size:11pt">${escapeHtml(d.project || '-')}</div>
+            <div style="color:#5c5b54;margin-top:2pt">ผู้รับเหมา: <strong>${escapeHtml(d.contractor || '-')}</strong></div>
+            <div style="color:#5c5b54">หมวด: ${CAT_LABELS[d.category] || d.category}</div>
+            <div style="color:#5c5b54">ผู้ขอเบิก: <strong>${escapeHtml(d.submittedBy?.name || '-')}</strong></div>
+          </td>
+          <td style="width:40%;vertical-align:top;text-align:right">
+            <div>วันที่ขอเบิก: <strong>${thaiDate(d.requestDate)}</strong></div>
+            <div style="margin-top:4pt;background:#fbeed3;color:#7a5d2e;padding:4pt 8pt;border-radius:4pt;display:inline-block">
+              <strong>หักจากงวดที่ ${d.refPeriod || '-'}</strong>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div class="pdf-section" style="background:#f5f4ee;padding:8pt;border-radius:4pt;margin-bottom:10pt;font-size:10pt;line-height:1.6">
+        <strong>เหตุผล:</strong><br>${escapeHtml(d.reason || '-')}
+        ${d.note ? `<br><br><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}` : ''}
+      </div>
+      <table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:10pt">
+        <thead>
+          <tr style="background:#1a1a17;color:white">
+            <th style="padding:6pt;text-align:center;border:1px solid #1a1a17;width:30pt">#</th>
+            <th style="padding:6pt;text-align:left;border:1px solid #1a1a17">ชื่อ-นามสกุล / รายการ</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:50pt">จำนวน</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:50pt">วัน</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:80pt">เรท/วัน</th>
+            <th style="padding:6pt;text-align:right;border:1px solid #1a1a17;width:100pt">รวม (บาท)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(d.items || []).map((it, i) => `
+            <tr>
+              <td style="padding:6pt;text-align:center;border:1px solid #c8c5b6">${i + 1}</td>
+              <td style="padding:6pt;border:1px solid #c8c5b6">${escapeHtml(it.name)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.days)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.rate)}</td>
+              <td style="padding:6pt;text-align:right;border:1px solid #c8c5b6;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
+            </tr>
+          `).join('')}
+          <tr style="background:#d8f0e1">
+            <td colspan="5" style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-weight:700">ยอดรวมที่ขอเบิก</td>
+            <td style="padding:8pt;text-align:right;border:1px solid #2d6a4f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt;color:#2d6a4f">${fmt(d.net)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:10pt;margin-bottom:14pt;padding:6pt 0;font-style:italic;color:#5c5b54">(ตัวอักษร: ${bahtText(d.net)})</div>
+    `;
+    if (d.deductedAt) {
+      html += `<div class="pdf-section" style="background:#d8e8f4;padding:8pt;border-radius:4pt;margin-bottom:10pt;font-size:10pt;color:#1f5582">
+        ↩ <strong>หักจากงวดงานแล้ว</strong> · ${escapeHtml(d.deductedFromDocNo || '-')} · ${thaiDate(d.deductedAt)}
+      </div>`;
+    }
+    html += pdfAttachedImages(d.files, 'เอกสารแนบ');
+    if (d.paymentEvidenceFiles) html += pdfAttachedImages(d.paymentEvidenceFiles, 'หลักฐานการจ่ายเงิน (สลิป)');
     html += pdfFooter();
     generatePdf(html);
   }
@@ -7087,14 +7770,20 @@ function exportPoPdf(id) {
   // History
   window.onHistoryProjectChange = onHistoryProjectChange;
   window.exportPoPdf = exportPoPdf;
-  // ★ Labor + Edit Installment
-  window.addLaborItem = addLaborItem;
-  window.removeLaborItem = removeLaborItem;
-  window.updateLaborItem = updateLaborItem;
-  window.changeLaborStatus = changeLaborStatus;
-  window.changeLaborStatusInDetail = changeLaborStatusInDetail;
-  window.editInstallment = editInstallment;
-  window.cancelEdit = cancelEdit;
+  // ★ Phase 3: Labor
+  window.addLbItem = addLbItem;
+  window.removeLbItem = removeLbItem;
+  window.updateLbItem = updateLbItem;
+  window.updateLaborPeriodHint = updateLaborPeriodHint;
+  window.submitLb = submitLb;
+  window.resetLbForm = resetLbForm;
+  window.approveLabor = approveLabor;
+  window.rejectLabor = rejectLabor;
+  window.exportLaborPdf = exportLaborPdf;
+  // ★ Phase 3: Deduct labor from installment
+  window.refreshDeductLaborCard = refreshDeductLaborCard;
+  window.toggleDeductLabor = toggleDeductLabor;
+  window.updateDeductLaborTotal = updateDeductLaborTotal;
 </script>
 
 <div id="print-area"></div>
