@@ -7661,6 +7661,9 @@ function exportPoPdf(id) {
   }, 60000); // every 60 seconds
 
   // ============ EXPORT ALL FUNCTIONS TO WINDOW ============
+  window.editInstallment = editInstallment;
+window.cancelEdit = cancelEdit;
+window.changeLaborStatusInDetail = changeLaborStatusInDetail;
   window.login = login;
   window.logout = logout;
   window.switchTab = switchTab;
