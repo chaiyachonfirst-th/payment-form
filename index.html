@@ -3926,7 +3926,7 @@
     summary.innerHTML = `
       <strong>PR ที่อ้างอิง:</strong> ${pr.docNo}<br>
       <strong>โครงการ:</strong> ${escapeHtml(pr.project || '-')}<br>
-      <strong>ผู้ขอ:</strong> ${escapeHtml(pr.submittedBy.name)} · <strong>วันที่ต้องการ:</strong> ${pr.neededBy || '-'}<br>
+      <strong>ผู้ขอ:</strong> ${escapeHtml(pr.submittedBy ? pr.submittedBy.name : '-')} · <strong>วันที่ต้องการ:</strong> ${pr.neededBy || '-'}<br>
       <strong>เหตุผล:</strong> ${escapeHtml(pr.reason || '-')}
       ${pr.suggestedVendor ? `<br><strong>ผู้ขายแนะนำ:</strong> ${escapeHtml(pr.suggestedVendor)}` : ''}
     `;
@@ -5285,7 +5285,7 @@
         ).join('')}
       </div>` : '<div style="color:var(--text-3);font-size:13px">(ไม่มีเอกสารแนบ)</div>';
 
-    document.getElementById('detail-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head" style="background:#fdf6e9">
         <div>
           <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">เบิกย่อย · หักท้ายงวด</div>
@@ -5629,7 +5629,7 @@
     const canMakePo = canCreatePO() && d.status === 'approved' && !d.poDocId;
     const linkedPo = d.poDocId ? documents.find(x => x.id === d.poDocId) : null;
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-clipboard-list" style="color:#0e7c66"></i> รายละเอียด PR <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
@@ -5643,7 +5643,7 @@
             <div><div class="kv-k">ต้องการภายใน</div><div class="kv-v"><strong>${d.neededBy || '-'}</strong></div></div>
             <div><div class="kv-k">ความเร่งด่วน</div><div class="kv-v" style="color:${URGENCY_COLORS[d.urgency]||'var(--text)'};font-weight:600">${URGENCY_LABELS[d.urgency]||d.urgency}</div></div>
             <div><div class="kv-k">หมวดหมู่</div><div class="kv-v">${CATEGORY_LABELS[d.category]||d.category||'-'}</div></div>
-            <div><div class="kv-k">ผู้ขอ</div><div class="kv-v">${escapeHtml(d.submittedBy.name)}</div></div>
+            <div><div class="kv-k">ผู้ขอ</div><div class="kv-v">${escapeHtml(d.submittedBy ? d.submittedBy.name : '-')}</div></div>
           </div>
         </div>
 
@@ -5725,7 +5725,7 @@
           </a>`;
     }).join('');
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-truck-delivery" style="color:#5b3a8a"></i> รายละเอียด PO <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
@@ -5740,7 +5740,7 @@
             <div><div class="kv-k">วันที่จัดส่ง</div><div class="kv-v">${d.deliveryDate || '-'}</div></div>
             <div><div class="kv-k">ผู้ขาย</div><div class="kv-v"><strong>${escapeHtml(d.vendor || '-')}</strong>${d.vendorContact ? `<br><span style="color:var(--text-2);font-size:13px">${escapeHtml(d.vendorContact)}</span>` : ''}</div></div>
             <div><div class="kv-k">เงื่อนไขชำระ</div><div class="kv-v">${PAYMENT_LABELS[d.paymentTerms] || d.paymentTerms || '-'}</div></div>
-            <div><div class="kv-k">ผู้สั่งซื้อ</div><div class="kv-v">${escapeHtml(d.submittedBy.name)}</div></div>
+            <div><div class="kv-k">ผู้สั่งซื้อ</div><div class="kv-v">${escapeHtml(d.submittedBy ? d.submittedBy.name : '-')}</div></div>
           </div>
         </div>
 
