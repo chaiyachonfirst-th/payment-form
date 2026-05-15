@@ -5797,6 +5797,7 @@
 
       <div class="modal-foot">
         <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="exportPoPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>
           ${canApprove ? `
             <button class="btn btn-success btn-sm" onclick="approvePO('${d.id}')"><i class="ti ti-check"></i> อนุมัติ PO</button>
             <button class="btn btn-danger btn-sm" onclick="rejectPO('${d.id}')"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
@@ -7795,6 +7796,7 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.exportPurchasePdf = exportPurchasePdf;
   window.exportFuelPdf = exportFuelPdf;
   window.exportProjectSummaryPdf = exportProjectSummaryPdf;
+  window.exportPoPdf = exportPoPdf;
 
   // Phase 2 additions
   window.prefillFromPreviousInstallment = prefillFromPreviousInstallment;
