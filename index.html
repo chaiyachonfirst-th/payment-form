@@ -6629,7 +6629,45 @@
     `;
     generatePdf(html, `${d.docNo}.pdf`);
   }
+function exportPoPdf(id) {
+  const d = documents.find(x => x.id === id);
+  if (!d) return;
 
+  const sigs = [
+    { label: 'ผู้จัดทำ (ผู้ขอซื้อ)', name: d.submittedBy ? d.submittedBy.name : '', date: d.submittedBy ? d.submittedBy.at : null },
+    { label: 'ผู้อนุมัติ (PM)', name: d.approvedBy ? d.approvedBy.name : '', date: d.approvedBy ? d.approvedBy.at : null }
+  ];
+
+  const html = `
+    ${pdfHeader('ใบสั่งซื้อ', 'PURCHASE ORDER', d.docNo)}
+    <table style="width:100%;font-size:11px;margin-bottom:14px;border-collapse:collapse">
+      <tr><td style="padding:4px 0;color:#5c5b54;width:90px">โครงการ</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:4px 0;color:#5c5b54;width:75px">วันที่สั่งซื้อ</td><td style="padding:4px 0">${d.orderDate || '-'}</td></tr>
+      <tr><td style="padding:4px 0;color:#5c5b54">ร้านค้า/ผู้ขาย</td><td style="padding:4px 0;font-weight:500">${escapeHtml(d.vendor || '-')}</td><td style="padding:4px 0;color:#5c5b54">ผู้ติดต่อ</td><td style="padding:4px 0">${escapeHtml(d.vendorContact || '-')}</td></tr>
+      <tr><td style="padding:4px 0;color:#5c5b54">กำหนดส่ง</td><td style="padding:4px 0">${d.deliveryDate || '-'}</td><td style="padding:4px 0;color:#5c5b54">เงื่อนไขชำระ</td><td style="padding:4px 0">${escapeHtml(d.paymentTerms || '-')}</td></tr>
+    </table>
+    <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:14px">
+      <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:7px;text-align:left;width:30px">#</th><th style="padding:7px;text-align:left">รายการ</th><th style="padding:7px;text-align:right;width:60px">จำนวน</th><th style="padding:7px;text-align:left;width:40px">หน่วย</th><th style="padding:7px;text-align:right;width:80px">ราคา/หน่วย</th><th style="padding:7px;text-align:right;width:90px">รวม</th></tr></thead>
+      <tbody>
+        ${(d.items || []).map((it, i) => `
+          <tr style="border-bottom:1px solid #e3e1d7;${i % 2 === 1 ? 'background:#fafaf7' : ''}">
+            <td style="padding:6px 7px">${i + 1}</td>
+            <td style="padding:6px 7px">${escapeHtml(it.name)}</td>
+            <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.qty)}</td>
+            <td style="padding:6px 7px">${escapeHtml(it.unit || '-')}</td>
+            <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.price)}</td>
+            <td style="padding:6px 7px;text-align:right;font-family:monospace">${fmt(it.total)}</td>
+          </tr>
+        `).join('')}
+        <tr style="background:#1a1a17;color:#fff"><td colspan="5" style="padding:8px;font-weight:600;text-align:right">ยอดรวมทั้งสิ้น</td><td style="padding:8px;text-align:right;font-family:monospace;font-weight:700;font-size:13px">${fmt(d.total)}</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:10px;color:#5c5b54;margin-bottom:6px">(${bahtText(d.total)})</div>
+    ${d.note ? `<div style="font-size:10px;margin-bottom:14px"><strong style="color:#5c5b54">หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+    ${pdfSignatures(sigs)}
+    ${pdfFooter()}
+  `;
+  generatePdf(html, `${d.docNo}.pdf`);
+}
   function exportFuelPdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
