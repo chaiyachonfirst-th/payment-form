@@ -6246,12 +6246,26 @@
       toast('กรุณาตั้ง PIN ก่อน', 'error');
       return;
     }
-    const note = document.getElementById('approver-note').value.trim();
+    // approver-note input only exists in installment detail's renderApprovalActions block.
+    // subWithdraw detail doesn't render that input — handle null gracefully.
+    const noteEl = document.getElementById('approver-note');
+    const note = noteEl ? noteEl.value.trim() : '';
     if (action === 'reject' && !note) {
-      toast('กรุณาระบุเหตุผลที่ไม่อนุมัติ', 'error');
-      return;
+      // For subWithdraw (no inline note input), use prompt() so PM can give a reason
+      if (!noteEl) {
+        const reason = prompt('กรุณาระบุเหตุผลที่ไม่อนุมัติ:');
+        if (!reason || !reason.trim()) {
+          toast('ยกเลิกการไม่อนุมัติ', 'info');
+          return;
+        }
+        pendingApproval = { id, stepKey, action, note: reason.trim() };
+      } else {
+        toast('กรุณาระบุเหตุผลที่ไม่อนุมัติ', 'error');
+        return;
+      }
+    } else {
+      pendingApproval = { id, stepKey, action, note };
     }
-    pendingApproval = { id, stepKey, action, note };
 
     document.getElementById('pin-modal-title').textContent = action === 'approve' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการไม่อนุมัติ';
     document.getElementById('pin-modal-sub').textContent = `กรุณากรอก PIN ของ ${currentUser.name}`;
