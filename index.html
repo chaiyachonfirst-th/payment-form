@@ -641,19 +641,38 @@
       font-size: 11pt;
       line-height: 1.55;
     }
+    /* CRITICAL: prevent trailing blank pages —
+       html/body must not force additional layout pages */
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
     /* Force backgrounds to print (e.g. badge colors, table headers) */
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     /* Page break helpers */
-    .pdf-section { page-break-inside: avoid; }
+    .pdf-section { page-break-inside: avoid; break-inside: avoid; }
     .pdf-table { page-break-inside: auto; }
     .pdf-table tr { page-break-inside: avoid; page-break-after: auto; }
     .pdf-table thead { display: table-header-group; }
     .pdf-table tfoot { display: table-footer-group; }
-    .pdf-page-break { page-break-after: always; }
-    .pdf-signatures { page-break-inside: avoid; }
+    .pdf-page-break { page-break-after: always; break-after: page; }
+    /* Signature block — ALL signatures (4 roles + 2 executives) must stay on the same page */
+    .pdf-signatures { page-break-inside: avoid; break-inside: avoid; }
+    /* GROUP wrapper that keeps all signature blocks + footer together on one page */
+    .pdf-signatures-group {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-before: auto;
+    }
+    /* Prevent footer/last content from creating an empty next page */
+    .pdf-footer { page-break-inside: avoid; break-inside: avoid; }
+    /* Remove the last item's bottom margin to avoid forcing a new page */
+    #print-area > *:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }
     /* Prevent any modals from showing */
     .modal-bg { display: none !important; }
   }
@@ -777,7 +796,7 @@
       </div>
       <div class="sidebar-group">
         <div class="sidebar-group-title">เครื่องมือ</div>
-        <button class="sidebar-item" data-tab="pocket" onclick="switchTab('pocket')">
+        <button class="sidebar-item" data-tab="pocket" onclick="switchTab('pocket')" style="display:none">
           <i class="ti ti-wallet"></i><span>Pocket Money</span>
         </button>
         <button class="sidebar-item" data-tab="settings" onclick="switchTab('settings')">
@@ -1036,23 +1055,48 @@
               </div>
             </label>
           </div>
-          <div class="field" style="max-width:340px">
-            <label>มูลค่า VO (บาท) <span class="req">*</span></label>
-            <input type="number" class="input mono" id="vo-amount" placeholder="0.00" step="0.01" min="0" style="text-align:right;font-size:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;background:var(--surface-2);padding:10px;border-radius:var(--radius-sm)">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;font-weight:500">รูปแบบการคำนวณ:</div>
+              <div style="display:flex;gap:6px">
+                <label style="flex:1;cursor:pointer;background:var(--surface);padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;gap:6px;align-items:center">
+                  <input type="radio" name="vo-price-mode" value="qty" checked onchange="onVoPriceModeChange()">
+                  <div>
+                    <div style="font-size:12px;font-weight:500">ราคา/หน่วย × จำนวน</div>
+                    <div style="font-size:10px;color:var(--text-3)">เช่น 20 ตร.ม. × 250 บาท</div>
+                  </div>
+                </label>
+                <label style="flex:1;cursor:pointer;background:var(--surface);padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;gap:6px;align-items:center">
+                  <input type="radio" name="vo-price-mode" value="lump" onchange="onVoPriceModeChange()">
+                  <div>
+                    <div style="font-size:12px;font-weight:500">ยอดเงินรวมตรงๆ</div>
+                    <div style="font-size:10px;color:var(--text-3)">ใส่ยอดเงินรายการ</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div id="vo-items-table-wrap"></div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:10px 12px;background:#0e7c66;color:white;border-radius:var(--radius-sm)">
+            <div style="font-size:13px;font-weight:600"><i class="ti ti-sum"></i> ยอดรวม VO ทั้งหมด</div>
+            <div id="vo-grand-total" style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace">0.00 บาท</div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-head"><i class="ti ti-clipboard-text"></i><h3>รายละเอียดงาน VO</h3></div>
+        <div class="card-head"><i class="ti ti-clipboard-text"></i><h3>หัวข้องาน VO และเหตุผล</h3></div>
         <div class="card-body">
           <div class="field" style="margin-bottom:14px">
             <label>หัวข้องาน VO <span class="req">*</span></label>
-            <input type="text" class="input" id="vo-title" placeholder="เช่น เพิ่มงานทาสีห้องน้ำ · เปลี่ยนพื้นกระเบื้องห้องนอน">
+            <input type="text" class="input" id="vo-title" placeholder="เช่น งานเพิ่มห้องน้ำ ชั้น 2 · งานปรับแก้แบบโครงสร้าง">
+            <span class="field-hint">หัวข้อรวมของ VO นี้ — รายละเอียดของแต่ละรายการให้ใส่ในตารางด้านบน</span>
           </div>
           <div class="field" style="margin-bottom:14px">
-            <label>รายละเอียดงาน <span class="req">*</span></label>
-            <textarea class="textarea" id="vo-description" placeholder="อธิบายรายละเอียดของงาน VO ที่จะทำ เช่น ขอบเขตงาน · วัสดุที่ใช้ · พื้นที่ ฯลฯ" style="min-height:100px"></textarea>
+            <label>รายละเอียดเพิ่มเติม</label>
+            <textarea class="textarea" id="vo-description" placeholder="ข้อมูลเสริมทั่วไป (ถ้ามี) เช่น ขอบเขตงานรวม · พื้นที่ · กำหนดส่ง" style="min-height:70px"></textarea>
           </div>
           <div class="field">
             <label>เหตุผลของการเพิ่มงาน</label>
@@ -2046,9 +2090,9 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap">
             <div>
               <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
-                <i class="ti ti-users" style="color:var(--accent)"></i> ผู้รับเหมาในโครงการ <span class="req">*</span>
+                <i class="ti ti-users" style="color:var(--accent)"></i> ผู้รับเหมาในโครงการ
               </div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">จัดการผู้รับเหมาในหน้าต่างแยก — บันทึกแล้วจึงไปสร้างแผนงวดด้านล่าง</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">ไม่บังคับตอนสร้าง — เพิ่มภายหลังได้</div>
             </div>
             <button type="button" class="btn btn-primary btn-sm" onclick="openContractorsModal()">
               <i class="ti ti-users"></i> จัดการ ผรม.
@@ -2965,6 +3009,8 @@
     const tabPr = document.querySelector('.sidebar-item[data-tab="pr"]');
     const tabPo = document.querySelector('.sidebar-item[data-tab="po"]');
     const tabPocket = document.querySelector('.sidebar-item[data-tab="pocket"]');
+    // Pocket Money is disabled — always hidden from UI (data preserved in Firestore)
+    if (tabPocket) tabPocket.style.display = 'none';
     const tabOverview = document.querySelector('.sidebar-item[data-tab="overview"]');
     // Executive sees everything (read-only); other roles see based on permissions
     const isExec = currentUser?.role === 'executive';
@@ -2976,8 +3022,6 @@
     // Sub-withdraw tab (เบิกย่อย)
     const tabSub = document.querySelector('.sidebar-item[data-tab="sub"]');
     if (tabSub) tabSub.style.display = (canCreateInstallment() || isExec) ? '' : 'none';
-    // Pocket Money: Procurement (manage) + PM/Executive (view all)
-    if (tabPocket) tabPocket.style.display = (currentUser?.role === 'procurement' || canSeeAllProjects()) ? '' : 'none';
     // Overview: PM/Executive only
     if (tabOverview) tabOverview.style.display = canSeeAllProjects() ? '' : 'none';
     // Dashboard: PM/Executive/Admin only
@@ -3362,6 +3406,11 @@
           projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
         psel.innerHTML = opts;
       }
+      // Initialize items table on first visit
+      if (voItems.length === 0) {
+        voItems = [_newVoItem()];
+      }
+      renderVoItems();
     }
     if (tab === 'po') {
       if (poItems.length === 0) addPoItem();
@@ -4052,6 +4101,105 @@
 
   // ============ VO (VARIATION ORDER) FORM ============
   let pendingVoFiles = [];
+  let voItems = [];           // [{id, name, qty, unit, price, total}]
+  let voPriceMode = 'qty';    // 'qty' = qty × price | 'lump' = lump sum
+
+  function _newVoItem() {
+    return { id: 'voi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: '', qty: 1, unit: '', price: 0, total: 0 };
+  }
+  function addVoItem() {
+    voItems.push(_newVoItem());
+    renderVoItems();
+  }
+  function removeVoItem(id) {
+    voItems = voItems.filter(it => it.id !== id);
+    if (voItems.length === 0) voItems = [_newVoItem()];
+    renderVoItems();
+  }
+  function updateVoItem(id, field, value) {
+    const it = voItems.find(x => x.id === id);
+    if (!it) return;
+    if (field === 'qty' || field === 'price' || field === 'total') {
+      it[field] = value === '' ? '' : Number(value);
+    } else {
+      it[field] = value;
+    }
+    // Auto-recalc total based on mode
+    if (voPriceMode === 'qty' && (field === 'qty' || field === 'price')) {
+      it.total = (Number(it.qty) || 0) * (Number(it.price) || 0);
+      const cell = document.getElementById(`vo-line-${id}`);
+      if (cell) cell.textContent = fmt(it.total);
+    }
+    calcVoTotal();
+  }
+  function onVoPriceModeChange() {
+    const r = document.querySelector('input[name="vo-price-mode"]:checked');
+    voPriceMode = r ? r.value : 'qty';
+    // Reset price/total values when switching mode
+    voItems.forEach(it => {
+      if (voPriceMode === 'qty') {
+        // keep qty, price; recalc total
+        it.total = (Number(it.qty) || 0) * (Number(it.price) || 0);
+      } else {
+        // lump mode: total is direct
+        if (!it.total) it.total = (Number(it.qty) || 0) * (Number(it.price) || 0);
+      }
+    });
+    renderVoItems();
+  }
+  function calcVoTotal() {
+    const total = voItems.reduce((s, it) => s + (Number(it.total) || 0), 0);
+    const el = document.getElementById('vo-grand-total');
+    if (el) el.textContent = fmt(total) + ' บาท';
+    return total;
+  }
+  function renderVoItems() {
+    const wrap = document.getElementById('vo-items-table-wrap');
+    if (!wrap) return;
+    if (voItems.length === 0) voItems = [_newVoItem()];
+
+    const isQty = voPriceMode === 'qty';
+    const headerHtml = isQty
+      ? `<th>รายการ <span class="req">*</span></th>
+         <th class="right" style="width:80px">จำนวน</th>
+         <th style="width:70px">หน่วย</th>
+         <th class="right" style="width:110px">ราคา/หน่วย</th>
+         <th class="right" style="width:110px">รวม</th>
+         <th style="width:36px"></th>`
+      : `<th>รายการ <span class="req">*</span></th>
+         <th style="width:200px">รายละเอียด/หมายเหตุ</th>
+         <th class="right" style="width:140px">ยอดเงิน (บาท)</th>
+         <th style="width:36px"></th>`;
+
+    const rowsHtml = voItems.map(it => {
+      if (isQty) {
+        return `<tr>
+          <td><input type="text" value="${escapeHtml(it.name || '')}" placeholder="เช่น ทาสีห้องน้ำ" oninput="updateVoItem('${it.id}','name',this.value)"></td>
+          <td><input type="number" value="${it.qty || ''}" min="0" step="0.01" placeholder="0" oninput="updateVoItem('${it.id}','qty',this.value)"></td>
+          <td><input type="text" value="${escapeHtml(it.unit || '')}" placeholder="ตร.ม. / ชุด" oninput="updateVoItem('${it.id}','unit',this.value)"></td>
+          <td><input type="number" value="${it.price || ''}" min="0" step="0.01" placeholder="0.00" oninput="updateVoItem('${it.id}','price',this.value)"></td>
+          <td class="row-total" id="vo-line-${it.id}">${fmt(it.total || 0)}</td>
+          <td><button class="icon-btn-danger" onclick="removeVoItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
+        </tr>`;
+      } else {
+        return `<tr>
+          <td><input type="text" value="${escapeHtml(it.name || '')}" placeholder="เช่น งานทาสีห้องน้ำ" oninput="updateVoItem('${it.id}','name',this.value)"></td>
+          <td><input type="text" value="${escapeHtml(it.unit || '')}" placeholder="รายละเอียด (ถ้ามี)" oninput="updateVoItem('${it.id}','unit',this.value)"></td>
+          <td><input type="number" value="${it.total || ''}" min="0" step="0.01" placeholder="0.00" style="text-align:right" oninput="updateVoItem('${it.id}','total',this.value)"></td>
+          <td><button class="icon-btn-danger" onclick="removeVoItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
+        </tr>`;
+      }
+    }).join('');
+
+    wrap.innerHTML = `
+      <table class="items-tbl">
+        <thead><tr>${headerHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div class="pp-add-row" onclick="addVoItem()" style="margin-top:8px"><i class="ti ti-plus"></i> เพิ่มรายการ VO</div>
+    `;
+    calcVoTotal();
+  }
 
   function onVoProjectChange() {
     const projectId = document.getElementById('vo-project').value;
@@ -4120,7 +4268,7 @@
   }
 
   function resetVoForm() {
-    ['vo-project','vo-contractor-sel','vo-amount','vo-title','vo-description','vo-reason'].forEach(id => {
+    ['vo-project','vo-contractor-sel','vo-title','vo-description','vo-reason'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -4133,6 +4281,12 @@
     document.getElementById('vo-contractor-sel').disabled = true;
     document.getElementById('vo-contractor-sel').innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
     document.getElementById('vo-contractor-hint').textContent = '';
+    // Reset price mode
+    voPriceMode = 'qty';
+    const radio = document.querySelector('input[name="vo-price-mode"][value="qty"]');
+    if (radio) radio.checked = true;
+    voItems = [_newVoItem()];
+    renderVoItems();
     pendingVoFiles = [];
     renderVoFilesPreview();
   }
@@ -4147,11 +4301,17 @@
     const contractor = document.getElementById('vo-contractor-sel').value;
     if (!contractor) { toast('กรุณาเลือก ผรม.', 'error'); return; }
     const title = document.getElementById('vo-title').value.trim();
-    if (!title) { toast('กรุณากรอกหัวข้อ VO', 'error'); return; }
+    if (!title) { toast('กรุณากรอกหัวข้องาน VO', 'error'); return; }
+    // Validate items
+    const validItems = voItems.filter(it => it.name && it.name.trim() && (Number(it.total) || 0) > 0);
+    if (validItems.length === 0) {
+      toast('กรุณาเพิ่มรายการ VO อย่างน้อย 1 รายการ พร้อมยอดเงิน', 'error');
+      return;
+    }
+    const totalAmount = validItems.reduce((s, it) => s + (Number(it.total) || 0), 0);
+    if (totalAmount <= 0) { toast('ยอดรวม VO ต้องมากกว่า 0', 'error'); return; }
+
     const description = document.getElementById('vo-description').value.trim();
-    if (!description) { toast('กรุณากรอกรายละเอียดงาน', 'error'); return; }
-    const amount = Number(document.getElementById('vo-amount').value) || 0;
-    if (amount <= 0) { toast('กรุณากรอกมูลค่า VO', 'error'); return; }
     const includeInContract = document.getElementById('vo-include-contract').checked;
     const reason = document.getElementById('vo-reason').value.trim();
     const voDate = document.getElementById('vo-date').value;
@@ -4168,7 +4328,17 @@
       title,
       description,
       reason,
-      amount,
+      // NEW: multi-item structure
+      items: validItems.map(it => ({
+        name: String(it.name || '').trim(),
+        qty: Number(it.qty) || 0,
+        unit: String(it.unit || '').trim(),
+        price: Number(it.price) || 0,
+        total: Number(it.total) || 0
+      })),
+      priceMode: voPriceMode,
+      // Total for backward-compat with existing amount-based logic
+      amount: totalAmount,
       includeInContract,
       attachments: {
         quote: document.getElementById('vo-att-quote').checked,
@@ -5044,19 +5214,18 @@
     renderPlannedPeriodsEditor();
   }
   function saveContractorsAndClose() {
-    // Validate: must have at least one with a name
+    // Keep only rows with names (cleanup empty rows automatically)
     const valid = editingContractors.filter(c => c.name && c.name.trim());
-    if (valid.length === 0) {
-      toast('กรุณาเพิ่มผู้รับเหมาอย่างน้อย 1 คน', 'error');
-      return;
-    }
-    // Remove rows without names (cleanup)
     editingContractors = valid;
     _contractorsBackup = null; // confirm changes
     document.getElementById('contractors-modal').classList.remove('show');
     renderContractorsSummary();
     renderPlannedPeriodsEditor();
-    toast(`บันทึก ผรม. ${valid.length} คนแล้ว — สามารถสร้างแผนงวดด้านล่างได้`, 'success');
+    if (valid.length === 0) {
+      toast('ยังไม่ได้เพิ่ม ผรม. — สามารถเพิ่มได้ภายหลังโดยกด "จัดการ ผรม."', 'info');
+    } else {
+      toast(`บันทึก ผรม. ${valid.length} คนแล้ว`, 'success');
+    }
   }
 
   function addPlannedPeriod() {
@@ -5208,8 +5377,8 @@
     editingPlannedPeriods = [];
     editingContractors = [];
     renderContractorsSummary();
-    // Start with one empty row so the user sees the table
-    addPlannedPeriod();
+    // Don't auto-add period — user can add later when needed
+    renderPlannedPeriodsEditor();
     showExistingInstallmentsWarning(null);
     document.getElementById('project-modal').classList.add('show');
   }
@@ -5302,16 +5471,11 @@
     const dup = projects.find(p => p.id !== id && (p.code || '').toUpperCase() === code);
     if (dup) { toast(`รหัส "${code}" ถูกใช้ใน "${dup.name}" แล้ว`, 'error'); return; }
 
-    // === Validate contractors list ===
-    const namedContractors = editingContractors.filter(c => c.name && c.name.trim());
-    if (namedContractors.length === 0) {
-      toast('กรุณาเพิ่มผู้รับเหมาอย่างน้อย 1 คน — กดปุ่ม "จัดการ ผรม."', 'error'); return;
-    }
+    // Contractors list is optional at creation time — can be added later by editing the project
+    // Period planner can also be empty initially
 
-    // === Validate planned periods ===
-    if (editingPlannedPeriods.length === 0) {
-      toast('กรุณาเพิ่มแผนงวดงานอย่างน้อย 1 งวด', 'error'); return;
-    }
+    // === Validate planned periods (only if user added some) ===
+    if (editingPlannedPeriods.length > 0) {
     // All rows must have description, contractor, and positive percent
     for (let i = 0; i < editingPlannedPeriods.length; i++) {
       const pp = editingPlannedPeriods[i];
@@ -5329,6 +5493,7 @@
     if (Math.abs(sum - 100) > 0.01) {
       toast(`รวม % ต้องเท่ากับ 100 (ตอนนี้ ${sum}%)`, 'error'); return;
     }
+    } // end: if (editingPlannedPeriods.length > 0)
 
     const existing = id ? getProjectById(id) : null;
 
@@ -6097,14 +6262,49 @@
             <tr><td>ผู้รับเหมา</td><td>${escapeHtml(d.contractor || '-')}</td></tr>
             <tr><td>วันที่</td><td>${d.voDate || '-'}</td></tr>
             <tr><td>หัวข้องาน VO</td><td><strong>${escapeHtml(d.title || '-')}</strong></td></tr>
-            <tr><td>รายละเอียดงาน</td><td style="white-space:pre-wrap">${escapeHtml(d.description || '-')}</td></tr>
+            ${d.description ? `<tr><td>รายละเอียด</td><td style="white-space:pre-wrap">${escapeHtml(d.description)}</td></tr>` : ''}
             ${d.reason ? `<tr><td>เหตุผล</td><td style="white-space:pre-wrap">${escapeHtml(d.reason)}</td></tr>` : ''}
             <tr><td>รูปแบบบัญชี</td><td>${d.includeInContract
               ? '<span style="color:var(--success);font-weight:500"><i class="ti ti-check"></i> รวมเข้ามูลค่าสัญญา</span>'
               : '<span style="color:var(--warning);font-weight:500"><i class="ti ti-asterisk"></i> งานนอกสัญญา (ไม่รวม)</span>'}</td></tr>
-            <tr class="net-row"><td>มูลค่า VO</td><td class="amount-col readonly" style="color:#0e7c66;font-size:18px">${fmt(d.amount || 0)}</td></tr>
+            <tr class="net-row"><td>ยอดรวม VO</td><td class="amount-col readonly" style="color:#0e7c66;font-size:18px">${fmt(d.amount || 0)}</td></tr>
           </table>
         </div>
+        ${(d.items && d.items.length > 0) ? `
+          <div class="card">
+            <div class="card-head"><i class="ti ti-list-details"></i><h3>รายการ VO (${d.items.length})</h3></div>
+            <div class="card-body" style="padding:0">
+              <table class="items-tbl" style="width:100%;font-size:13px">
+                <thead><tr style="background:var(--surface-2)">
+                  <th style="padding:8px;text-align:left;width:30px">#</th>
+                  <th style="padding:8px;text-align:left">รายการ</th>
+                  ${d.priceMode === 'qty' ? `
+                    <th style="padding:8px;text-align:right;width:70px">จำนวน</th>
+                    <th style="padding:8px;text-align:left;width:60px">หน่วย</th>
+                    <th style="padding:8px;text-align:right;width:100px">ราคา/หน่วย</th>
+                  ` : `
+                    <th style="padding:8px;text-align:left">รายละเอียด</th>
+                  `}
+                  <th style="padding:8px;text-align:right;width:110px">รวม</th>
+                </tr></thead>
+                <tbody>
+                  ${d.items.map((it, i) => `<tr style="border-top:1px solid var(--border)">
+                    <td style="padding:6px 8px">${i + 1}</td>
+                    <td style="padding:6px 8px">${escapeHtml(it.name || '')}</td>
+                    ${d.priceMode === 'qty' ? `
+                      <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+                      <td style="padding:6px 8px">${escapeHtml(it.unit || '-')}</td>
+                      <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.price)}</td>
+                    ` : `
+                      <td style="padding:6px 8px;color:var(--text-3);font-size:12px">${escapeHtml(it.unit || '-')}</td>
+                    `}
+                    <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500">${fmt(it.total)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
         ${attList.length > 0 ? `
           <div class="detail-section">
             <div class="detail-section-title">หมวดเอกสารแนบ</div>
@@ -7634,7 +7834,7 @@
       const isPdf = (f.type || '') === 'application/pdf';
       const refNo = doc.docNo || '-';
       const content = isImg
-        ? `<img src="${f.dataUrl}" style="max-width:100%;max-height:230mm;object-fit:contain;display:block;margin:0 auto" alt="">`
+        ? `<img src="${f.dataUrl}" style="max-width:100%;max-height:225mm;object-fit:contain;display:block;margin:0 auto" alt="">`
         : isPdf
           ? `<div style="border:1.5pt dashed #c8c5b6;padding:30pt;margin:30pt auto;max-width:80%;text-align:center;background:#fafaf7;border-radius:6pt">
               <div style="font-size:36pt;color:#b3261e;margin-bottom:12pt">📄</div>
@@ -7643,8 +7843,7 @@
             </div>`
           : `<div style="padding:30pt;text-align:center;color:#8b8a82;font-style:italic">[ไฟล์ไม่รองรับการแสดง: ${escapeHtml(f.name || '')}]</div>`;
       return `
-        <div class="pdf-page-break"></div>
-        <div class="pdf-section" style="min-height:240mm">
+        <div class="pdf-section pdf-attachment-page" style="page-break-before:always;break-before:page">
           <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6pt;border-bottom:1pt solid #c8c5b6;margin-bottom:10pt">
             <div style="font-size:11pt;font-weight:600">${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')} — เอกสารแนบ</div>
             <div style="font-size:9pt;color:#5c5b54">หน้า ${idx} / ${total}</div>
@@ -7661,7 +7860,7 @@
   }
 
   function pdfFooter() {
-    return `<div style="text-align:center;font-size:8pt;color:#8b8a82;margin-top:14pt;padding-top:6pt;border-top:0.5pt solid #e3e1d7">สร้างเมื่อ ${thaiDate(Date.now())} · ${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')}</div>`;
+    return `<div class="pdf-footer" style="text-align:center;font-size:8pt;color:#8b8a82;margin-top:14pt;padding-top:6pt;border-top:0.5pt solid #e3e1d7">สร้างเมื่อ ${thaiDate(Date.now())} · ${escapeHtml(companySettings.name || 'Home Delight Co.,Ltd')}</div>`;
   }
 
   async function generatePdf(html, filename) {
@@ -7785,9 +7984,11 @@
           </div>
         </div>`;
       })()}
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -7842,9 +8043,11 @@
           </div>
         </div>`;
       })()}
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -7892,9 +8095,11 @@
         </tbody>
       </table>
       <div style="font-size:10px;color:#5c5b54;margin-bottom:6px">(${bahtText(d.net)})</div>
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -7932,9 +8137,11 @@
       <div style="font-size:9pt;color:#5c5b54;margin-bottom:14pt;background:#fbeed3;padding:6pt 10pt;border-radius:3pt;border-left:2.5pt solid #b8740a">
         <strong>หมายเหตุ:</strong> ยอดเบิกย่อยนี้จะถูกหักออกจากยอดเบิกของงวดที่ ${d.period || '-'} โดยอัตโนมัติ
       </div>
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -7984,9 +8191,11 @@
       </div>` : ''}
       ${d.suggestedVendor ? `<div style="font-size:10pt;margin-bottom:6pt"><strong>ผู้ขายที่แนะนำ:</strong> ${escapeHtml(d.suggestedVendor)}</div>` : ''}
       ${d.note ? `<div style="font-size:10pt;margin-bottom:11pt;color:#5c5b54"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -8035,9 +8244,11 @@
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.total || 0)})</div>
       ${d.note ? `<div style="font-size:10pt;margin-bottom:11pt;color:#5c5b54;background:#f5f4ee;padding:8pt 10pt;border-radius:3pt"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -8076,12 +8287,44 @@
         <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">เหตุผล</div>
         <div style="font-size:10pt;white-space:pre-wrap">${escapeHtml(d.reason)}</div>
       </div>` : ''}
-      <table class="pdf-table" style="width:100%;font-size:10pt;border-collapse:collapse;margin-bottom:11pt">
-        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:6pt;text-align:left">รายการ</th><th style="padding:6pt;text-align:right;width:120pt">จำนวนเงิน (บาท)</th></tr></thead>
-        <tbody>
-          <tr style="background:#0e7c66;color:#fff"><td style="padding:8pt;font-weight:600">มูลค่า VO ที่ขอเบิก</td><td style="padding:8pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13pt">${fmt(d.amount || 0)}</td></tr>
-        </tbody>
-      </table>
+      ${(d.items && d.items.length > 0) ? `
+        <table class="pdf-table" style="width:100%;font-size:10pt;border-collapse:collapse;margin-bottom:11pt">
+          <thead><tr style="background:#1a1a17;color:#fff">
+            <th style="padding:6pt;text-align:left;width:24pt">#</th>
+            <th style="padding:6pt;text-align:left">รายการ</th>
+            ${d.priceMode === 'qty' ? `
+              <th style="padding:6pt;text-align:right;width:48pt">จำนวน</th>
+              <th style="padding:6pt;text-align:left;width:50pt">หน่วย</th>
+              <th style="padding:6pt;text-align:right;width:70pt">ราคา/หน่วย</th>
+            ` : `
+              <th style="padding:6pt;text-align:left;width:140pt">รายละเอียด</th>
+            `}
+            <th style="padding:6pt;text-align:right;width:80pt">รวม (บาท)</th>
+          </tr></thead>
+          <tbody>
+            ${d.items.map((it, i) => `<tr style="border-bottom:0.5pt solid #e3e1d7;${i % 2 === 1 ? 'background:#fafaf7' : ''}">
+              <td style="padding:5pt 6pt">${i + 1}</td>
+              <td style="padding:5pt 6pt">${escapeHtml(it.name || '')}</td>
+              ${d.priceMode === 'qty' ? `
+                <td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+                <td style="padding:5pt 6pt">${escapeHtml(it.unit || '-')}</td>
+                <td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.price)}</td>
+              ` : `
+                <td style="padding:5pt 6pt;color:#5c5b54;font-size:9pt">${escapeHtml(it.unit || '-')}</td>
+              `}
+              <td style="padding:5pt 6pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500">${fmt(it.total)}</td>
+            </tr>`).join('')}
+            <tr style="background:#0e7c66;color:#fff"><td colspan="${d.priceMode === 'qty' ? 5 : 3}" style="padding:7pt;font-weight:600;text-align:right">ยอดรวม VO ทั้งหมด</td><td style="padding:7pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.amount || 0)}</td></tr>
+          </tbody>
+        </table>
+      ` : `
+        <table class="pdf-table" style="width:100%;font-size:10pt;border-collapse:collapse;margin-bottom:11pt">
+          <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:6pt;text-align:left">รายการ</th><th style="padding:6pt;text-align:right;width:120pt">จำนวนเงิน (บาท)</th></tr></thead>
+          <tbody>
+            <tr style="background:#0e7c66;color:#fff"><td style="padding:8pt;font-weight:600">มูลค่า VO ที่ขอเบิก</td><td style="padding:8pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13pt">${fmt(d.amount || 0)}</td></tr>
+          </tbody>
+        </table>
+      `}
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.amount || 0)})</div>
       ${(() => {
         const items = [];
@@ -8099,9 +8342,11 @@
           </div>
         </div>`;
       })()}
-      ${pdfSignatures(sigs)}
-      ${pdfExecutiveSignatures()}
-      ${pdfFooter()}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
       ${pdfAttachmentPages(d)}
     `;
     generatePdf(html, `${d.docNo}.pdf`);
@@ -9242,6 +9487,21 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.closePrPriceModal = closePrPriceModal;
   window.updatePrPriceTotal = updatePrPriceTotal;
   window.submitPrPrices = submitPrPrices;
+
+  // Phase 3: VO (Variation Order) — งานเพิ่ม
+  window.onVoProjectChange = onVoProjectChange;
+  window.handleVoFiles = handleVoFiles;
+  window.removeVoFile = removeVoFile;
+  window.resetVoForm = resetVoForm;
+  window.submitVo = submitVo;
+  window.exportVoPdf = exportVoPdf;
+  window.showVoDetail = showVoDetail;
+  // VO multi-item helpers
+  window.addVoItem = addVoItem;
+  window.removeVoItem = removeVoItem;
+  window.updateVoItem = updateVoItem;
+  window.onVoPriceModeChange = onVoPriceModeChange;
+  window.renderVoItems = renderVoItems;
 
   // Phase 3: Confirm Transfer
   window.initiateConfirmTransfer = initiateConfirmTransfer;
