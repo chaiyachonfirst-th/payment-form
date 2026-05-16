@@ -384,6 +384,7 @@
   }
   .type-installment { background: var(--accent-soft); color: var(--accent-dark); }
   .type-subwithdraw { background: #f3e6d4; color: #7a4a14; }
+  .type-vo { background: #d8eee7; color: #0e7c66; }
   .type-purchase { background: var(--info-soft); color: var(--info); }
   .type-fuel { background: var(--warning-soft); color: var(--warning); }
   .type-pr { background: #d8eee7; color: #0e7c66; }
@@ -758,6 +759,9 @@
         <button class="sidebar-item" data-tab="sub" onclick="switchTab('sub')">
           <i class="ti ti-cash-banknote"></i><span>เบิกย่อย</span>
         </button>
+        <button class="sidebar-item" data-tab="vo" onclick="switchTab('vo')">
+          <i class="ti ti-plus-equal"></i><span>VO งานเพิ่ม</span>
+        </button>
         <button class="sidebar-item" data-tab="purchase" onclick="switchTab('purchase')">
           <i class="ti ti-shopping-cart"></i><span>ซื้อของ</span>
         </button>
@@ -982,6 +986,109 @@
       <div class="actions">
         <button class="btn btn-ghost" onclick="resetSubForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
         <button class="btn btn-primary" onclick="submitSubWithdraw()"><i class="ti ti-send"></i> ส่งขออนุมัติ</button>
+      </div>
+    </div>
+
+    <!-- VO (VARIATION ORDER) PAGE -->
+    <div class="page" id="page-vo">
+      <div class="card">
+        <div class="card-head" style="background:#d8eee7"><i class="ti ti-plus-equal" style="color:#0e7c66"></i><h3>ใบสั่งงานเพิ่ม (VO — Variation Order)</h3></div>
+        <div class="card-body">
+          <div style="background:#eaf5f0;border:1px solid #0e7c66;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:13px;color:#0e7c66;line-height:1.6">
+            <i class="ti ti-info-circle"></i> <strong>ใบ VO ใช้สำหรับงานเพิ่ม/เปลี่ยนแปลงนอกสัญญา</strong> — เลือกได้ว่าจะรวมเข้ามูลค่าสัญญาของโครงการหรือไม่ · เบิกแยกเป็นตัวต่อตัว (VO 1, VO 2, ...) · ต้องผ่าน PM อนุมัติเช่นเดียวกับงวดงาน
+          </div>
+          <div class="grid">
+            <div class="field">
+              <label>โครงการ <span class="req">*</span></label>
+              <select class="select" id="vo-project" onchange="onVoProjectChange()"><option value="">— เลือกโครงการ —</option></select>
+            </div>
+            <div class="field">
+              <label>เลขที่เอกสาร</label>
+              <input type="text" class="input mono" id="vo-docno" readonly placeholder="สร้างอัตโนมัติเมื่อบันทึก">
+            </div>
+            <div class="field">
+              <label>ผู้รับเหมา <span class="req">*</span></label>
+              <select class="select" id="vo-contractor-sel" disabled>
+                <option value="">— เลือกโครงการก่อน —</option>
+              </select>
+              <span class="field-hint" id="vo-contractor-hint" style="color:var(--text-3)"></span>
+            </div>
+            <div class="field">
+              <label>วันที่เกิดงาน VO</label>
+              <input type="date" class="input" id="vo-date">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-coin"></i><h3>มูลค่าและการบัญชี</h3></div>
+        <div class="card-body">
+          <div style="background:var(--surface-2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+              <input type="checkbox" id="vo-include-contract" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
+              <div>
+                <div style="font-size:13px;font-weight:600">รวมมูลค่า VO เข้าในสัญญาของโครงการ</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:2px">
+                  <strong>✓ ติ๊ก:</strong> มูลค่า VO จะถูกบวกเข้ามูลค่าสัญญารวมของโครงการ (เป็นส่วนหนึ่งของสัญญา)<br>
+                  <strong>✗ ไม่ติ๊ก:</strong> เป็นงานพิเศษนอกสัญญา (บันทึกแยก ไม่กระทบยอดสัญญา)
+                </div>
+              </div>
+            </label>
+          </div>
+          <div class="field" style="max-width:340px">
+            <label>มูลค่า VO (บาท) <span class="req">*</span></label>
+            <input type="number" class="input mono" id="vo-amount" placeholder="0.00" step="0.01" min="0" style="text-align:right;font-size:16px">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-clipboard-text"></i><h3>รายละเอียดงาน VO</h3></div>
+        <div class="card-body">
+          <div class="field" style="margin-bottom:14px">
+            <label>หัวข้องาน VO <span class="req">*</span></label>
+            <input type="text" class="input" id="vo-title" placeholder="เช่น เพิ่มงานทาสีห้องน้ำ · เปลี่ยนพื้นกระเบื้องห้องนอน">
+          </div>
+          <div class="field" style="margin-bottom:14px">
+            <label>รายละเอียดงาน <span class="req">*</span></label>
+            <textarea class="textarea" id="vo-description" placeholder="อธิบายรายละเอียดของงาน VO ที่จะทำ เช่น ขอบเขตงาน · วัสดุที่ใช้ · พื้นที่ ฯลฯ" style="min-height:100px"></textarea>
+          </div>
+          <div class="field">
+            <label>เหตุผลของการเพิ่มงาน</label>
+            <textarea class="textarea" id="vo-reason" placeholder="เช่น ลูกค้าขอเพิ่ม · ตามคำสั่งวิศวกร · ปรับแก้แบบ ฯลฯ"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบ</h3></div>
+        <div class="card-body">
+          <div class="checks" style="margin-bottom:14px">
+            <label class="check"><input type="checkbox" id="vo-att-quote"> ใบเสนอราคา VO</label>
+            <label class="check"><input type="checkbox" id="vo-att-photo"> รูปถ่ายหน้างาน</label>
+            <label class="check"><input type="checkbox" id="vo-att-drawing"> แบบ/แปลน VO</label>
+            <label class="check"><input type="checkbox" id="vo-att-other"> เอกสารอื่นๆ</label>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-size:13px;font-weight:500">อัพโหลดไฟล์ (PDF / รูปภาพ)</div>
+                <div class="field-hint">รูป ≤ 1 MB · PDF ≤ 2 MB · รวมทุกไฟล์ ≤ 5 MB</div>
+              </div>
+              <button type="button" class="btn btn-sm" onclick="document.getElementById('vo-files').click()">
+                <i class="ti ti-upload"></i> เลือกไฟล์
+              </button>
+              <input type="file" id="vo-files" accept="image/*,.pdf" multiple style="display:none" onchange="handleVoFiles(event)">
+            </div>
+            <div id="vo-files-preview" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="resetVoForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
+        <button class="btn btn-primary" onclick="submitVo()" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-send"></i> ส่งขออนุมัติ</button>
       </div>
     </div>
 
@@ -1321,7 +1428,7 @@
         </div>
         <div class="card-body">
           <div id="pr-items"></div>
-          <div style="display:flex;justify-content:flex-end;margin-top:12px;font-weight:600;font-size:14px;color:var(--text)">
+          <div id="pr-total-row" style="display:none;justify-content:flex-end;margin-top:12px;font-weight:600;font-size:14px;color:var(--text)">
             ประมาณการรวม: <span class="mono" id="pr-total" style="margin-left:8px;color:#0e7c66">0.00</span> บาท
           </div>
         </div>
@@ -1655,6 +1762,7 @@
         <button class="filter-btn active type-filter-btn" data-type="all" onclick="filterByType('all')"><i class="ti ti-stack-2"></i> ทุกประเภท</button>
         <button class="filter-btn type-filter-btn" data-type="installment" onclick="filterByType('installment')"><i class="ti ti-edit"></i> งวดงาน</button>
         <button class="filter-btn type-filter-btn" data-type="subWithdraw" onclick="filterByType('subWithdraw')"><i class="ti ti-cash-banknote"></i> เบิกย่อย</button>
+        <button class="filter-btn type-filter-btn" data-type="vo" onclick="filterByType('vo')"><i class="ti ti-plus-equal"></i> VO</button>
         <button class="filter-btn type-filter-btn" data-type="purchase" onclick="filterByType('purchase')"><i class="ti ti-shopping-cart"></i> ซื้อของ</button>
         <button class="filter-btn type-filter-btn" data-type="fuel" onclick="filterByType('fuel')"><i class="ti ti-gas-station"></i> ค่ารถ</button>
         <button class="filter-btn type-filter-btn" data-type="pr" onclick="filterByType('pr')"><i class="ti ti-clipboard-list"></i> PR</button>
@@ -1933,28 +2041,22 @@
           <textarea class="textarea" id="proj-note" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
         </div>
 
-        <!-- CONTRACTORS LIST -->
+        <!-- CONTRACTORS SUMMARY (clicking opens separate modal) -->
         <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap">
             <div>
               <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
-                <i class="ti ti-users" style="color:var(--accent)"></i> ผู้รับเหมาในโครงการ
+                <i class="ti ti-users" style="color:var(--accent)"></i> ผู้รับเหมาในโครงการ <span class="req">*</span>
               </div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">เพิ่ม/แก้/ลบผู้รับเหมา — ใช้เป็น dropdown ในแผนงวดด้านล่าง</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">จัดการผู้รับเหมาในหน้าต่างแยก — บันทึกแล้วจึงไปสร้างแผนงวดด้านล่าง</div>
             </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openContractorsModal()">
+              <i class="ti ti-users"></i> จัดการ ผรม.
+            </button>
           </div>
-          <table class="pp-table">
-            <thead>
-              <tr>
-                <th style="min-width:160px">ชื่อ-นามสกุล / บริษัท</th>
-                <th style="width:130px">เบอร์โทร</th>
-                <th>หมายเหตุ</th>
-                <th style="width:36px"></th>
-              </tr>
-            </thead>
-            <tbody id="contractor-tbody"></tbody>
-          </table>
-          <div class="pp-add-row" onclick="addContractor()"><i class="ti ti-user-plus"></i> เพิ่มผู้รับเหมา</div>
+          <div id="contractors-summary" style="background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--text-2);min-height:46px;display:flex;align-items:center">
+            <span style="color:var(--text-3);font-style:italic">ยังไม่มีผู้รับเหมา — กดปุ่ม "จัดการ ผรม." เพื่อเพิ่ม</span>
+          </div>
         </div>
 
         <!-- PERIOD PLANNER -->
@@ -1997,6 +2099,86 @@
       <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button>
         <button class="btn btn-primary" onclick="saveProject()"><i class="ti ti-device-floppy"></i> บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRACTORS MODAL (separate from project modal — better UX) -->
+  <div class="modal-bg" id="contractors-modal" onclick="if(event.target===this)closeContractorsModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:680px">
+      <div class="modal-head">
+        <div>
+          <h3 style="font-size:16px;font-weight:600"><i class="ti ti-users" style="color:var(--accent);vertical-align:-2px"></i> จัดการผู้รับเหมา</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px">เพิ่ม/แก้/ลบผู้รับเหมาในโครงการนี้ — กดบันทึกก่อนปิด เพื่อนำไปใช้ในแผนงวด</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeContractorsModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--info-soft);border:1px solid var(--info);color:var(--info);padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;line-height:1.6">
+          <i class="ti ti-info-circle"></i> <strong>ขั้นตอน:</strong> 1) เพิ่ม ผรม. ที่นี่ → 2) กดบันทึก → 3) กลับไปที่หน้าโครงการ → 4) ในแผนงวดงานจะเลือก ผรม. ที่บันทึกไว้
+        </div>
+        <table class="pp-table">
+          <thead>
+            <tr>
+              <th style="min-width:160px">ชื่อ-นามสกุล / บริษัท <span class="req">*</span></th>
+              <th style="width:130px">เบอร์โทร</th>
+              <th>หมายเหตุ</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="contractor-tbody"></tbody>
+        </table>
+        <div class="pp-add-row" onclick="addContractor()"><i class="ti ti-user-plus"></i> เพิ่มผู้รับเหมา</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeContractorsModal()">ยกเลิก (ไม่บันทึก)</button>
+        <button class="btn btn-primary" onclick="saveContractorsAndClose()"><i class="ti ti-device-floppy"></i> บันทึก ผรม.</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PR PRICE ENTRY MODAL (Procurement enters prices when approving PR) -->
+  <div class="modal-bg" id="pr-price-modal" onclick="if(event.target===this)closePrPriceModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:760px">
+      <div class="modal-head" style="background:#d8eee7">
+        <div>
+          <h3 style="font-size:16px;font-weight:600"><i class="ti ti-receipt" style="color:#0e7c66;vertical-align:-2px"></i> แนบราคาและอนุมัติ PR</h3>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px">จัดซื้อใส่ราคาให้แต่ละรายการ — เมื่อบันทึก PR จะถูกอนุมัติพร้อมราคา</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closePrPriceModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="pr-price-doc-info" style="background:var(--surface-2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px"></div>
+        <table style="width:100%;font-size:13px;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--surface-2)">
+              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">รายการ</th>
+              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:60px">จำนวน</th>
+              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);width:70px">หน่วย</th>
+              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:130px">ราคา/หน่วย <span class="req">*</span></th>
+              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:110px">รวม</th>
+            </tr>
+          </thead>
+          <tbody id="pr-price-tbody"></tbody>
+          <tfoot>
+            <tr style="background:#1a1a17;color:white">
+              <td colspan="4" style="padding:10px 8px;text-align:right;font-weight:600">ยอดรวมทั้งสิ้น</td>
+              <td id="pr-price-grand" style="padding:10px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px">0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div class="field" style="margin-top:14px">
+          <label>ผู้ขาย (ที่จัดซื้อเลือก)</label>
+          <input type="text" class="input" id="pr-price-vendor" placeholder="ชื่อร้านค้าที่จะสั่งซื้อ">
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>หมายเหตุจากจัดซื้อ</label>
+          <textarea class="textarea" id="pr-price-note" placeholder="ข้อมูลเพิ่มเติม เช่น เลือกราคาจากเจ้านี้เพราะ..."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closePrPriceModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="submitPrPrices()" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-check"></i> บันทึกราคา + อนุมัติ PR</button>
       </div>
     </div>
   </div>
@@ -2353,6 +2535,7 @@
   const DOC_TYPES = {
     installment: { label: 'งวดงาน',  icon: 'edit',          cls: 'type-installment', color: '#c8632c' },
     subWithdraw: { label: 'เบิกย่อย', icon: 'cash-banknote', cls: 'type-subwithdraw', color: '#9a6324' },
+    vo:          { label: 'VO งานเพิ่ม', icon: 'plus-equal', cls: 'type-vo',          color: '#0e7c66' },
     purchase:    { label: 'ซื้อของ', icon: 'shopping-cart', cls: 'type-purchase',    color: '#1f5582' },
     fuel:        { label: 'ค่ารถ',   icon: 'gas-station',   cls: 'type-fuel',        color: '#b8740a' },
     pr:          { label: 'PR ขอซื้อ', icon: 'clipboard-list', cls: 'type-pr',         color: '#0e7c66' },
@@ -2624,7 +2807,7 @@
     const now = new Date();
     const ym = `${now.getFullYear().toString().slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
     // Phase 2 prefixes: installment=IN, purchase=PC, fuel=FU, pr=PR, po=PO, subWithdraw=SW
-    const PREFIX_MAP = { installment: 'IN', purchase: 'PC', fuel: 'FU', pr: 'PR', po: 'PO', subWithdraw: 'SW' };
+    const PREFIX_MAP = { installment: 'IN', purchase: 'PC', fuel: 'FU', pr: 'PR', po: 'PO', subWithdraw: 'SW', vo: 'VO' };
     const typePrefix = PREFIX_MAP[type] || 'DOC';
     // Per-project sequence
     const project = projectId ? getProjectById(projectId) : null;
@@ -3163,6 +3346,17 @@
       if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
       // populate dropdown ครั้งแรก ถ้ายังว่าง
       const psel = document.getElementById('sw-project');
+      if (psel && psel.options.length <= 1) {
+        const opts = '<option value="">— เลือกโครงการ —</option>' +
+          projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
+        psel.innerHTML = opts;
+      }
+    }
+    if (tab === 'vo') {
+      const dt = document.getElementById('vo-date');
+      if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
+      // populate project dropdown
+      const psel = document.getElementById('vo-project');
       if (psel && psel.options.length <= 1) {
         const opts = '<option value="">— เลือกโครงการ —</option>' +
           projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
@@ -3856,6 +4050,149 @@
     }
   }
 
+  // ============ VO (VARIATION ORDER) FORM ============
+  let pendingVoFiles = [];
+
+  function onVoProjectChange() {
+    const projectId = document.getElementById('vo-project').value;
+    const cSel = document.getElementById('vo-contractor-sel');
+    const hint = document.getElementById('vo-contractor-hint');
+    if (!projectId) {
+      cSel.innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
+      cSel.disabled = true;
+      if (hint) hint.textContent = '';
+      return;
+    }
+    const contractors = getContractorsInProject(projectId);
+    if (contractors.length === 0) {
+      cSel.innerHTML = '<option value="">— ไม่พบ ผรม. ในโครงการ —</option>';
+      cSel.disabled = true;
+      if (hint) {
+        hint.innerHTML = '<i class="ti ti-alert-triangle" style="color:var(--warning)"></i> โครงการนี้ยังไม่มี ผรม.';
+        hint.style.color = 'var(--warning)';
+      }
+      return;
+    }
+    cSel.disabled = false;
+    cSel.innerHTML = '<option value="">— เลือก ผรม. —</option>' +
+      contractors.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (contractors.length === 1) cSel.value = contractors[0];
+    if (hint) {
+      hint.innerHTML = `<i class="ti ti-info-circle"></i> โครงการนี้มี ${contractors.length} ผรม.`;
+      hint.style.color = 'var(--info)';
+    }
+  }
+
+  async function handleVoFiles(event) {
+    const tmp = pendingFiles;
+    pendingFiles = pendingVoFiles;
+    await handleFiles(event);
+    pendingVoFiles = pendingFiles;
+    pendingFiles = tmp;
+    renderVoFilesPreview();
+  }
+
+  function renderVoFilesPreview() {
+    const el = document.getElementById('vo-files-preview');
+    if (!el) return;
+    el.innerHTML = pendingVoFiles.map((f, i) => {
+      const isImg = f.type.startsWith('image/');
+      return `
+        <div class="file-chip">
+          <div class="file-chip-icon ${isImg ? 'img' : 'pdf'}">
+            <i class="ti ti-${isImg ? 'photo' : 'file-type-pdf'}"></i>
+          </div>
+          <div class="file-chip-info">
+            <div class="file-chip-name">${escapeHtml(f.name || 'file')}</div>
+            <div class="file-chip-size">${fmtSize(f.size)}</div>
+          </div>
+          <button class="file-chip-remove" onclick="removeVoFile(${i})" title="ลบ">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function removeVoFile(idx) {
+    pendingVoFiles.splice(idx, 1);
+    renderVoFilesPreview();
+  }
+
+  function resetVoForm() {
+    ['vo-project','vo-contractor-sel','vo-amount','vo-title','vo-description','vo-reason'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('vo-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('vo-include-contract').checked = false;
+    ['vo-att-quote','vo-att-photo','vo-att-drawing','vo-att-other'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+    document.getElementById('vo-contractor-sel').disabled = true;
+    document.getElementById('vo-contractor-sel').innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
+    document.getElementById('vo-contractor-hint').textContent = '';
+    pendingVoFiles = [];
+    renderVoFilesPreview();
+  }
+
+  async function submitVo() {
+    if (isReadOnlyViewer()) { toast('Executive ดูได้อย่างเดียว', 'error'); return; }
+    if (!currentUser) { toast('กรุณาเข้าสู่ระบบ', 'error'); return; }
+    const projectId = document.getElementById('vo-project').value;
+    if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
+    const proj = getProjectById(projectId);
+    if (!proj) { toast('ไม่พบโครงการ', 'error'); return; }
+    const contractor = document.getElementById('vo-contractor-sel').value;
+    if (!contractor) { toast('กรุณาเลือก ผรม.', 'error'); return; }
+    const title = document.getElementById('vo-title').value.trim();
+    if (!title) { toast('กรุณากรอกหัวข้อ VO', 'error'); return; }
+    const description = document.getElementById('vo-description').value.trim();
+    if (!description) { toast('กรุณากรอกรายละเอียดงาน', 'error'); return; }
+    const amount = Number(document.getElementById('vo-amount').value) || 0;
+    if (amount <= 0) { toast('กรุณากรอกมูลค่า VO', 'error'); return; }
+    const includeInContract = document.getElementById('vo-include-contract').checked;
+    const reason = document.getElementById('vo-reason').value.trim();
+    const voDate = document.getElementById('vo-date').value;
+
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const docObj = {
+      id,
+      type: 'vo',
+      docNo: generateDocNo('vo', projectId),
+      projectId,
+      project: proj.name || '',
+      contractor,
+      voDate,
+      title,
+      description,
+      reason,
+      amount,
+      includeInContract,
+      attachments: {
+        quote: document.getElementById('vo-att-quote').checked,
+        photo: document.getElementById('vo-att-photo').checked,
+        drawing: document.getElementById('vo-att-drawing').checked,
+        other: document.getElementById('vo-att-other').checked
+      },
+      files: pendingVoFiles.slice(),
+      submittedBy: { id: currentUser.id, name: currentUser.name, role: currentUser.role, at: Date.now() },
+      approvals: { pm: null, exec1: null, exec2: null },
+      status: 'pending',
+      createdAt: Date.now()
+    };
+
+    documents.unshift(docObj);
+    const ok = await saveDocs(docObj);
+    if (ok) {
+      toast(`บันทึก VO ${docObj.docNo} สำเร็จ`, 'success');
+      logActivity('doc-create', `สร้าง VO ${docObj.docNo} · ${fmt(amount)} บาท · ${title}`);
+      resetVoForm();
+      switchTab('history');
+    }
+  }
+
   // ============ PURCHASE FORM ============
   function addPurchaseItem(name = '', qty = 1, price = 0) {
     purchaseItems.push({
@@ -3991,27 +4328,26 @@
           <th>รายการ</th>
           <th class="right" style="width:90px">จำนวน</th>
           <th style="width:80px">หน่วย</th>
-          <th class="right" style="width:130px">ราคาประมาณ/หน่วย</th>
-          <th class="right" style="width:120px">รวม</th>
           <th style="width:36px"></th>
         </tr></thead>
         <tbody>
           ${prItems.map(it => {
-            const total = (Number(it.qty) || 0) * (Number(it.est) || 0);
             return `<tr>
-              <td><input type="text" value="${escapeHtml(it.name)}" placeholder="ชื่อสินค้า/spec" oninput="updatePrItem('${it.id}','name',this.value)"></td>
+              <td><input type="text" value="${escapeHtml(it.name)}" placeholder="ชื่อสินค้า / spec / รายละเอียด" oninput="updatePrItem('${it.id}','name',this.value)"></td>
               <td><input type="number" value="${it.qty}" min="0" step="0.01" oninput="updatePrItem('${it.id}','qty',this.value)"></td>
-              <td><input type="text" value="${escapeHtml(it.unit||'')}" placeholder="ชิ้น" oninput="updatePrItem('${it.id}','unit',this.value)"></td>
-              <td><input type="number" value="${it.est}" min="0" step="0.01" oninput="updatePrItem('${it.id}','est',this.value)"></td>
-              <td class="row-total">${fmt(total)}</td>
+              <td><input type="text" value="${escapeHtml(it.unit||'')}" placeholder="ชิ้น/ลัง/เมตร" oninput="updatePrItem('${it.id}','unit',this.value)"></td>
               <td><button class="icon-btn-danger" onclick="removePrItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table>
+      <div style="background:var(--info-soft);color:var(--info);padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;margin-top:8px">
+        <i class="ti ti-info-circle"></i> <strong>ผู้ขอเบิกไม่ต้องกรอกราคา</strong> — จัดซื้อจะเป็นผู้แนบราคาเองตอนรับ PR
+      </div>`;
     calcPrTotal();
   }
   function calcPrTotal() {
+    // Site Eng/PM doesn't enter prices — total comes from Procurement after they fill prices
     const total = prItems.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.est) || 0), 0);
     const el = document.getElementById('pr-total');
     if (el) el.textContent = fmt(total);
@@ -4080,12 +4416,72 @@
     if (!canApprovePR()) { toast('เฉพาะ Procurement', 'error'); return; }
     const d = documents.find(x => x.id === docId);
     if (!d || d.type !== 'pr' || d.status !== 'pending') return;
-    if (!confirm(`อนุมัติ PR ${d.docNo}?`)) return;
+    // NEW FLOW: Open price entry modal — Procurement enters prices, then approves
+    openPrPriceModal(d);
+  }
+  // Procurement enters prices for PR items, then approves
+  let _prPriceTarget = null;
+  function openPrPriceModal(d) {
+    _prPriceTarget = d;
+    const tbody = document.getElementById('pr-price-tbody');
+    tbody.innerHTML = (d.items || []).map((it, i) => `
+      <tr>
+        <td style="padding:6px 8px">${escapeHtml(it.name || '')}</td>
+        <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
+        <td style="padding:6px 8px">${escapeHtml(it.unit || '-')}</td>
+        <td style="padding:6px 8px"><input type="number" id="pr-price-${i}" value="${it.est || ''}" placeholder="0.00" min="0" step="0.01" oninput="updatePrPriceTotal()" style="width:100%;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace"></td>
+        <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500" id="pr-line-${i}">0.00</td>
+      </tr>
+    `).join('');
+    document.getElementById('pr-price-vendor').value = d.suggestedVendor || '';
+    document.getElementById('pr-price-note').value = '';
+    document.getElementById('pr-price-doc-info').innerHTML = `
+      <div style="font-size:12px;color:var(--text-3)">PR ${escapeHtml(d.docNo)} · ${escapeHtml(d.project || '-')}</div>
+      <div style="font-weight:600;margin-top:2px">${escapeHtml(d.title || (d.items && d.items[0] ? d.items[0].name : ''))}</div>
+    `;
+    updatePrPriceTotal();
+    document.getElementById('pr-price-modal').classList.add('show');
+  }
+  function updatePrPriceTotal() {
+    if (!_prPriceTarget) return;
+    let total = 0;
+    (_prPriceTarget.items || []).forEach((it, i) => {
+      const price = Number(document.getElementById(`pr-price-${i}`)?.value) || 0;
+      const line = (Number(it.qty) || 0) * price;
+      total += line;
+      const lineEl = document.getElementById(`pr-line-${i}`);
+      if (lineEl) lineEl.textContent = fmt(line);
+    });
+    document.getElementById('pr-price-grand').textContent = fmt(total);
+  }
+  function closePrPriceModal() {
+    document.getElementById('pr-price-modal').classList.remove('show');
+    _prPriceTarget = null;
+  }
+  async function submitPrPrices() {
+    const d = _prPriceTarget;
+    if (!d) return;
+    // Collect prices and recalculate totals
+    let totalEst = 0;
+    d.items = (d.items || []).map((it, i) => {
+      const price = Number(document.getElementById(`pr-price-${i}`)?.value) || 0;
+      const line = (Number(it.qty) || 0) * price;
+      totalEst += line;
+      return { ...it, est: price, total: line };
+    });
+    d.totalEst = totalEst;
+    d.suggestedVendor = document.getElementById('pr-price-vendor').value.trim() || d.suggestedVendor;
+    const note = document.getElementById('pr-price-note').value.trim();
+    if (note) {
+      d.note = (d.note ? d.note + '\n' : '') + '[จัดซื้อ] ' + note;
+    }
     d.status = 'approved';
     d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
+    d.pricesAddedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
     await saveDocs(d);
-    logActivity('doc-approve', `อนุมัติ ${d.docNo} (PR)`);
-    toast('อนุมัติ PR เรียบร้อย — สามารถสร้าง PO ได้แล้ว', 'success');
+    logActivity('doc-approve', `อนุมัติ ${d.docNo} (PR) · จัดซื้อแนบราคารวม ${fmt(totalEst)} บาท`);
+    toast(`อนุมัติ PR + แนบราคา ${fmt(totalEst)} บาท`, 'success');
+    closePrPriceModal();
     closeModal();
   }
   async function rejectPR(docId) {
@@ -4611,6 +5007,58 @@
     `).join('');
   }
 
+  // Render compact summary of contractors inside the project modal
+  function renderContractorsSummary() {
+    const el = document.getElementById('contractors-summary');
+    if (!el) return;
+    const filled = editingContractors.filter(c => c.name && c.name.trim());
+    if (filled.length === 0) {
+      el.innerHTML = '<span style="color:var(--text-3);font-style:italic">ยังไม่มีผู้รับเหมา — กดปุ่ม "จัดการ ผรม." เพื่อเพิ่ม</span>';
+      return;
+    }
+    el.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">
+        ${filled.map(c => `<span style="background:var(--accent-soft);color:var(--accent-dark);padding:4px 10px;border-radius:99px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user" style="font-size:13px"></i>${escapeHtml(c.name)}${c.phone ? ` · ${escapeHtml(c.phone)}` : ''}</span>`).join('')}
+        <span style="margin-left:auto;color:var(--text-3);font-size:12px">รวม ${filled.length} ผรม.</span>
+      </div>
+    `;
+  }
+
+  // Stash original contractors when opening modal so user can cancel
+  let _contractorsBackup = null;
+  function openContractorsModal() {
+    _contractorsBackup = JSON.parse(JSON.stringify(editingContractors));
+    if (editingContractors.length === 0) addContractor();
+    renderContractorsEditor();
+    document.getElementById('contractors-modal').classList.add('show');
+  }
+  function closeContractorsModal() {
+    // Restore backup (cancel)
+    if (_contractorsBackup) {
+      editingContractors = _contractorsBackup;
+      _contractorsBackup = null;
+    }
+    document.getElementById('contractors-modal').classList.remove('show');
+    renderContractorsSummary();
+    // Re-render period planner to refresh dropdown options
+    renderPlannedPeriodsEditor();
+  }
+  function saveContractorsAndClose() {
+    // Validate: must have at least one with a name
+    const valid = editingContractors.filter(c => c.name && c.name.trim());
+    if (valid.length === 0) {
+      toast('กรุณาเพิ่มผู้รับเหมาอย่างน้อย 1 คน', 'error');
+      return;
+    }
+    // Remove rows without names (cleanup)
+    editingContractors = valid;
+    _contractorsBackup = null; // confirm changes
+    document.getElementById('contractors-modal').classList.remove('show');
+    renderContractorsSummary();
+    renderPlannedPeriodsEditor();
+    toast(`บันทึก ผรม. ${valid.length} คนแล้ว — สามารถสร้างแผนงวดด้านล่างได้`, 'success');
+  }
+
   function addPlannedPeriod() {
     const nextNo = editingPlannedPeriods.length > 0
       ? Math.max(...editingPlannedPeriods.map(x => Number(x.no) || 0)) + 1
@@ -4759,8 +5207,7 @@
     });
     editingPlannedPeriods = [];
     editingContractors = [];
-    addContractor(); // start with one empty contractor row
-    renderContractorsEditor();
+    renderContractorsSummary();
     // Start with one empty row so the user sees the table
     addPlannedPeriod();
     showExistingInstallmentsWarning(null);
@@ -4808,9 +5255,8 @@
       };
       addCt(p.contractor);
       (p.plannedPeriods || []).forEach(pp => addCt(pp.contractor));
-      if (editingContractors.length === 0) addContractor();
     }
-    renderContractorsEditor();
+    renderContractorsSummary();
 
     // Load planned periods (deep copy to avoid mutating original)
     if (Array.isArray(p.plannedPeriods) && p.plannedPeriods.length > 0) {
@@ -4855,6 +5301,12 @@
     // Check duplicate code
     const dup = projects.find(p => p.id !== id && (p.code || '').toUpperCase() === code);
     if (dup) { toast(`รหัส "${code}" ถูกใช้ใน "${dup.name}" แล้ว`, 'error'); return; }
+
+    // === Validate contractors list ===
+    const namedContractors = editingContractors.filter(c => c.name && c.name.trim());
+    if (namedContractors.length === 0) {
+      toast('กรุณาเพิ่มผู้รับเหมาอย่างน้อย 1 คน — กดปุ่ม "จัดการ ผรม."', 'error'); return;
+    }
 
     // === Validate planned periods ===
     if (editingPlannedPeriods.length === 0) {
@@ -5036,7 +5488,7 @@
       }
       return { label: 'PO รอ PM อนุมัติ', cls: 'pill-pending' };
     }
-    // Installment + SubWithdraw — single-step approval (PM only)
+    // Installment + SubWithdraw + VO — single-step approval (PM only)
     if (doc.status === 'rejected') return { label: 'ไม่อนุมัติ', cls: 'pill-rejected' };
     const step = getCurrentStep(doc);
     if (step === 'done') return { label: 'อนุมัติแล้ว · รอจัดซื้อยืนยันโอน', cls: 'pill-approved' };
@@ -5047,8 +5499,8 @@
   function canApprove(doc) {
     if (!currentUser) return false;
     const type = doc.type || 'installment';
-    // installment และ subWithdraw ใช้ workflow approval เดียวกัน
-    if (type !== 'installment' && type !== 'subWithdraw') return false;
+    // installment, subWithdraw, and VO use the same approval workflow
+    if (type !== 'installment' && type !== 'subWithdraw' && type !== 'vo') return false;
     const step = getCurrentStep(doc);
     if (step === -1 || step === 'done') return false;
     // Admin always can approve any step
@@ -5206,6 +5658,18 @@
         const chainHtml = chain.map(c => `<span style="color:var(--text-3)">${c.label}:</span> <strong style="color:var(--text-2);font-weight:500">${escapeHtml(c.name)}</strong>`).join(' <span style="color:var(--text-3)">›</span> ');
         extraInfo = `<span><i class="ti ti-cash-banknote" style="font-size:13px;color:#9a6324"></i> ${escapeHtml(SUB_KIND_LABELS[d.subKind] || d.subKind || '-')} · หักงวด ${d.period || '-'}</span>` +
           (chainHtml ? `<span style="display:block;width:100%;margin-top:4px;font-size:12px;line-height:1.6">${chainHtml}</span>` : '');
+      } else if (type === 'vo') {
+        metaText = d.contractor || '-';
+        const chain = [];
+        if (d.submittedBy) chain.push({ label: 'นำเสนอ', name: d.submittedBy.name });
+        const pm = getApprovalSlot(d, 'pm');
+        if (pm) chain.push({ label: pm.rejected ? 'PM ปฏิเสธ' : 'PM', name: pm.name });
+        const chainHtml = chain.map(c => `<span style="color:var(--text-3)">${c.label}:</span> <strong style="color:var(--text-2);font-weight:500">${escapeHtml(c.name)}</strong>`).join(' <span style="color:var(--text-3)">›</span> ');
+        const accTag = d.includeInContract
+          ? '<span style="color:#0e7c66;font-weight:600">✓ รวมสัญญา</span>'
+          : '<span style="color:#854f0b;font-weight:600">⚪ นอกสัญญา</span>';
+        extraInfo = `<span><i class="ti ti-plus-equal" style="font-size:13px;color:#0e7c66"></i> ${escapeHtml((d.title || '').slice(0, 50))} · ${accTag}</span>` +
+          (chainHtml ? `<span style="display:block;width:100%;margin-top:4px;font-size:12px;line-height:1.6">${chainHtml}</span>` : '');
       } else if (type === 'purchase') {
         metaIcon = 'building-store';
         metaText = d.vendor || '-';
@@ -5249,8 +5713,8 @@
               </div>
             </div>
             <div class="doc-amt">
-              <div class="doc-amt-label">${type === 'installment' ? 'ยอดสุทธิ' : (type === 'subWithdraw' ? 'จำนวนเงิน' : 'ยอดรวม')}</div>
-              <div class="doc-amt-value">${fmt(type === 'pr' ? d.totalEst : (type === 'po' ? d.total : (type === 'subWithdraw' ? d.amount : d.net)))}</div>
+              <div class="doc-amt-label">${type === 'installment' ? 'ยอดสุทธิ' : (type === 'subWithdraw' ? 'จำนวนเงิน' : (type === 'vo' ? 'มูลค่า VO' : 'ยอดรวม'))}</div>
+              <div class="doc-amt-value">${fmt(type === 'pr' ? d.totalEst : (type === 'po' ? d.total : ((type === 'subWithdraw' || type === 'vo') ? d.amount : d.net)))}</div>
               <div style="margin-top:6px"><span class="pill ${status.cls}">${status.label}</span></div>
             </div>
           </div>
@@ -5524,7 +5988,141 @@
     if (type === 'pr') return showPrDetail(d);
     if (type === 'po') return showPoDetail(d);
     if (type === 'subWithdraw') return showSubWithdrawDetail(d);
+    if (type === 'vo') return showVoDetail(d);
     return showInstallmentDetail(d);
+  }
+
+  function showVoDetail(d) {
+    const currStep = getCurrentStep(d);
+    const status = getStatusInfo(d);
+    const myTurn = canApprove(d);
+
+    const APPROVAL_STEPS = [
+      { key: '_submitted', label: 'นำเสนอ' },
+      { key: 'pm', label: 'Project Manager อนุมัติ' }
+    ];
+    const stepsHtml = APPROVAL_STEPS.map((step, i) => {
+      let stepData = null, cls = '', detail = '';
+      if (step.key === '_submitted') {
+        stepData = d.submittedBy;
+        cls = 'done';
+        detail = `${escapeHtml(stepData ? stepData.name : '-')} · ${stepData ? fmtDateTime(stepData.at) : ''}`;
+      } else {
+        stepData = getApprovalSlot(d, step.key);
+        if (stepData) {
+          if (stepData.rejected) { cls = 'rejected'; detail = `<span style="color:var(--danger);font-weight:500">ไม่อนุมัติ</span> · ${escapeHtml(stepData.name)} · ${fmtDateTime(stepData.at)}`; }
+          else { cls = 'done'; detail = `${escapeHtml(stepData.name)} · ${fmtDateTime(stepData.at)}`; }
+        } else if (currStep === step.key && d.status !== 'rejected') {
+          cls = 'current'; detail = 'รอการอนุมัติ';
+        } else {
+          detail = 'ยังไม่ถึงคิว';
+        }
+      }
+      const iconHtml = (cls === 'done') ? '<i class="ti ti-check"></i>' : (cls === 'rejected') ? '<i class="ti ti-x"></i>' : i;
+      return `
+        <div class="step ${cls}">
+          <div class="step-icon">${iconHtml}</div>
+          <div class="step-body">
+            <div class="step-title">${step.label}</div>
+            <div class="step-meta">${detail}</div>
+            ${stepData && stepData.note ? `<div class="step-note">${escapeHtml(stepData.note)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const canPay = currStep === 'done' && !d.paidAt && canConfirmExecTransfer();
+    let actionsHtml = '';
+    actionsHtml += `<button class="btn btn-sm" onclick="exportVoPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>`;
+    if (myTurn) {
+      actionsHtml += `
+        <button class="btn btn-primary" onclick="initiateApproval('${d.id}','${currStep}','approve')"><i class="ti ti-check"></i> อนุมัติ</button>
+        <button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="initiateApproval('${d.id}','${currStep}','reject')"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
+      `;
+    }
+    if (canPay) {
+      actionsHtml += `<button class="btn btn-primary" style="background:var(--success);border-color:var(--success)" onclick="initiateConfirmTransfer('${d.id}')"><i class="ti ti-check"></i> ติ๊กยืนยันโอน</button>`;
+    }
+    if (canDeleteAnything()) {
+      actionsHtml += `<button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>`;
+    }
+
+    const paidInfo = d.paidAt ? `
+      <div class="card" style="background:var(--success-soft);border-color:var(--success)">
+        <div class="card-body" style="font-size:13px">
+          <strong style="color:var(--success)"><i class="ti ti-cash"></i> จ่ายเงินแล้ว</strong>
+          · ${fmtDateTime(d.paidAt)} · ${escapeHtml(d.paidBy ? d.paidBy.name : '-')}
+          ${d.paymentMethod ? ` · วิธี: ${d.paymentMethod === 'transfer' ? 'โอน' : 'เงินสด'}` : ''}
+        </div>
+      </div>` : '';
+
+    const filesHtml = (d.files && d.files.length > 0) ? `
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+        ${d.files.map((f) => {
+          const isImg = (f.type || '').startsWith('image/');
+          return isImg
+            ? `<img src="${f.dataUrl}" class="file-thumb" alt="${escapeHtml(f.name)}" title="${escapeHtml(f.name)}" onclick="openImageViewer('${f.dataUrl}')">`
+            : `<a class="file-pdf-card" onclick="event.preventDefault();openPdf('${f.dataUrl}', '${escapeHtml(f.name).replace(/'/g,"\\'")}')" href="#">
+                <div class="file-chip-icon pdf"><i class="ti ti-file-type-pdf"></i></div>
+                <div><div style="font-weight:500">${escapeHtml(f.name)}</div><div style="font-size:11px;color:var(--text-3)">${fmtSize(f.size)} · เปิดดู PDF</div></div>
+              </a>`;
+        }).join('')}
+      </div>` : '<div style="color:var(--text-3);font-size:13px">(ไม่มีเอกสารแนบ)</div>';
+
+    const attList = [];
+    if (d.attachments) {
+      if (d.attachments.quote) attList.push('ใบเสนอราคา VO');
+      if (d.attachments.photo) attList.push('รูปถ่ายหน้างาน');
+      if (d.attachments.drawing) attList.push('แบบ/แปลน VO');
+      if (d.attachments.other) attList.push('อื่นๆ');
+    }
+
+    document.getElementById('modal-content').innerHTML = `
+      <div class="modal-head" style="background:#d8eee7">
+        <div>
+          <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">
+            <span class="type-badge type-vo"><i class="ti ti-plus-equal"></i> VO งานเพิ่ม</span>
+          </div>
+          <h3 style="font-size:18px;font-weight:600;margin-top:4px">${escapeHtml(d.docNo)}</h3>
+          <span class="pill ${status.cls}" style="margin-top:4px;display:inline-block">${status.label}</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        ${paidInfo}
+        <div class="card">
+          <div class="card-head"><i class="ti ti-info-circle"></i><h3>ข้อมูล VO</h3></div>
+          <table class="money-tbl">
+            <tr><td>โครงการ</td><td>${escapeHtml(d.project || '-')}</td></tr>
+            <tr><td>ผู้รับเหมา</td><td>${escapeHtml(d.contractor || '-')}</td></tr>
+            <tr><td>วันที่</td><td>${d.voDate || '-'}</td></tr>
+            <tr><td>หัวข้องาน VO</td><td><strong>${escapeHtml(d.title || '-')}</strong></td></tr>
+            <tr><td>รายละเอียดงาน</td><td style="white-space:pre-wrap">${escapeHtml(d.description || '-')}</td></tr>
+            ${d.reason ? `<tr><td>เหตุผล</td><td style="white-space:pre-wrap">${escapeHtml(d.reason)}</td></tr>` : ''}
+            <tr><td>รูปแบบบัญชี</td><td>${d.includeInContract
+              ? '<span style="color:var(--success);font-weight:500"><i class="ti ti-check"></i> รวมเข้ามูลค่าสัญญา</span>'
+              : '<span style="color:var(--warning);font-weight:500"><i class="ti ti-asterisk"></i> งานนอกสัญญา (ไม่รวม)</span>'}</td></tr>
+            <tr class="net-row"><td>มูลค่า VO</td><td class="amount-col readonly" style="color:#0e7c66;font-size:18px">${fmt(d.amount || 0)}</td></tr>
+          </table>
+        </div>
+        ${attList.length > 0 ? `
+          <div class="detail-section">
+            <div class="detail-section-title">หมวดเอกสารแนบ</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">${attList.map(a => `<span class="pill pill-info"><i class="ti ti-paperclip"></i> ${a}</span>`).join('')}</div>
+          </div>
+        ` : ''}
+        <div class="card">
+          <div class="card-head"><i class="ti ti-checks"></i><h3>ขั้นตอนการอนุมัติ</h3></div>
+          <div class="card-body">${stepsHtml}</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบ</h3></div>
+          <div class="card-body">${filesHtml}</div>
+        </div>
+        ${actionsHtml ? `<div class="actions" style="justify-content:flex-end">${actionsHtml}</div>` : ''}
+      </div>
+    `;
+    document.getElementById('detail-modal').classList.add('show');
   }
 
   function showSubWithdrawDetail(d) {
@@ -5605,7 +6203,7 @@
         ).join('')}
       </div>` : '<div style="color:var(--text-3);font-size:13px">(ไม่มีเอกสารแนบ)</div>';
 
-    document.getElementById('detail-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head" style="background:#fdf6e9">
         <div>
           <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">เบิกย่อย · หักท้ายงวด</div>
@@ -7170,6 +7768,23 @@
         </tbody>
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.net)})</div>
+      ${(() => {
+        // Show attachment checklist
+        const items = [];
+        if (d.attachments) {
+          if (d.attachments.qc) items.push('QC Checklist');
+          if (d.attachments.photo) items.push('รูปถ่ายความก้าวหน้า');
+          if (d.attachments.bank) items.push('สำเนาบัญชี');
+          if (d.attachments.other) items.push('เอกสารอื่นๆ');
+        }
+        if (items.length === 0) return '';
+        return `<div class="pdf-section" style="margin-bottom:11pt;padding:8pt 10pt;background:#f5f4ee;border-radius:3pt">
+          <div style="font-size:9pt;color:#5c5b54;font-weight:600;margin-bottom:4pt">เอกสารประกอบการเบิกจ่าย</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8pt;font-size:10pt">
+            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:3pt 9pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>`;
+      })()}
       ${pdfSignatures(sigs)}
       ${pdfExecutiveSignatures()}
       ${pdfFooter()}
@@ -7212,6 +7827,21 @@
         </tbody>
       </table>
       <div style="font-size:10px;color:#5c5b54;margin-bottom:6px">(${bahtText(d.net)})</div>
+      ${(() => {
+        const items = [];
+        if (d.attachments) {
+          if (d.attachments.receipt) items.push('ใบเสร็จ/ใบกำกับ');
+          if (d.attachments.slip) items.push('สลิปโอนเงิน');
+          if (d.attachments.photo) items.push('รูปสินค้า');
+        }
+        if (items.length === 0) return '';
+        return `<div style="margin-bottom:11px;padding:8px 10px;background:#f5f4ee;border-radius:3px">
+          <div style="font-size:9pt;color:#5c5b54;font-weight:600;margin-bottom:4pt">เอกสารประกอบ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:10pt">
+            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:3px 9px;border-radius:3px;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>`;
+      })()}
       ${pdfSignatures(sigs)}
       ${pdfExecutiveSignatures()}
       ${pdfFooter()}
@@ -7405,6 +8035,70 @@
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.total || 0)})</div>
       ${d.note ? `<div style="font-size:10pt;margin-bottom:11pt;color:#5c5b54;background:#f5f4ee;padding:8pt 10pt;border-radius:3pt"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+      ${pdfSignatures(sigs)}
+      ${pdfExecutiveSignatures()}
+      ${pdfFooter()}
+      ${pdfAttachmentPages(d)}
+    `;
+    generatePdf(html, `${d.docNo}.pdf`);
+  }
+
+  // NEW: VO (Variation Order) PDF
+  function exportVoPdf(id) {
+    const d = documents.find(x => x.id === id);
+    if (!d) return;
+    const pmSlot = getApprovalSlot(d, 'pm');
+    const sigs = [
+      { label: 'ผู้รับเหมา', name: d.contractor, date: null },
+      { label: 'ผู้ขอ (Site Eng/PM)', name: d.submittedBy ? d.submittedBy.name : '', date: d.submittedBy ? d.submittedBy.at : null },
+      { label: 'Project Manager', name: pmSlot ? pmSlot.name : '', date: pmSlot ? pmSlot.at : null },
+      { label: 'จัดซื้อ (ยืนยันโอน)', name: d.execTransferConfirmedBy ? d.execTransferConfirmedBy.name : '', date: d.execTransferConfirmedAt || null }
+    ];
+    const accountingBadge = d.includeInContract
+      ? '<div style="display:inline-block;background:#d8f0e1;color:#0e7c66;font-size:10pt;font-weight:600;padding:4pt 10pt;border-radius:99pt;margin-bottom:8pt"><i class="ti ti-check" style="vertical-align:-1pt"></i> รวมเข้ามูลค่าสัญญา</div>'
+      : '<div style="display:inline-block;background:#fbeed3;color:#854f0b;font-size:10pt;font-weight:600;padding:4pt 10pt;border-radius:99pt;margin-bottom:8pt"><i class="ti ti-asterisk" style="vertical-align:-1pt"></i> งานนอกสัญญา (ไม่รวมในยอดสัญญา)</div>';
+    const html = `
+      ${pdfHeader('ใบสั่งงานเพิ่ม (VO)', 'VARIATION ORDER', d.docNo)}
+      ${accountingBadge}
+      <table style="width:100%;font-size:10pt;margin-bottom:11pt;border-collapse:collapse">
+        <tr><td style="padding:4pt 0;color:#5c5b54;width:90pt">โครงการ</td><td style="padding:4pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:4pt 0;color:#5c5b54;width:75pt">วันที่</td><td style="padding:4pt 0">${d.voDate || thaiDate(d.createdAt)}</td></tr>
+        <tr><td style="padding:4pt 0;color:#5c5b54">ผู้รับเหมา</td><td colspan="3" style="padding:4pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td></tr>
+      </table>
+      <div class="pdf-section" style="background:#eaf5f0;padding:8pt 10pt;margin-bottom:11pt;border-left:2.5pt solid #0e7c66">
+        <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">หัวข้องาน VO</div>
+        <div style="font-size:12pt;font-weight:600;color:#0e7c66">${escapeHtml(d.title || '-')}</div>
+      </div>
+      <div class="pdf-section" style="background:#f5f4ee;padding:8pt 10pt;margin-bottom:11pt;border-left:2.5pt solid #c8c5b6">
+        <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">รายละเอียดงาน</div>
+        <div style="font-size:10pt;white-space:pre-wrap">${escapeHtml(d.description || '-')}</div>
+      </div>
+      ${d.reason ? `<div class="pdf-section" style="background:#fdf6e9;padding:8pt 10pt;margin-bottom:11pt;border-left:2.5pt solid #9a6324">
+        <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">เหตุผล</div>
+        <div style="font-size:10pt;white-space:pre-wrap">${escapeHtml(d.reason)}</div>
+      </div>` : ''}
+      <table class="pdf-table" style="width:100%;font-size:10pt;border-collapse:collapse;margin-bottom:11pt">
+        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:6pt;text-align:left">รายการ</th><th style="padding:6pt;text-align:right;width:120pt">จำนวนเงิน (บาท)</th></tr></thead>
+        <tbody>
+          <tr style="background:#0e7c66;color:#fff"><td style="padding:8pt;font-weight:600">มูลค่า VO ที่ขอเบิก</td><td style="padding:8pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13pt">${fmt(d.amount || 0)}</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.amount || 0)})</div>
+      ${(() => {
+        const items = [];
+        if (d.attachments) {
+          if (d.attachments.quote) items.push('ใบเสนอราคา VO');
+          if (d.attachments.photo) items.push('รูปถ่ายหน้างาน');
+          if (d.attachments.drawing) items.push('แบบ/แปลน VO');
+          if (d.attachments.other) items.push('เอกสารอื่นๆ');
+        }
+        if (items.length === 0) return '';
+        return `<div style="margin-bottom:11pt;padding:8pt 10pt;background:#f5f4ee;border-radius:3pt">
+          <div style="font-size:9pt;color:#5c5b54;font-weight:600;margin-bottom:4pt">เอกสารประกอบ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8pt;font-size:10pt">
+            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:3pt 9pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>`;
+      })()}
       ${pdfSignatures(sigs)}
       ${pdfExecutiveSignatures()}
       ${pdfFooter()}
@@ -8535,11 +9229,19 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.exportPoPdf = exportPoPdf;
   window.exportProjectSummaryPdf = exportProjectSummaryPdf;
 
-  // Phase 3: Contractor management
+  // Phase 3 Batch 4: Contractors separate modal + PR prices flow
   window.addContractor = addContractor;
   window.removeContractor = removeContractor;
   window.updateContractor = updateContractor;
   window.renderContractorsEditor = renderContractorsEditor;
+  window.renderContractorsSummary = renderContractorsSummary;
+  window.openContractorsModal = openContractorsModal;
+  window.closeContractorsModal = closeContractorsModal;
+  window.saveContractorsAndClose = saveContractorsAndClose;
+  window.openPrPriceModal = openPrPriceModal;
+  window.closePrPriceModal = closePrPriceModal;
+  window.updatePrPriceTotal = updatePrPriceTotal;
+  window.submitPrPrices = submitPrPrices;
 
   // Phase 3: Confirm Transfer
   window.initiateConfirmTransfer = initiateConfirmTransfer;
