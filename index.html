@@ -2130,6 +2130,10 @@
         </div>
         <div class="grid">
           <div class="field">
+            <label>มูลค่าสัญญารวม (บาท)</label>
+            <input type="number" class="input" id="proj-contract-value" placeholder="0" step="0.01" oninput="updatePlannedPeriodsAmounts()">
+          </div>
+          <div class="field">
             <label>จำนวนงวดงาน</label>
             <input type="number" class="input" id="proj-period-total" placeholder="5" min="1" readonly style="background:var(--surface-2);color:var(--text-3)">
             <span class="field-hint">นับอัตโนมัติจากแผนงวดด้านล่าง</span>
@@ -2138,17 +2142,11 @@
             <label>วันที่เริ่ม</label>
             <input type="date" class="input" id="proj-start-date">
           </div>
-          <!-- ผู้รับเหมาหลัก + มูลค่าสัญญารวม ถูกย้ายไปอยู่ที่ PO แต่ละใบแล้ว -->
-          <input type="hidden" id="proj-contractor" value="">
-          <input type="hidden" id="proj-contract-value" value="0">
         </div>
         <div class="field" style="margin-top:14px">
           <label>หมายเหตุ</label>
           <textarea class="textarea" id="proj-note" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
         </div>
-
-        <!-- CONTRACTORS SUMMARY: ซ่อนแล้ว — ผู้รับเหมามาจาก PO แต่ละใบ (PO-only flow) -->
-        <div id="contractors-summary" style="display:none"></div>
 
         <!-- PERIOD PLANNER -->
         <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
@@ -2157,7 +2155,7 @@
               <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
                 <i class="ti ti-list-numbers" style="color:var(--accent)"></i> แผนงวดงาน <span class="req">*</span>
               </div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">ระบุงวด · % · รายละเอียดงาน — ผู้รับเหมามาจาก PO อัตโนมัติ · รวม % ต่อ PO ต้องเท่ากับ 100</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">ระบุงวด · % · รายละเอียดงาน · ผู้รับเหมา — รวม % ต้องเท่ากับ 100</div>
             </div>
           </div>
           <div id="pp-warn-existing" class="pp-warn-existing">
@@ -2193,42 +2191,8 @@
     </div>
   </div>
 
-  <!-- CONTRACTORS MODAL (separate from project modal — better UX) -->
-  <div class="modal-bg" id="contractors-modal" onclick="if(event.target===this)closeContractorsModal()">
-    <div class="modal" onclick="event.stopPropagation()" style="max-width:680px">
-      <div class="modal-head">
-        <div>
-          <h3 style="font-size:16px;font-weight:600"><i class="ti ti-users" style="color:var(--accent);vertical-align:-2px"></i> จัดการผู้รับเหมา</h3>
-          <p style="font-size:12px;color:var(--text-3);margin-top:4px">เพิ่ม/แก้/ลบผู้รับเหมาในโครงการนี้ — กดบันทึกก่อนปิด เพื่อนำไปใช้ในแผนงวด</p>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="closeContractorsModal()"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-body">
-        <div style="background:var(--info-soft);border:1px solid var(--info);color:var(--info);padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;line-height:1.6">
-          <i class="ti ti-info-circle"></i> <strong>ขั้นตอน:</strong> 1) เพิ่ม ผรม. ที่นี่ → 2) กดบันทึก → 3) กลับไปที่หน้าโครงการ → 4) ในแผนงวดงานจะเลือก ผรม. ที่บันทึกไว้
-        </div>
-        <table class="pp-table">
-          <thead>
-            <tr>
-              <th style="min-width:160px">ชื่อ-นามสกุล / บริษัท <span class="req">*</span></th>
-              <th style="width:130px">เบอร์โทร</th>
-              <th>หมายเหตุ</th>
-              <th style="width:36px"></th>
-            </tr>
-          </thead>
-          <tbody id="contractor-tbody"></tbody>
-        </table>
-        <div class="pp-add-row" onclick="addContractor()"><i class="ti ti-user-plus"></i> เพิ่มผู้รับเหมา</div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" onclick="closeContractorsModal()">ยกเลิก (ไม่บันทึก)</button>
-        <button class="btn btn-primary" onclick="saveContractorsAndClose()"><i class="ti ti-device-floppy"></i> บันทึก ผรม.</button>
-      </div>
-    </div>
-  </div>
-
   <!-- PR PRICE ENTRY MODAL (Procurement enters prices when approving PR) -->
-  <div class="modal-bg" id="pr-price-modal" onclick="if(event.target===this)closePrPriceModal()">
+  <div class="modal-bg" id="pr-price-modal" style="z-index:10500" onclick="if(event.target===this)closePrPriceModal()">
     <div class="modal" onclick="event.stopPropagation()" style="max-width:760px">
       <div class="modal-head" style="background:#d8eee7">
         <div>
@@ -2269,6 +2233,26 @@
       <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closePrPriceModal()">ยกเลิก</button>
         <button class="btn btn-primary" onclick="submitPrPrices()" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-check"></i> บันทึกราคา + อนุมัติ PR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMPLE CONFIRM/PROMPT MODAL (replaces native confirm()/prompt() which are blocked in sandboxed environments) -->
+  <div class="modal-bg" id="simple-dialog-modal" style="z-index:10500" onclick="if(event.target===this)closeSimpleDialog()">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:480px">
+      <div class="modal-head">
+        <h3 id="simple-dialog-title" style="font-size:16px;font-weight:600">ยืนยัน</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeSimpleDialog()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="simple-dialog-message" style="font-size:14px;line-height:1.6;color:var(--text);margin-bottom:14px"></div>
+        <div id="simple-dialog-input-wrap" style="display:none">
+          <textarea class="textarea" id="simple-dialog-input" placeholder="" style="min-height:80px"></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeSimpleDialog()">ยกเลิก</button>
+        <button class="btn btn-primary" id="simple-dialog-ok" onclick="confirmSimpleDialog()">ตกลง</button>
       </div>
     </div>
   </div>
@@ -2917,6 +2901,55 @@
     document.body.appendChild(t);
     setTimeout(() => t.remove(), duration);
   }
+
+  // ============ IN-APP CONFIRM / PROMPT (แทน native confirm()/prompt() ที่อาจถูกบล็อกใน sandbox) ============
+  let _simpleDialogConfig = null;
+  function openSimpleConfirm(cfg) {
+    _simpleDialogConfig = { mode: 'confirm', ...cfg };
+    document.getElementById('simple-dialog-title').textContent = cfg.title || 'ยืนยัน';
+    document.getElementById('simple-dialog-message').innerHTML = cfg.message || '';
+    document.getElementById('simple-dialog-input-wrap').style.display = 'none';
+    const okBtn = document.getElementById('simple-dialog-ok');
+    okBtn.className = 'btn ' + (cfg.okClass || 'btn-primary');
+    okBtn.innerHTML = `<i class="ti ti-check"></i> ${escapeHtml(cfg.okLabel || 'ตกลง')}`;
+    document.getElementById('simple-dialog-modal').classList.add('show');
+  }
+  function openSimplePrompt(cfg) {
+    _simpleDialogConfig = { mode: 'prompt', ...cfg };
+    document.getElementById('simple-dialog-title').textContent = cfg.title || 'กรอกข้อมูล';
+    document.getElementById('simple-dialog-message').innerHTML = cfg.message || '';
+    document.getElementById('simple-dialog-input-wrap').style.display = '';
+    const input = document.getElementById('simple-dialog-input');
+    input.value = cfg.defaultValue || '';
+    input.placeholder = cfg.placeholder || '';
+    const okBtn = document.getElementById('simple-dialog-ok');
+    okBtn.className = 'btn ' + (cfg.okClass || 'btn-primary');
+    okBtn.innerHTML = `<i class="ti ti-check"></i> ${escapeHtml(cfg.okLabel || 'ตกลง')}`;
+    document.getElementById('simple-dialog-modal').classList.add('show');
+    setTimeout(() => input.focus(), 50);
+  }
+  function closeSimpleDialog() {
+    document.getElementById('simple-dialog-modal').classList.remove('show');
+    _simpleDialogConfig = null;
+  }
+  async function confirmSimpleDialog() {
+    const cfg = _simpleDialogConfig;
+    if (!cfg || typeof cfg.onOk !== 'function') { closeSimpleDialog(); return; }
+    let result;
+    if (cfg.mode === 'prompt') {
+      const value = document.getElementById('simple-dialog-input').value;
+      result = await cfg.onOk(value);
+    } else {
+      result = await cfg.onOk();
+    }
+    // ถ้า onOk return false → ไม่ปิด dialog (มี validation error)
+    if (result !== false) closeSimpleDialog();
+  }
+  // expose for inline onclicks
+  window.openSimpleConfirm = openSimpleConfirm;
+  window.openSimplePrompt = openSimplePrompt;
+  window.closeSimpleDialog = closeSimpleDialog;
+  window.confirmSimpleDialog = confirmSimpleDialog;
 
   // ============ LOGIN ============
   async function login() {
@@ -4764,69 +4797,30 @@
     if (!canApprovePR()) { toast('เฉพาะ Procurement', 'error'); return; }
     const d = documents.find(x => x.id === docId);
     if (!d || d.type !== 'pr' || d.status !== 'pending') return;
-    // ใช้ modal reject แทน prompt() ที่อาจถูก block ใน embed/iframe
-    openRejectReasonModal(d, 'pr');
-  }
-
-  // ========= Modal-based reject reason (replaces prompt() that some browsers/embed contexts block) =========
-  let _rejectTarget = null;
-  let _rejectKind = null;
-  function openRejectReasonModal(doc, kind) {
-    _rejectTarget = doc;
-    _rejectKind = kind;
-    let host = document.getElementById('reject-reason-modal');
-    if (!host) {
-      host = document.createElement('div');
-      host.id = 'reject-reason-modal';
-      host.className = 'modal-backdrop';
-      host.innerHTML = `
-        <div class="modal" style="max-width:480px">
-          <div class="modal-head">
-            <h3 style="font-size:16px;font-weight:600"><i class="ti ti-x" style="color:var(--danger);vertical-align:-2px"></i> ไม่อนุมัติเอกสาร</h3>
-          </div>
-          <div class="modal-body">
-            <div class="field">
-              <label>เหตุผลที่ไม่อนุมัติ <span class="req">*</span></label>
-              <textarea class="textarea" id="reject-reason-input" placeholder="เช่น ราคาสูงเกินไป / ขาดข้อมูล / ไม่ตรงสเปก" style="min-height:90px"></textarea>
-            </div>
-            <div id="reject-target-info" style="font-size:12px;color:var(--text-3);margin-top:6px"></div>
-          </div>
-          <div class="modal-foot">
-            <button class="btn btn-ghost" onclick="closeRejectReasonModal()">ยกเลิก</button>
-            <button class="btn btn-danger" onclick="confirmRejectReason()"><i class="ti ti-x"></i> ยืนยันไม่อนุมัติ</button>
-          </div>
-        </div>`;
-      document.body.appendChild(host);
-    }
-    document.getElementById('reject-reason-input').value = '';
-    document.getElementById('reject-target-info').textContent = `${(kind || '').toUpperCase()} ${doc.docNo || ''} · ${doc.project || ''}`;
-    host.classList.add('show');
-    setTimeout(() => document.getElementById('reject-reason-input').focus(), 50);
-  }
-  function closeRejectReasonModal() {
-    const host = document.getElementById('reject-reason-modal');
-    if (host) host.classList.remove('show');
-    _rejectTarget = null;
-    _rejectKind = null;
-  }
-  async function confirmRejectReason() {
-    const d = _rejectTarget;
-    const kind = _rejectKind;
-    if (!d) return;
-    const reason = (document.getElementById('reject-reason-input').value || '').trim();
-    if (!reason) { toast('กรุณากรอกเหตุผล', 'error'); return; }
-    try {
-      d.status = 'rejected';
-      d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason };
-      await saveDocs(d);
-      logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (${(kind||'').toUpperCase()}) — ${reason}`);
-      toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
-      closeRejectReasonModal();
-      closeModal();
-    } catch (e) {
-      console.error('confirmRejectReason error:', e);
-      toast('บันทึกไม่สำเร็จ: ' + (e && e.message ? e.message : e), 'error');
-    }
+    // ใช้ modal in-app แทน prompt() (เพราะ prompt() อาจถูกบล็อกใน sandbox/embed)
+    openSimplePrompt({
+      title: 'ไม่อนุมัติ PR',
+      message: `กรอกเหตุผลที่ไม่อนุมัติ PR <strong>${escapeHtml(d.docNo)}</strong>`,
+      placeholder: 'เหตุผลที่ไม่อนุมัติ...',
+      okLabel: 'บันทึกการไม่อนุมัติ',
+      okClass: 'btn-danger',
+      onOk: async (reason) => {
+        if (!reason || !reason.trim()) { toast('กรุณากรอกเหตุผล', 'error'); return false; }
+        try {
+          d.status = 'rejected';
+          d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason: reason.trim() };
+          await saveDocs(d);
+          logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (PR) — ${reason.trim()}`);
+          toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
+          closeModal();
+          return true;
+        } catch (e) {
+          console.error('rejectPR error:', e);
+          toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+          return false;
+        }
+      }
+    });
   }
 
   // ============ PO (PURCHASE ORDER) FORM ============
@@ -5112,25 +5106,55 @@
     const d = documents.find(x => x.id === docId);
     if (!d || d.type !== 'po') { toast('ไม่พบ PO', 'error'); return; }
     if (d.status !== 'pending') { toast(`PO อยู่ในสถานะ ${d.status} ไม่ใช่ pending`, 'info'); return; }
-    // ไม่ใช้ confirm() เพราะบางครั้งถูก block ใน embed/iframe → อนุมัติทันที (มี undo ผ่าน reject ได้)
-    try {
-      d.status = 'approved';
-      d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
-      await saveDocs(d);
-      logActivity('doc-approve', `อนุมัติ ${d.docNo} (PO)`);
-      toast(`อนุมัติ PO ${d.docNo} เรียบร้อย`, 'success');
-      closeModal();
-    } catch (e) {
-      console.error('approvePO error:', e);
-      toast('อนุมัติไม่สำเร็จ: ' + (e && e.message ? e.message : e), 'error');
-    }
+    // ใช้ modal in-app แทน confirm() (เพราะ confirm() อาจถูกบล็อกใน sandbox/embed)
+    openSimpleConfirm({
+      title: 'อนุมัติ PO',
+      message: `ยืนยันการอนุมัติ PO <strong>${escapeHtml(d.docNo)}</strong>?`,
+      okLabel: 'อนุมัติ',
+      okClass: 'btn-success',
+      onOk: async () => {
+        try {
+          d.status = 'approved';
+          d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
+          await saveDocs(d);
+          logActivity('doc-approve', `อนุมัติ ${d.docNo} (PO)`);
+          toast('อนุมัติ PO เรียบร้อย', 'success');
+          closeModal();
+        } catch (e) {
+          console.error('approvePO error:', e);
+          toast('อนุมัติไม่สำเร็จ: ' + e.message, 'error');
+        }
+      }
+    });
   }
   async function rejectPO(docId) {
     if (!canApprovePO()) { toast('เฉพาะ Project Manager', 'error'); return; }
     const d = documents.find(x => x.id === docId);
     if (!d || d.type !== 'po' || d.status !== 'pending') return;
-    // ใช้ modal reject แทน prompt() ที่อาจถูก block
-    openRejectReasonModal(d, 'po');
+    // ใช้ modal in-app แทน prompt() (เพราะ prompt() อาจถูกบล็อกใน sandbox/embed)
+    openSimplePrompt({
+      title: 'ไม่อนุมัติ PO',
+      message: `กรอกเหตุผลที่ไม่อนุมัติ PO <strong>${escapeHtml(d.docNo)}</strong>`,
+      placeholder: 'เหตุผลที่ไม่อนุมัติ...',
+      okLabel: 'บันทึกการไม่อนุมัติ',
+      okClass: 'btn-danger',
+      onOk: async (reason) => {
+        if (!reason || !reason.trim()) { toast('กรุณากรอกเหตุผล', 'error'); return false; }
+        try {
+          d.status = 'rejected';
+          d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason: reason.trim() };
+          await saveDocs(d);
+          logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (PO) — ${reason.trim()}`);
+          toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
+          closeModal();
+          return true;
+        } catch (e) {
+          console.error('rejectPO error:', e);
+          toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+          return false;
+        }
+      }
+    });
   }
 
   // PO Vendor Confirmation (Procurement attaches vendor's response)
@@ -5420,96 +5444,8 @@
   // editingPlannedPeriods is the working draft inside the open project modal.
   // Each item: { no, percent, description, contractor }
   let editingPlannedPeriods = [];
-  // editingContractors: working draft of contractor list for the project.
-  // Each item: { id, name, phone, note }
+  // editingContractors: legacy — kept empty since contractors now come from PO
   let editingContractors = [];
-
-  function addContractor() {
-    editingContractors.push({
-      id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      name: '',
-      phone: '',
-      note: ''
-    });
-    renderContractorsEditor();
-  }
-  function removeContractor(idx) {
-    editingContractors.splice(idx, 1);
-    renderContractorsEditor();
-  }
-  function updateContractor(idx, field, value) {
-    const c = editingContractors[idx];
-    if (!c) return;
-    c[field] = value;
-    // Don't re-render — would lose focus on text input
-  }
-  function renderContractorsEditor() {
-    const tbody = document.getElementById('contractor-tbody');
-    if (!tbody) return;
-    if (editingContractors.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:14px;font-style:italic">ยังไม่มีผู้รับเหมา — กด "เพิ่มผู้รับเหมา" เพื่อเริ่ม</td></tr>';
-      return;
-    }
-    tbody.innerHTML = editingContractors.map((c, i) => `
-      <tr>
-        <td><input type="text" value="${escapeHtml(c.name || '')}" placeholder="ชื่อ-นามสกุล หรือ บริษัท" oninput="updateContractor(${i},'name',this.value)"></td>
-        <td><input type="text" value="${escapeHtml(c.phone || '')}" placeholder="081-xxx-xxxx" oninput="updateContractor(${i},'phone',this.value)"></td>
-        <td><input type="text" value="${escapeHtml(c.note || '')}" placeholder="หมายเหตุ" oninput="updateContractor(${i},'note',this.value)"></td>
-        <td><button class="icon-btn-danger" onclick="removeContractor(${i})" title="ลบ"><i class="ti ti-trash"></i></button></td>
-      </tr>
-    `).join('');
-  }
-
-  // Render compact summary of contractors inside the project modal
-  function renderContractorsSummary() {
-    const el = document.getElementById('contractors-summary');
-    if (!el) return;
-    const filled = editingContractors.filter(c => c.name && c.name.trim());
-    if (filled.length === 0) {
-      el.innerHTML = '<span style="color:var(--text-3);font-style:italic">ยังไม่มีผู้รับเหมา — กดปุ่ม "จัดการ ผรม." เพื่อเพิ่ม</span>';
-      return;
-    }
-    el.innerHTML = `
-      <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">
-        ${filled.map(c => `<span style="background:var(--accent-soft);color:var(--accent-dark);padding:4px 10px;border-radius:99px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px"><i class="ti ti-user" style="font-size:13px"></i>${escapeHtml(c.name)}${c.phone ? ` · ${escapeHtml(c.phone)}` : ''}</span>`).join('')}
-        <span style="margin-left:auto;color:var(--text-3);font-size:12px">รวม ${filled.length} ผรม.</span>
-      </div>
-    `;
-  }
-
-  // Stash original contractors when opening modal so user can cancel
-  let _contractorsBackup = null;
-  function openContractorsModal() {
-    _contractorsBackup = JSON.parse(JSON.stringify(editingContractors));
-    if (editingContractors.length === 0) addContractor();
-    renderContractorsEditor();
-    document.getElementById('contractors-modal').classList.add('show');
-  }
-  function closeContractorsModal() {
-    // Restore backup (cancel)
-    if (_contractorsBackup) {
-      editingContractors = _contractorsBackup;
-      _contractorsBackup = null;
-    }
-    document.getElementById('contractors-modal').classList.remove('show');
-    renderContractorsSummary();
-    // Re-render period planner to refresh dropdown options
-    renderPlannedPeriodsEditor();
-  }
-  function saveContractorsAndClose() {
-    // Keep only rows with names (cleanup empty rows automatically)
-    const valid = editingContractors.filter(c => c.name && c.name.trim());
-    editingContractors = valid;
-    _contractorsBackup = null; // confirm changes
-    document.getElementById('contractors-modal').classList.remove('show');
-    renderContractorsSummary();
-    renderPlannedPeriodsEditor();
-    if (valid.length === 0) {
-      toast('ยังไม่ได้เพิ่ม ผรม. — สามารถเพิ่มได้ภายหลังโดยกด "จัดการ ผรม."', 'info');
-    } else {
-      toast(`บันทึก ผรม. ${valid.length} คนแล้ว`, 'success');
-    }
-  }
 
   function addPlannedPeriod(poId) {
     const nextNo = editingPlannedPeriods.length > 0
@@ -5552,47 +5488,26 @@
     const tbody = document.getElementById('pp-tbody');
     const sumBadge = document.getElementById('pp-sum-badge');
     if (!tbody) return;
+    const contractValue = Number(document.getElementById('proj-contract-value').value) || 0;
     const rows = tbody.querySelectorAll('tr');
-    // map row index → editingPlannedPeriods index (skip group header rows)
-    let amountRowIdx = 0;
-    editingPlannedPeriods.forEach((p) => {
-      // หา row .pp-amount ตามลำดับ
-      let amountCell = null;
-      while (amountRowIdx < rows.length) {
-        amountCell = rows[amountRowIdx].querySelector('.pp-amount');
-        amountRowIdx++;
-        if (amountCell) break;
+    editingPlannedPeriods.forEach((p, i) => {
+      const row = rows[i];
+      if (!row) return;
+      const amountCell = row.querySelector('.pp-amount');
+      if (amountCell) {
+        const amount = contractValue * (Number(p.percent) || 0) / 100;
+        amountCell.textContent = fmt(amount);
       }
-      if (!amountCell) return;
-      // ใช้ poAmount ที่เก็บไว้ตอน addPlannedPeriod (มูลค่าสัญญาของ PO ใบนั้น)
-      const baseAmt = Number(p.poAmount) || 0;
-      const amount = baseAmt * (Number(p.percent) || 0) / 100;
-      amountCell.textContent = fmt(amount);
     });
     if (sumBadge) {
-      // เปลี่ยนจาก "รวม % ของทั้งโครงการ" เป็น "รวม % แยกตาม PO"
-      const groups = {};
-      editingPlannedPeriods.forEach(p => {
-        const k = p.poId || '_legacy';
-        groups[k] = (groups[k] || 0) + (Number(p.percent) || 0);
-      });
-      const groupKeys = Object.keys(groups);
-      if (groupKeys.length === 0) {
-        sumBadge.textContent = 'ยังไม่มีงวด';
-        sumBadge.className = 'period-planner-sum';
-        return;
-      }
-      // หากมีหลาย PO → แสดงสถานะของแต่ละ PO
-      let allOk = true, anyOver = false;
-      groupKeys.forEach(k => {
-        const r = Math.round(groups[k] * 100) / 100;
-        if (Math.abs(r - 100) > 0.01) allOk = false;
-        if (r > 100.01) anyOver = true;
-      });
-      let cls = 'warn', label;
-      if (anyOver) { cls = 'bad'; label = 'มี PO ที่รวม > 100%'; }
-      else if (allOk) { cls = 'ok'; label = `รวม 100% ทุก PO ✓`; }
-      else { cls = 'warn'; label = `ยังรวมไม่ครบ 100% ใน ${groupKeys.length} PO`; }
+      const sum = plannedSum(editingPlannedPeriods);
+      const rounded = Math.round(sum * 100) / 100;
+      let cls = 'warn';
+      let label = `รวม ${rounded}%`;
+      if (Math.abs(rounded - 100) < 0.01) { cls = 'ok'; label = `รวม 100% ✓`; }
+      else if (rounded > 100) { cls = 'bad'; label = `เกิน 100% (${rounded}%)`; }
+      else if (rounded < 100 && editingPlannedPeriods.length > 0) { cls = 'warn'; label = `ขาด ${(100 - rounded).toFixed(2)}% (รวม ${rounded}%)`; }
+      else { label = `รวม 0%`; }
       sumBadge.textContent = label;
       sumBadge.className = 'period-planner-sum ' + cls;
     }
@@ -5732,13 +5647,12 @@
   function showAddProject() {
     if (!canManageProjects()) { toast('เฉพาะ Project Manager เท่านั้น', 'error'); return; }
     document.getElementById('project-modal-title').textContent = 'เพิ่มโครงการ';
-    ['proj-id','proj-name','proj-code','proj-location','proj-contractor','proj-contract-value','proj-period-total','proj-start-date','proj-note'].forEach(id => {
+    ['proj-id','proj-name','proj-code','proj-location','proj-contract-value','proj-period-total','proj-start-date','proj-note'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     editingPlannedPeriods = [];
     editingContractors = [];
-    renderContractorsSummary();
     // Don't auto-add period — user can add later when needed
     renderPlannedPeriodsEditor();
     showExistingInstallmentsWarning(null);
@@ -5755,39 +5669,13 @@
     const codeEl = document.getElementById('proj-code');
     if (codeEl) codeEl.value = p.code || '';
     document.getElementById('proj-location').value = p.location || '';
-    document.getElementById('proj-contractor').value = p.contractor || '';
     document.getElementById('proj-contract-value').value = p.contractValue || '';
     document.getElementById('proj-period-total').value = p.periodTotal || '';
     document.getElementById('proj-start-date').value = p.startDate || '';
     document.getElementById('proj-note').value = p.note || '';
 
-    // Load contractors (or migrate from legacy fields)
-    if (Array.isArray(p.contractors) && p.contractors.length > 0) {
-      editingContractors = p.contractors.map(c => ({
-        id: c.id || ('c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-        name: c.name || '',
-        phone: c.phone || '',
-        note: c.note || ''
-      }));
-    } else {
-      // Migrate: build contractors list from legacy data
-      editingContractors = [];
-      const seen = new Set();
-      const addCt = (name) => {
-        const t = String(name || '').trim();
-        if (!t) return;
-        const k = t.toLowerCase();
-        if (seen.has(k)) return;
-        seen.add(k);
-        editingContractors.push({
-          id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name: t, phone: '', note: ''
-        });
-      };
-      addCt(p.contractor);
-      (p.plannedPeriods || []).forEach(pp => addCt(pp.contractor));
-    }
-    renderContractorsSummary();
+    // Legacy: keep p.contractors data intact so saveProject doesn't wipe it
+    editingContractors = Array.isArray(p.contractors) ? p.contractors.map(c => ({ ...c })) : [];
 
     // Load planned periods (deep copy to avoid mutating original)
     if (Array.isArray(p.plannedPeriods) && p.plannedPeriods.length > 0) {
@@ -5935,7 +5823,7 @@
       name,
       code,
       location: val('proj-location'),
-      contractor: val('proj-contractor'),
+      contractor: existing ? (existing.contractor || '') : '',  // legacy field, preserved if exists
       contractValue: Number(document.getElementById('proj-contract-value').value) || 0,
       periodTotal: planned.length,
       startDate: val('proj-start-date'),
@@ -6330,7 +6218,7 @@
               <div class="project-name">${escapeHtml(p.name)}</div>
               <div class="project-contractor" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 ${p.code ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--accent-soft);color:var(--accent-dark);padding:1px 7px;border-radius:4px;font-weight:600;letter-spacing:0.04em">${escapeHtml(p.code)}</span>` : ''}
-                ${p.location ? `<span style="font-size:12px;color:var(--text-3)"><i class="ti ti-map-pin" style="font-size:13px"></i> ${escapeHtml(p.location)}</span>` : ''}
+                <span><i class="ti ti-user" style="font-size:13px"></i> ${escapeHtml((getContractorsInProject(p.id).join(', ')) || p.contractor || '-')}</span>
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -6466,29 +6354,21 @@
           <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px">
             ${p.location ? `<div><div class="summary-label">สถานที่</div><div style="font-size:14px">${escapeHtml(p.location)}</div></div>` : ''}
             ${(() => {
-              const totalPoValue = documents
-                .filter(d => d.type === 'po' && d.poType === 'contractor' && d.projectId === p.id && d.status === 'approved')
-                .reduce((s, d) => s + (Number(d.total) || 0), 0);
-              return totalPoValue > 0
-                ? `<div><div class="summary-label">มูลค่าสัญญารวม (PO)</div><div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace">${fmt(totalPoValue)}</div></div>`
-                : '';
+              const ctrs = getContractorsInProject(p.id);
+              const display = ctrs.length > 0 ? ctrs.join(', ') : (p.contractor || '');
+              return display ? `<div><div class="summary-label">ผู้รับเหมา</div><div style="font-size:14px;font-weight:500">${escapeHtml(display)}</div></div>` : '';
             })()}
+            ${p.contractValue > 0 ? `<div><div class="summary-label">มูลค่าสัญญา</div><div style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace">${fmt(p.contractValue)}</div></div>` : ''}
           </div>
-          ${(() => {
-            const totalPoValue = documents
-              .filter(d => d.type === 'po' && d.poType === 'contractor' && d.projectId === p.id && d.status === 'approved')
-              .reduce((s, d) => s + (Number(d.total) || 0), 0);
-            if (totalPoValue <= 0) return '';
-            const pct = Math.min(100, (highestTotal / totalPoValue) * 100);
-            return `
-              <div class="project-progress">
-                <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-                <div class="progress-text">
-                  <span>ความคืบหน้า ${pct.toFixed(1)}%</span>
-                  <span>${fmt(highestTotal)} / ${fmt(totalPoValue)}</span>
-                </div>
-              </div>`;
-          })()}
+          ${p.contractValue > 0 ? `
+            <div class="project-progress">
+              <div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+              <div class="progress-text">
+                <span>ความคืบหน้า ${progressPct.toFixed(1)}%</span>
+                <span>${fmt(highestTotal)} / ${fmt(p.contractValue)}</span>
+              </div>
+            </div>
+          ` : ''}
           <div class="project-summary">
             <div class="summary-item"><div class="summary-label">งวดงาน (อนุมัติ)</div><div class="summary-value" style="color:var(--accent)">${fmt(netApproved)}</div></div>
             <div class="summary-item"><div class="summary-label">ซื้อของ</div><div class="summary-value" style="color:var(--info)">${fmt(totalPurchase)}</div></div>
@@ -6515,9 +6395,7 @@
               <tbody>
                 ${p.plannedPeriods.map(pp => {
                   const inst = installmentDocs.find(d => Number(d.period) === Number(pp.no) && d.status !== 'rejected');
-                  // Amount: from PO ที่งวดนี้ผูกอยู่ (poAmount), fallback เป็น 0 ถ้าไม่มี PO
-                  const baseAmt = Number(pp.poAmount) || 0;
-                  const amount = baseAmt * (Number(pp.percent) || 0) / 100;
+                  const amount = (Number(p.contractValue) || 0) * (Number(pp.percent) || 0) / 100;
                   let badge = '<span class="pill pill-draft">ยังไม่เบิก</span>';
                   if (inst) {
                     const step = getCurrentStep(inst);
@@ -8835,6 +8713,8 @@
         <div style="font-size:14px;font-weight:600;margin-top:2px">${escapeHtml(p.name)}</div>
         <div style="font-size:10px;color:#5c5b54;margin-top:6px">
           ${p.location ? `📍 ${escapeHtml(p.location)} · ` : ''}
+          ${p.contractor ? `ผรม. ${escapeHtml(p.contractor)} · ` : ''}
+          ${p.contractValue > 0 ? `มูลค่าสัญญา ${fmt(p.contractValue)} บาท · ` : ''}
           ณ วันที่ ${thaiDate(Date.now())}
         </div>
       </div>
@@ -8892,8 +8772,7 @@
           <tbody>
             ${p.plannedPeriods.map(pp => {
               const inst = installmentDocs.find(d => Number(d.period) === Number(pp.no) && d.status !== 'rejected');
-              const baseAmt = Number(pp.poAmount) || 0;
-              const amount = baseAmt * (Number(pp.percent) || 0) / 100;
+              const amount = (Number(p.contractValue) || 0) * (Number(pp.percent) || 0) / 100;
               let statusLabel = 'ยังไม่เบิก', clr = '#8b8a82';
               if (inst) {
                 const step = getCurrentStep(inst);
@@ -9731,7 +9610,8 @@
         <div class="proj-block">
           <h2>${escapeHtml(p.name)}${p.code ? ` <span style="font-size:11pt;color:#666">(${escapeHtml(p.code)})</span>` : ''}</h2>
           <div class="proj-meta">
-            ${p.location ? `📍 ${escapeHtml(p.location)}` : ''}
+            ${p.contractor ? `ผู้รับเหมา: ${escapeHtml(p.contractor)}` : ''}
+            ${p.contractValue > 0 ? ` · มูลค่าสัญญา: ${fmt(p.contractValue)} บาท` : ''}
           </div>
           <div class="summary-grid">
             <div class="sum-cell" style="background:#d8f0e1"><div class="sum-lbl">รายรับ</div><div class="sum-val" style="color:#2d6a4f">${fmt(income)}</div></div>
@@ -9914,15 +9794,7 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.exportPoPdf = exportPoPdf;
   window.exportProjectSummaryPdf = exportProjectSummaryPdf;
 
-  // Phase 3 Batch 4: Contractors separate modal + PR prices flow
-  window.addContractor = addContractor;
-  window.removeContractor = removeContractor;
-  window.updateContractor = updateContractor;
-  window.renderContractorsEditor = renderContractorsEditor;
-  window.renderContractorsSummary = renderContractorsSummary;
-  window.openContractorsModal = openContractorsModal;
-  window.closeContractorsModal = closeContractorsModal;
-  window.saveContractorsAndClose = saveContractorsAndClose;
+  // Phase 3 Batch 4: PR prices flow
   window.openPrPriceModal = openPrPriceModal;
   window.closePrPriceModal = closePrPriceModal;
   window.updatePrPriceTotal = updatePrPriceTotal;
@@ -9962,11 +9834,6 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   // Phase 2 additions
   window.prefillFromPreviousInstallment = prefillFromPreviousInstallment;
   window.applyTabPermissions = applyTabPermissions;
-
-  // Reject reason modal (replaces blocked prompt())
-  window.openRejectReasonModal = openRejectReasonModal;
-  window.closeRejectReasonModal = closeRejectReasonModal;
-  window.confirmRejectReason = confirmRejectReason;
 
   // === Period planner (project modal + form) ===
   window.addPlannedPeriod = addPlannedPeriod;
