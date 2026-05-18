@@ -1553,10 +1553,9 @@
                 </select>
               </div>
               <div class="field">
-                <label>ผู้รับเหมา (จากโครงการ) <span class="req">*</span></label>
-                <select class="select" id="po-c-contractor" disabled onchange="onPoContractorChange()">
-                  <option value="">— เลือกโครงการก่อน —</option>
-                </select>
+                <label>ผู้รับเหมา <span class="req">*</span></label>
+                <input type="text" class="input" id="po-c-contractor" placeholder="ชื่อ-นามสกุล หรือ บริษัท ผรม." onblur="onPoContractorChange()">
+                <span class="field-hint">พิมพ์ชื่อได้อิสระ — ระบบจะเก็บเข้า ผรม. ของโครงการให้อัตโนมัติ</span>
               </div>
               <div class="field">
                 <label>เบอร์ติดต่อ ผรม.</label>
@@ -4936,31 +4935,24 @@
   }
 
   function onPoContractorProjectChange() {
+    // Free text input — ไม่ต้อง populate dropdown แล้ว
+    // เก็บ function ไว้ตามเดิมเผื่อ HTML onchange ยังเรียก
     const projectId = document.getElementById('po-c-project').value;
-    const cSel = document.getElementById('po-c-contractor');
     if (!projectId) {
-      cSel.innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
-      cSel.disabled = true;
-      return;
+      document.getElementById('po-c-contractor').value = '';
+      document.getElementById('po-c-phone').value = '';
     }
-    const proj = getProjectById(projectId);
-    const contractors = Array.isArray(proj?.contractors) ? proj.contractors : [];
-    if (contractors.length === 0) {
-      cSel.innerHTML = '<option value="">— ไม่พบ ผรม. ในโครงการ —</option>';
-      cSel.disabled = true;
-      toast('โครงการนี้ยังไม่มี ผรม. — กรุณาเพิ่ม ผรม. ในหน้าโครงการก่อน', 'error');
-      return;
-    }
-    cSel.disabled = false;
-    cSel.innerHTML = '<option value="">— เลือก ผรม. —</option>' +
-      contractors.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.phone ? ' · ' + escapeHtml(c.phone) : ''}</option>`).join('');
   }
   function onPoContractorChange() {
+    // Free text input — ไม่ต้อง auto-fill phone จาก dropdown แล้ว
+    // ถ้าชื่อตรงกับ ผรม. ที่เคยบันทึกไว้ในโครงการ → auto-fill phone ให้
     const projectId = document.getElementById('po-c-project').value;
-    const cId = document.getElementById('po-c-contractor').value;
+    const name = (document.getElementById('po-c-contractor').value || '').trim().toLowerCase();
+    if (!projectId || !name) return;
     const proj = getProjectById(projectId);
-    const c = proj?.contractors?.find(x => x.id === cId);
-    if (c) document.getElementById('po-c-phone').value = c.phone || '';
+    const found = (proj?.contractors || []).find(c => (c.name || '').trim().toLowerCase() === name);
+    const phoneEl = document.getElementById('po-c-phone');
+    if (found && phoneEl && !phoneEl.value) phoneEl.value = found.phone || '';
   }
 
   async function submitPo() {
@@ -4974,16 +4966,22 @@
       if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
       const proj = getProjectById(projectId);
       if (!proj) { toast('ไม่พบโครงการ', 'error'); return; }
-      const cId = document.getElementById('po-c-contractor').value;
-      if (!cId) { toast('กรุณาเลือก ผรม.', 'error'); return; }
-      const contractor = proj.contractors?.find(x => x.id === cId);
-      if (!contractor) { toast('ไม่พบ ผรม.', 'error'); return; }
+      const contractorName = document.getElementById('po-c-contractor').value.trim();
+      if (!contractorName) { toast('กรุณากรอกชื่อ ผรม.', 'error'); return; }
       const scope = document.getElementById('po-c-scope').value.trim();
       if (!scope) { toast('กรุณากรอกขอบเขตงาน', 'error'); return; }
       const amount = Number(document.getElementById('po-c-amount').value) || 0;
       if (amount <= 0) { toast('กรุณากรอกมูลค่าสัญญา', 'error'); return; }
-      const phone = document.getElementById('po-c-phone').value.trim() || contractor.phone || '';
+      const phone = document.getElementById('po-c-phone').value.trim();
       if (!val('po-date')) { toast('กรุณาเลือกวันที่', 'error'); return; }
+
+      // หา ผรม. เดิมในโครงการที่ชื่อตรงกัน (case-insensitive) เพื่อ reuse id + phone
+      const existingContractor = (proj.contractors || []).find(
+        c => (c.name || '').trim().toLowerCase() === contractorName.toLowerCase()
+      );
+      const contractorId = existingContractor
+        ? existingContractor.id
+        : ('c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
 
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const docObj = {
@@ -4994,8 +4992,8 @@
         projectId,
         project: proj.name,
         // Contractor info (for Contractor PO)
-        contractorId: contractor.id,
-        contractor: contractor.name,
+        contractorId,
+        contractor: contractorName,
         contractorPhone: phone,
         scope,
         orderDate: val('po-date'),
@@ -5018,7 +5016,14 @@
       documents.unshift(docObj);
       const ok = await saveDocs(docObj);
       if (ok) {
-        toast(`สร้าง PO ${docObj.docNo} (จ้าง ${contractor.name}) — รอ PM อนุมัติ`, 'success');
+        // Sync ผรม. เข้าข้อมูลโครงการ (ถ้ายังไม่มี)
+        await syncContractorToProject(projectId, {
+          id: contractorId,
+          name: contractorName,
+          phone,
+          note: ''
+        });
+        toast(`สร้าง PO ${docObj.docNo} (จ้าง ${contractorName}) — รอ PM อนุมัติ`, 'success');
         resetPoForm();
         switchTab('history');
       }
@@ -5146,6 +5151,10 @@
           d.status = 'rejected';
           d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason: reason.trim() };
           await saveDocs(d);
+          // ถ้าเป็น PO จ้างผรม. → ลบชื่อ ผรม. ออกจากข้อมูลโครงการถ้าไม่มี PO อื่นใช้
+          if (d.poType === 'contractor' && d.projectId && d.contractor) {
+            await removeContractorFromProjectIfUnused(d.projectId, d.contractor, d.id);
+          }
           logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (PO) — ${reason.trim()}`);
           toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
           closeModal();
@@ -5440,6 +5449,67 @@
       toast('ลบโครงการไม่สำเร็จ', 'error');
       return false;
     }
+  }
+
+  // ===== AUTO-SYNC ผรม. <-> โครงการ =====
+  // เรียกเมื่อบันทึก PO contractor — เพิ่มชื่อ ผรม. เข้า project.contractors[] ถ้ายังไม่มี
+  async function syncContractorToProject(projectId, contractor) {
+    const proj = getProjectById(projectId);
+    if (!proj) return;
+    const name = String(contractor.name || '').trim();
+    if (!name) return;
+    const list = Array.isArray(proj.contractors) ? proj.contractors.slice() : [];
+    const existingIdx = list.findIndex(c => (c.name || '').trim().toLowerCase() === name.toLowerCase());
+    if (existingIdx >= 0) {
+      // มีอยู่แล้ว → update phone ถ้าใหม่กว่า
+      if (contractor.phone && !list[existingIdx].phone) {
+        list[existingIdx] = { ...list[existingIdx], phone: contractor.phone };
+        proj.contractors = list;
+        proj.updatedAt = Date.now();
+        await saveProjectToDb(proj);
+      }
+      return;
+    }
+    list.push({
+      id: contractor.id || ('c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      name,
+      phone: contractor.phone || '',
+      note: contractor.note || ''
+    });
+    proj.contractors = list;
+    proj.updatedAt = Date.now();
+    await saveProjectToDb(proj);
+  }
+
+  // เรียกเมื่อ PO ถูกลบ/ไม่อนุมัติ — ลบชื่อ ผรม. ออก ถ้าไม่มี PO อื่นใช้ชื่อนี้แล้ว
+  async function removeContractorFromProjectIfUnused(projectId, contractorName, excludePoId) {
+    const proj = getProjectById(projectId);
+    if (!proj) return;
+    const name = String(contractorName || '').trim();
+    if (!name) return;
+    // ตรวจว่ายังมี PO อื่นในโครงการนี้ที่ใช้ ผรม. ชื่อเดียวกันหรือไม่
+    // นับเฉพาะ PO ที่ status != rejected และไม่ใช่ตัวที่กำลังจะลบ
+    const stillUsed = documents.some(d =>
+      d.type === 'po' &&
+      d.poType === 'contractor' &&
+      d.projectId === projectId &&
+      d.id !== excludePoId &&
+      d.status !== 'rejected' &&
+      (d.contractor || '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (stillUsed) return;
+    // ตรวจว่ามีในแผนงวดงานที่ใช้ชื่อนี้และยังเบิกอยู่ไหม
+    const usedInPlan = (proj.plannedPeriods || []).some(pp =>
+      (pp.contractor || '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (usedInPlan) return;
+    // ลบออกจาก project.contractors[]
+    const list = Array.isArray(proj.contractors) ? proj.contractors : [];
+    const filtered = list.filter(c => (c.name || '').trim().toLowerCase() !== name.toLowerCase());
+    if (filtered.length === list.length) return; // ไม่มีการเปลี่ยนแปลง
+    proj.contractors = filtered;
+    proj.updatedAt = Date.now();
+    await saveProjectToDb(proj);
   }
 
   // ===== PERIOD PLANNER (editor state) =====
@@ -8014,12 +8084,24 @@
 
   async function confirmDelete(id) {
     if (!canDeleteAnything()) { toast('เฉพาะ Admin เท่านั้นที่สามารถลบเอกสารได้', 'error'); return; }
-    if (!confirm('ต้องการลบเอกสารนี้?')) return;
-    const ok = await deleteDocFromDb(id);
-    if (ok) {
-      toast('ลบเรียบร้อย', 'success');
-      closeModal();
-    }
+    const d = documents.find(x => x.id === id);
+    openSimpleConfirm({
+      title: 'ลบเอกสาร',
+      message: 'ยืนยันการลบเอกสารนี้?<br><span style="color:var(--text-3);font-size:12px">การกระทำนี้ไม่สามารถย้อนกลับได้</span>',
+      okLabel: 'ลบ',
+      okClass: 'btn-danger',
+      onOk: async () => {
+        const ok = await deleteDocFromDb(id);
+        if (ok) {
+          // ถ้าเป็น PO จ้างผรม. → ลบชื่อ ผรม. ออกจากข้อมูลโครงการถ้าไม่มี PO อื่นใช้
+          if (d && d.type === 'po' && d.poType === 'contractor' && d.projectId && d.contractor) {
+            await removeContractorFromProjectIfUnused(d.projectId, d.contractor, d.id);
+          }
+          toast('ลบเรียบร้อย', 'success');
+          closeModal();
+        }
+      }
+    });
   }
 
   function closeModal() { document.getElementById('detail-modal').classList.remove('show'); }
