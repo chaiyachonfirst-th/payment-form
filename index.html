@@ -1564,12 +1564,47 @@
               </div>
               <div class="field">
                 <label>มูลค่าสัญญา (บาท) <span class="req">*</span></label>
-                <input type="number" class="input mono" id="po-c-amount" placeholder="0.00" step="0.01" min="0" style="text-align:right;font-size:16px">
+                <input type="number" class="input mono" id="po-c-amount" placeholder="0.00" step="0.01" min="0" style="text-align:right;font-size:16px" oninput="renderPoPlannedPeriods()">
               </div>
             </div>
             <div class="field" style="margin-top:8px">
               <label>ขอบเขตงาน (scope of work) <span class="req">*</span></label>
               <textarea class="textarea" id="po-c-scope" placeholder="ระบุงานที่จะจ้าง ผรม. ทำ เช่น งานโครงสร้าง+สถาปัตยกรรม · ขอบเขต · เงื่อนไข" style="min-height:80px"></textarea>
+            </div>
+
+            <!-- PO PERIOD PLAN -->
+            <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
+                    <i class="ti ti-list-numbers" style="color:#5b3a8a"></i> แผนงวดงาน <span class="req">*</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:2px">ระบุงวด · รายละเอียดงาน · % ของ PO นี้ — รวม % ต้องเท่ากับ 100 · เบิกตามลำดับงวด</div>
+                </div>
+                <button type="button" class="btn btn-sm" onclick="addPoPlannedPeriod()" style="background:#5b3a8a;color:white;border-color:#5b3a8a">
+                  <i class="ti ti-plus"></i> เพิ่มงวด
+                </button>
+              </div>
+              <div class="period-planner">
+                <div class="period-planner-head">
+                  <span class="period-planner-title">รายการงวด</span>
+                  <span class="period-planner-sum" id="po-pp-sum-badge">รวม 0%</span>
+                </div>
+                <table class="pp-table">
+                  <thead>
+                    <tr>
+                      <th style="width:38px;text-align:center">งวด</th>
+                      <th style="min-width:200px">รายละเอียดงาน</th>
+                      <th class="right" style="width:90px">% ของ PO</th>
+                      <th class="right" style="width:130px">มูลค่า (บาท)</th>
+                      <th style="width:36px"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="po-pp-tbody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:18px;font-style:italic">ยังไม่มีงวด — กดปุ่ม "เพิ่มงวด" เพื่อเริ่ม</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -3542,6 +3577,127 @@
     }
   }
 
+  // ============ BILL PO PERIOD ============
+  // State: บอก submitForm ว่าเบิกผ่าน PO flow (เพื่อบันทึก poId + poPeriodNo)
+  let _billingFromPo = null;
+
+  // เปิดฟอร์มเบิกงวด พร้อม auto-fill ข้อมูลจาก PO + งวด ที่ระบุ
+  function billPoPeriod(poId, periodNo) {
+    const po = documents.find(d => d.id === poId);
+    if (!po || po.type !== 'po' || po.poType !== 'contractor') {
+      toast('ไม่พบ PO สัญญาจ้าง', 'error'); return;
+    }
+    if (po.status !== 'approved') {
+      toast('PO ยังไม่ได้รับการอนุมัติ', 'error'); return;
+    }
+    const next = getNextBillablePoPeriod(po);
+    if (!next || next.no !== periodNo) {
+      toast(`ต้องเบิกงวดที่ ${next ? next.no : '?'} ก่อน — บังคับเบิกตามลำดับ`, 'error');
+      return;
+    }
+    const period = (po.plannedPeriods || []).find(p => Number(p.no) === Number(periodNo));
+    if (!period) { toast('ไม่พบงวด', 'error'); return; }
+
+    closeModal();
+    setTimeout(() => {
+      switchTab('main');
+      _billingFromPo = { poId: po.id, periodNo: period.no };
+
+      const projSel = document.getElementById('f-project');
+      if (projSel) {
+        projSel.value = po.projectId || '';
+        onProjectChange();
+      }
+
+      setTimeout(() => {
+        const cSel = document.getElementById('f-contractor-sel');
+        if (cSel) {
+          const hasOption = Array.from(cSel.options).some(o => o.value === po.contractor);
+          if (hasOption) {
+            cSel.value = po.contractor;
+            if (typeof onContractorChange === 'function') onContractorChange();
+          }
+        }
+        document.getElementById('f-contractor').value = po.contractor || '';
+        document.getElementById('f-desc').value = period.description || po.scope || '';
+        document.getElementById('f-contract').value = Number(po.total) || 0;
+
+        const prev = documents
+          .filter(d =>
+            (d.type || 'installment') === 'installment' &&
+            d.poId === po.id &&
+            d.status !== 'rejected' &&
+            Number(d.poPeriodNo) < Number(periodNo)
+          )
+          .reduce((s, d) => s + (Number(d.curr) || 0), 0);
+        document.getElementById('f-prev').value = prev || 0;
+
+        const plannedAmount = (Number(po.total) || 0) * (Number(period.percent) || 0) / 100;
+        document.getElementById('f-curr').value = plannedAmount ? Math.round(plannedAmount * 100) / 100 : '';
+        const periodTotalEl = document.getElementById('f-period-total');
+        if (periodTotalEl) periodTotalEl.value = (po.plannedPeriods || []).length;
+
+        const hintCur = document.getElementById('f-curr-hint');
+        if (hintCur) hintCur.textContent = ` · ตามแผน ${period.percent}% ของ PO ${fmt(po.total)} = ${fmt(plannedAmount)}`;
+
+        const hintPrefill = document.getElementById('f-prefill-hint');
+        if (hintPrefill) {
+          hintPrefill.innerHTML = `<i class="ti ti-link"></i> ผูก PO <strong>${escapeHtml(po.docNo)}</strong> · งวด ${period.no}/${(po.plannedPeriods||[]).length}: ${escapeHtml(period.description)}`;
+        }
+
+        const periodSel = document.getElementById('f-period');
+        if (periodSel) {
+          if (!Array.from(periodSel.options).some(o => Number(o.value) === Number(period.no))) {
+            const opt = document.createElement('option');
+            opt.value = period.no;
+            opt.textContent = `งวด ${period.no} (จาก PO ${po.docNo})`;
+            periodSel.appendChild(opt);
+          }
+          periodSel.value = period.no;
+          periodSel.disabled = false;
+        }
+
+        autoFillUncollectedSubWithdraws(po.projectId, po.contractor);
+
+        if (typeof calc === 'function') calc();
+        toast(`พร้อมเบิก ${po.docNo} งวด ${period.no} — ตรวจข้อมูลแล้วกดส่ง`, 'success');
+      }, 150);
+    }, 100);
+  }
+
+  // หักเบิกย่อย uncollected ของ ผรม. ลงในช่อง f-advance
+  function autoFillUncollectedSubWithdraws(projectId, contractorName) {
+    const { total, items } = sumUncollectedSubWithdraws(projectId, contractorName);
+    const advanceEl = document.getElementById('f-advance');
+    const hintEl = document.getElementById('f-advance-auto-hint');
+    if (!advanceEl) return;
+    if (total > 0) {
+      advanceEl.value = total;
+      if (hintEl) hintEl.textContent = ` · หักเบิกย่อยอัตโนมัติ ${items.length} รายการ`;
+    } else {
+      if (hintEl) hintEl.textContent = '';
+    }
+    renderSubDeductList(items);
+  }
+
+  // Render รายการเบิกย่อยที่จะหัก
+  function renderSubDeductList(items) {
+    const card = document.getElementById('f-sub-deduct-card');
+    const list = document.getElementById('f-sub-deduct-list');
+    if (!card || !list) return;
+    if (!items || items.length === 0) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+    list.innerHTML = items.map(s => `
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border)">
+        <span><i class="ti ti-receipt" style="color:#9a6324"></i> ${escapeHtml(s.docNo)} · ${escapeHtml(s.description || '-')}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:500;color:#9a6324">${fmt(s.amount)}</span>
+      </div>
+    `).join('');
+  }
+
   // ============ FORM SUBMIT ============
   async function submitForm() {
     if (isReadOnlyViewer()) { toast("Executive ดูได้อย่างเดียว ไม่สามารถสร้างเอกสาร", "error"); return; }
@@ -5044,6 +5200,30 @@
       const phone = document.getElementById('po-c-phone').value.trim();
       if (!val('po-date')) { toast('กรุณาเลือกวันที่', 'error'); return; }
 
+      // === Validate planned periods ===
+      const periods = poPlannedPeriods.filter(p => (p.description || '').trim() || Number(p.percent) > 0);
+      if (periods.length === 0) {
+        toast('กรุณาเพิ่มแผนงวดงานอย่างน้อย 1 งวด', 'error'); return;
+      }
+      const missingDesc = periods.find(p => !(p.description || '').trim());
+      if (missingDesc) {
+        toast(`งวดที่ ${missingDesc.no}: กรุณากรอกรายละเอียดงาน`, 'error'); return;
+      }
+      const totalPercent = periods.reduce((s, p) => s + (Number(p.percent) || 0), 0);
+      if (Math.abs(totalPercent - 100) > 0.01) {
+        toast(`% แผนงวดต้องรวม 100% (ตอนนี้ ${totalPercent.toFixed(2)}%)`, 'error'); return;
+      }
+      // Normalize period numbers + amounts
+      const normalizedPeriods = periods.map((p, i) => ({
+        no: i + 1,
+        description: String(p.description || '').trim(),
+        percent: Number(p.percent) || 0,
+        amount: amount * (Number(p.percent) || 0) / 100,
+        billed: false,
+        billedAt: null,
+        installmentId: null
+      }));
+
       // หา ผรม. เดิมในโครงการที่ชื่อตรงกัน (case-insensitive) เพื่อ reuse id + phone
       const existingContractor = (proj.contractors || []).find(
         c => (c.name || '').trim().toLowerCase() === contractorName.toLowerCase()
@@ -5071,6 +5251,8 @@
         // No items — single amount
         items: [],
         total: amount,
+        // NEW: planned periods embedded in PO
+        plannedPeriods: normalizedPeriods,
         note: val('po-note'),
         files: pendingFiles.slice(),
         submittedBy: { id: currentUser.id, name: currentUser.name, role: currentUser.role, at: Date.now() },
@@ -5165,10 +5347,13 @@
     document.getElementById('po-pr-summary').style.display = 'none';
     const projSel = document.getElementById('po-c-project');
     if (projSel) projSel.value = '';
-    const cSel = document.getElementById('po-c-contractor');
-    if (cSel) { cSel.value = ''; cSel.disabled = true; cSel.innerHTML = '<option value="">— เลือกโครงการก่อน —</option>'; }
+    const cInput = document.getElementById('po-c-contractor');
+    if (cInput) cInput.value = '';
     poItems = [];
     addPoItem();
+    // Reset PO planned periods
+    poPlannedPeriods = [];
+    renderPoPlannedPeriods();
     pendingFiles = [];
     renderFilesPreview();
     // Default to contractor mode (since that's the primary use)
@@ -5176,6 +5361,88 @@
     if (radio) radio.checked = true;
     onPoTypeChange();
   }
+
+  // ========================================================================
+  // PO PLANNED PERIODS (แผนงวดงานภายใต้ PO contractor)
+  // ========================================================================
+  let poPlannedPeriods = [];
+
+  function addPoPlannedPeriod() {
+    const nextNo = poPlannedPeriods.length + 1;
+    poPlannedPeriods.push({ no: nextNo, description: '', percent: 0 });
+    renderPoPlannedPeriods();
+  }
+
+  function removePoPlannedPeriod(idx) {
+    poPlannedPeriods.splice(idx, 1);
+    poPlannedPeriods.forEach((p, i) => { p.no = i + 1; });
+    renderPoPlannedPeriods();
+  }
+
+  function updatePoPlannedPeriod(idx, field, value) {
+    const it = poPlannedPeriods[idx];
+    if (!it) return;
+    if (field === 'percent') {
+      it.percent = Number(value) || 0;
+      updatePoPlannedPeriodAmounts();
+    } else {
+      it[field] = value;
+    }
+  }
+
+  function updatePoPlannedPeriodAmounts() {
+    const tbody = document.getElementById('po-pp-tbody');
+    const sumBadge = document.getElementById('po-pp-sum-badge');
+    if (!tbody) return;
+    const poTotal = Number(document.getElementById('po-c-amount')?.value) || 0;
+    const rows = tbody.querySelectorAll('tr[data-pp-row]');
+    poPlannedPeriods.forEach((p, i) => {
+      const row = rows[i];
+      if (!row) return;
+      const amountCell = row.querySelector('.pp-amount');
+      if (amountCell) {
+        const amount = poTotal * (Number(p.percent) || 0) / 100;
+        amountCell.textContent = fmt(amount);
+      }
+    });
+    if (sumBadge) {
+      const sum = poPlannedPeriods.reduce((s, p) => s + (Number(p.percent) || 0), 0);
+      const rounded = Math.round(sum * 100) / 100;
+      let cls = 'warn', label = `รวม ${rounded}%`;
+      if (Math.abs(rounded - 100) < 0.01) { cls = 'ok'; label = `รวม 100% ✓`; }
+      else if (rounded > 100) { cls = 'bad'; label = `เกิน 100% (${rounded}%)`; }
+      else if (rounded < 100 && poPlannedPeriods.length > 0) { cls = 'warn'; label = `ขาด ${(100 - rounded).toFixed(2)}% (รวม ${rounded}%)`; }
+      else { label = `รวม 0%`; }
+      sumBadge.textContent = label;
+      sumBadge.className = 'period-planner-sum ' + cls;
+    }
+  }
+
+  function renderPoPlannedPeriods() {
+    const tbody = document.getElementById('po-pp-tbody');
+    if (!tbody) return;
+    if (poPlannedPeriods.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:18px;font-style:italic">ยังไม่มีงวด — กดปุ่ม "เพิ่มงวด" เพื่อเริ่ม</td></tr>';
+      const sumBadge = document.getElementById('po-pp-sum-badge');
+      if (sumBadge) { sumBadge.textContent = 'รวม 0%'; sumBadge.className = 'period-planner-sum warn'; }
+      return;
+    }
+    const poTotal = Number(document.getElementById('po-c-amount')?.value) || 0;
+    tbody.innerHTML = poPlannedPeriods.map((p, i) => {
+      const amount = poTotal * (Number(p.percent) || 0) / 100;
+      return `<tr data-pp-row>
+        <td class="pp-no">${p.no}</td>
+        <td><input type="text" value="${escapeHtml(p.description || '')}" placeholder="เช่น งานฐานราก" oninput="updatePoPlannedPeriod(${i},'description',this.value)"></td>
+        <td><input type="number" value="${p.percent || ''}" min="0" max="100" step="0.01" placeholder="0" oninput="updatePoPlannedPeriod(${i},'percent',this.value)"></td>
+        <td class="pp-amount">${fmt(amount)}</td>
+        <td><button class="icon-btn-danger" onclick="removePoPlannedPeriod(${i})" title="ลบงวด"><i class="ti ti-trash"></i></button></td>
+      </tr>`;
+    }).join('');
+    updatePoPlannedPeriodAmounts();
+  }
+
+  // Recalc amounts when "po-c-amount" changes — bind via inline oninput
+  function _onPoAmountInput() { renderPoPlannedPeriods(); }
 
   // PO Approval (by PM)
   async function approvePO(docId) {
@@ -7526,6 +7793,119 @@
         </div>
       </div>
     `;
+  }
+
+  // ============ PO PERIOD STATE HELPERS ============
+  // หา installment ของงวด PO นี้ — installment ต้องมี poId + poPeriodNo ผูกไว้
+  function getInstallmentForPoPeriod(poId, periodNo) {
+    return documents.find(d =>
+      (d.type || 'installment') === 'installment' &&
+      d.poId === poId &&
+      Number(d.poPeriodNo) === Number(periodNo) &&
+      d.status !== 'rejected'
+    );
+  }
+
+  // หางวดถัดไปที่เบิกได้ของ PO (งวดแรกที่ยังไม่มี installment)
+  function getNextBillablePoPeriod(po) {
+    if (!po || !Array.isArray(po.plannedPeriods)) return null;
+    for (const p of po.plannedPeriods) {
+      const inst = getInstallmentForPoPeriod(po.id, p.no);
+      if (!inst) return p;
+    }
+    return null;
+  }
+
+  // รวมยอดเบิกย่อยของ ผรม. ที่ approved+paid แต่ยังไม่ collected
+  function sumUncollectedSubWithdraws(projectId, contractorName) {
+    const cKey = String(contractorName || '').trim().toLowerCase();
+    const items = documents.filter(d =>
+      d.type === 'subWithdraw' &&
+      d.projectId === projectId &&
+      String(d.contractor || '').trim().toLowerCase() === cKey &&
+      d.status !== 'rejected' &&
+      getCurrentStep(d) === 'done' &&
+      d.paidAt &&
+      !d.collectedAt
+    );
+    return {
+      total: items.reduce((s, x) => s + (Number(x.amount) || 0), 0),
+      items
+    };
+  }
+
+  // Render section "แผนงวดงาน" ใน PO detail modal (เฉพาะ contractor PO)
+  function renderPoPlannedPeriodsSection(po) {
+    if (!po || po.poType !== 'contractor') return '';
+    const periods = Array.isArray(po.plannedPeriods) ? po.plannedPeriods : [];
+    if (periods.length === 0) {
+      return `<div class="detail-section">
+        <div class="detail-section-title">แผนงวดงาน</div>
+        <div style="color:var(--text-3);font-style:italic">ยังไม่มีแผนงวด</div>
+      </div>`;
+    }
+    const isApproved = po.status === 'approved';
+    const nextBillable = isApproved ? getNextBillablePoPeriod(po) : null;
+    const uncollected = isApproved ? sumUncollectedSubWithdraws(po.projectId, po.contractor) : { total: 0, items: [] };
+
+    const rows = periods.map(p => {
+      const inst = getInstallmentForPoPeriod(po.id, p.no);
+      const isNext = nextBillable && nextBillable.no === p.no;
+      let statusHtml, actionHtml;
+
+      if (inst) {
+        const paidStr = inst.paidAt
+          ? ` · จ่ายแล้ว ${fmtDate(inst.paidAt)}`
+          : (getCurrentStep(inst) === 'done' ? ' · อนุมัติแล้ว · รอจ่าย' : ' · กำลังดำเนินการ');
+        statusHtml = `<span style="color:var(--success);font-weight:600"><i class="ti ti-check"></i> เบิกแล้ว</span> ${escapeHtml(inst.docNo)}${paidStr}`;
+        actionHtml = `<button class="btn btn-ghost btn-sm" onclick="closeModal();setTimeout(()=>showDetail('${inst.id}'),100)"><i class="ti ti-eye"></i> ดูใบเบิก</button>`;
+      } else if (isNext && isApproved) {
+        const deductHtml = uncollected.total > 0
+          ? `<div style="font-size:12px;color:#9a6324;margin-top:4px"><i class="ti ti-info-circle"></i> หักเบิกย่อย ${fmt(uncollected.total)} · สุทธิ ${fmt((p.amount || 0) - uncollected.total)}</div>`
+          : '';
+        statusHtml = `<span style="color:var(--warning);font-weight:600"><i class="ti ti-arrow-right"></i> พร้อมเบิก</span>${deductHtml}`;
+        actionHtml = `<button class="btn btn-primary btn-sm" onclick="billPoPeriod('${po.id}', ${p.no})" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-cash"></i> เบิกงวดนี้</button>`;
+      } else if (isApproved) {
+        statusHtml = `<span style="color:var(--text-3)"><i class="ti ti-clock-pause"></i> รองวดก่อนหน้า</span>`;
+        actionHtml = '';
+      } else {
+        statusHtml = `<span style="color:var(--text-3)">รอ PM อนุมัติ PO</span>`;
+        actionHtml = '';
+      }
+
+      return `<tr>
+        <td style="text-align:center;font-weight:600;color:#5b3a8a">${p.no}</td>
+        <td>${escapeHtml(p.description || '-')}</td>
+        <td style="text-align:right">${(Number(p.percent) || 0).toFixed(1)}%</td>
+        <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500">${fmt(p.amount || (po.total * (Number(p.percent) || 0) / 100))}</td>
+        <td>${statusHtml}</td>
+        <td style="text-align:right">${actionHtml}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="detail-section">
+      <div class="detail-section-title">แผนงวดงาน (${periods.length} งวด)</div>
+      <table class="items-tbl">
+        <thead>
+          <tr>
+            <th style="width:40px;text-align:center">งวด</th>
+            <th>รายละเอียด</th>
+            <th class="right" style="width:70px">%</th>
+            <th class="right" style="width:110px">มูลค่า</th>
+            <th style="min-width:160px">สถานะ</th>
+            <th style="width:140px;text-align:right">การดำเนินการ</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${uncollected.total > 0 && isApproved ? `
+        <div style="margin-top:10px;padding:10px;background:#fdf6e9;border-left:3px solid #b8740a;border-radius:var(--radius-sm);font-size:13px">
+          <i class="ti ti-cash-banknote" style="color:#9a6324"></i>
+          <strong>เบิกย่อยรอหัก:</strong> ${uncollected.items.length} รายการ · รวม <strong>${fmt(uncollected.total)} บาท</strong>
+          <div style="font-size:12px;color:var(--text-3);margin-top:4px">จะถูกหักอัตโนมัติเมื่อเบิกงวดถัดไป</div>
+        </div>
+      ` : ''}
+    </div>`;
   }
 
   function renderPaymentInfo(d) {
@@ -10154,6 +10534,12 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.approvePO = approvePO;
   window.rejectPO = rejectPO;
   window.confirmPoVendorDoc = confirmPoVendorDoc;
+  // PO planned periods (in-PO)
+  window.addPoPlannedPeriod = addPoPlannedPeriod;
+  window.removePoPlannedPeriod = removePoPlannedPeriod;
+  window.updatePoPlannedPeriod = updatePoPlannedPeriod;
+  window.renderPoPlannedPeriods = renderPoPlannedPeriods;
+  window.updatePoPlannedPeriodAmounts = updatePoPlannedPeriodAmounts;
 
   // Phase 2 Batch 3: Pocket Money + Overview
   window.showPocketSpend = showPocketSpend;
