@@ -5107,28 +5107,27 @@
   async function approvePO(docId) {
     if (!canApprovePO()) { toast('เฉพาะ Project Manager', 'error'); return; }
     const d = documents.find(x => x.id === docId);
-    if (!d || d.type !== 'po') { toast('ไม่พบ PO', 'error'); return; }
+    if (!d) { toast('ไม่พบ PO', 'error'); return; }
+    if (d.type !== 'po') { toast('เอกสารไม่ใช่ PO', 'error'); return; }
     if (d.status !== 'pending') { toast(`PO อยู่ในสถานะ ${d.status} ไม่ใช่ pending`, 'info'); return; }
-    // ใช้ modal in-app แทน confirm() (เพราะ confirm() อาจถูกบล็อกใน sandbox/embed)
-    openSimpleConfirm({
-      title: 'อนุมัติ PO',
-      message: `ยืนยันการอนุมัติ PO <strong>${escapeHtml(d.docNo)}</strong>?`,
-      okLabel: 'อนุมัติ',
-      okClass: 'btn-success',
-      onOk: async () => {
-        try {
-          d.status = 'approved';
-          d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
-          await saveDocs(d);
-          logActivity('doc-approve', `อนุมัติ ${d.docNo} (PO)`);
-          toast('อนุมัติ PO เรียบร้อย', 'success');
-          closeModal();
-        } catch (e) {
-          console.error('approvePO error:', e);
-          toast('อนุมัติไม่สำเร็จ: ' + e.message, 'error');
-        }
+    // อนุมัติทันที (การกดปุ่มถือเป็น explicit action แล้ว — ไม่ต้องยืนยันซ้ำ)
+    try {
+      d.status = 'approved';
+      d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
+      const ok = await saveDocs(d);
+      if (!ok) {
+        // saveDocs already shows error toast — revert local state
+        d.status = 'pending';
+        delete d.approvedBy;
+        return;
       }
-    });
+      logActivity('doc-approve', `อนุมัติ ${d.docNo} (PO)`);
+      toast(`อนุมัติ PO ${d.docNo} เรียบร้อย`, 'success');
+      closeModal();
+    } catch (e) {
+      console.error('approvePO error:', e);
+      toast('อนุมัติไม่สำเร็จ: ' + e.message, 'error');
+    }
   }
   async function rejectPO(docId) {
     if (!canApprovePO()) { toast('เฉพาะ Project Manager', 'error'); return; }
@@ -7029,7 +7028,7 @@
     const canMakePo = canCreatePO() && d.status === 'approved' && !d.poDocId;
     const linkedPo = d.poDocId ? documents.find(x => x.id === d.poDocId) : null;
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-clipboard-list" style="color:#0e7c66"></i> รายละเอียด PR <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
@@ -7126,7 +7125,7 @@
           </a>`;
     }).join('');
 
-    document.getElementById('detail-modal-content').innerHTML = `
+    document.getElementById('modal-content').innerHTML = `
       <div class="modal-head">
         <h3><i class="ti ti-truck-delivery" style="color:#5b3a8a"></i> รายละเอียด PO <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
         <span class="pill ${status.cls}">${status.label}</span>
