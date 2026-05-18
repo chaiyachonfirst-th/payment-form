@@ -810,6 +810,11 @@
 
     <!-- FORM PAGE -->
     <div class="page active" id="page-form">
+      <div style="background:#f4f0fa;border-left:3px solid #5b3a8a;padding:12px 14px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:13px;line-height:1.6">
+        <i class="ti ti-info-circle" style="color:#5b3a8a"></i>
+        <strong>วิธีการเบิกงวด:</strong> ไปที่เมนู "PO สั่งซื้อ" → เลือก PO สัญญาจ้างที่อนุมัติแล้ว → กดปุ่ม <strong>"เบิกงวดนี้"</strong> ในงวดที่ต้องการ
+        <div style="font-size:12px;color:var(--text-3);margin-top:4px">ระบบจะเปิดฟอร์มนี้พร้อมข้อมูลครบ — คุณแค่ตรวจและกดส่ง · เบิกตามลำดับงวด 1 → 2 → 3</div>
+      </div>
       <div class="card">
         <div class="card-head"><i class="ti ti-building"></i><h3>ข้อมูลโครงการ</h3></div>
         <div class="card-body">
@@ -945,13 +950,7 @@
               <select class="select" id="sw-contractor-sel" onchange="onSubContractorChange()" disabled>
                 <option value="">— เลือกโครงการก่อน —</option>
               </select>
-            </div>
-            <div class="field">
-              <label>หักเข้างวดงานที่ <span class="req">*</span></label>
-              <select class="select" id="sw-period" disabled>
-                <option value="">— เลือก ผรม. ก่อน —</option>
-              </select>
-              <span class="field-hint" id="sw-period-hint" style="color:var(--text-3)"></span>
+              <span class="field-hint" id="sw-po-hint" style="color:var(--text-3)"></span>
             </div>
             <div class="field">
               <label>ประเภทการเบิก <span class="req">*</span></label>
@@ -966,6 +965,8 @@
               <label>วันที่ขอเบิก</label>
               <input type="date" class="input" id="sw-date">
             </div>
+            <!-- Hidden: keep for backward compat with onSubContractorChange/calc -->
+            <input type="hidden" id="sw-period" value="">
           </div>
         </div>
       </div>
@@ -2129,59 +2130,41 @@
         </div>
         <div class="grid">
           <div class="field">
-            <label>มูลค่าสัญญารวม (บาท)</label>
-            <input type="number" class="input" id="proj-contract-value" placeholder="0" step="0.01" oninput="updatePlannedPeriodsAmounts()">
-          </div>
-          <div class="field">
-            <label>จำนวนงวดงาน</label>
-            <input type="number" class="input" id="proj-period-total" placeholder="5" min="1" readonly style="background:var(--surface-2);color:var(--text-3)">
-            <span class="field-hint">นับอัตโนมัติจากแผนงวดด้านล่าง</span>
+            <label>มูลค่าสัญญารวม (บาท) <span style="color:var(--text-3);font-weight:400;font-size:11px">· auto จาก PO อนุมัติ</span></label>
+            <input type="number" class="input mono" id="proj-contract-value" placeholder="0" step="0.01" readonly style="background:var(--surface-2);color:var(--text-2);text-align:right;font-weight:600">
+            <span class="field-hint" id="proj-contract-value-hint" style="color:var(--text-3)">ระบบรวมจาก PO สัญญาจ้าง (status=approved) ทุกใบในโครงการ</span>
           </div>
           <div class="field">
             <label>วันที่เริ่ม</label>
             <input type="date" class="input" id="proj-start-date">
           </div>
+          <!-- Hidden — kept for backward compat -->
+          <input type="hidden" id="proj-period-total" value="">
         </div>
         <div class="field" style="margin-top:14px">
           <label>หมายเหตุ</label>
           <textarea class="textarea" id="proj-note" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
         </div>
 
-        <!-- PERIOD PLANNER -->
-        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;flex-wrap:wrap">
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
-                <i class="ti ti-list-numbers" style="color:var(--accent)"></i> แผนงวดงาน <span class="req">*</span>
-              </div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">ระบุงวด · % · รายละเอียดงาน · ผู้รับเหมา — รวม % ต้องเท่ากับ 100</div>
-            </div>
+        <!-- INFO: PO-based flow -->
+        <div style="margin-top:18px;padding:14px;background:#f4f0fa;border-left:3px solid #5b3a8a;border-radius:var(--radius-sm)">
+          <div style="font-size:13px;font-weight:600;color:#5b3a8a;display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <i class="ti ti-info-circle"></i> แผนงวดงานอยู่ใน PO แล้ว
           </div>
-          <div id="pp-warn-existing" class="pp-warn-existing">
-            <strong><i class="ti ti-alert-triangle"></i> โครงการนี้มีงวดที่เบิกไปแล้ว</strong>
-            <div id="pp-warn-existing-detail" style="margin-top:4px"></div>
-            การแก้ไขแผนงวดจะถูกบันทึก audit log
-          </div>
-          <div class="period-planner">
-            <div class="period-planner-head">
-              <span class="period-planner-title">รายการงวด</span>
-              <span class="period-planner-sum" id="pp-sum-badge">รวม 0%</span>
-            </div>
-            <table class="pp-table">
-              <thead>
-                <tr>
-                  <th style="width:38px;text-align:center">งวด</th>
-                  <th style="min-width:140px">รายละเอียดงาน</th>
-                  <th style="min-width:130px">ผู้รับเหมา (จาก PO)</th>
-                  <th class="right" style="width:80px">% ใน PO</th>
-                  <th class="right" style="width:110px">มูลค่า</th>
-                  <th style="width:36px"></th>
-                </tr>
-              </thead>
-              <tbody id="pp-tbody"></tbody>
-            </table>
+          <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+            ตั้งแต่เวอร์ชันใหม่ — แผนงวดงานถูกย้ายไปอยู่ใน <strong>PO สัญญาจ้างผู้รับเหมา</strong> โดยตรง<br>
+            สร้าง PO ใหม่ที่เมนู "PO สั่งซื้อ" → เลือกแบบ "จ้าง ผรม." → ระบบจะให้กรอกแผนงวดในใบ PO เลย
           </div>
         </div>
+
+        <!-- LEGACY: hidden audit warning kept for old data -->
+        <div id="pp-warn-existing" class="pp-warn-existing" style="display:none">
+          <strong><i class="ti ti-alert-triangle"></i> โครงการนี้มีงวดที่เบิกไปแล้ว</strong>
+          <div id="pp-warn-existing-detail" style="margin-top:4px"></div>
+        </div>
+        <!-- Hidden tbody — kept so existing JS doesn't crash on getElementById -->
+        <table style="display:none"><tbody id="pp-tbody"></tbody></table>
+        <span id="pp-sum-badge" style="display:none"></span>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button>
@@ -3565,24 +3548,48 @@
     const projectId = val('f-project');
     if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
     const proj = getProjectById(projectId);
-    if (!proj || !Array.isArray(proj.plannedPeriods) || proj.plannedPeriods.length === 0) {
-      toast('โครงการนี้ยังไม่มีแผนงวด — กรุณาแก้โครงการเพื่อเพิ่มแผนงวดก่อน', 'error');
-      return;
-    }
-    const periodNo = Number(document.getElementById('f-period').value) || 0;
-    if (!periodNo) { toast('กรุณาเลือกงวดงาน', 'error'); return; }
-    const pp = proj.plannedPeriods.find(p => Number(p.no) === periodNo);
-    if (!pp) { toast('งวดที่เลือกไม่ตรงกับแผนของโครงการ', 'error'); return; }
-    // Block duplicate billing of the same period (if not rejected)
-    const dupBilled = documents.find(d =>
-      d.projectId === projectId &&
-      (d.type || 'installment') === 'installment' &&
-      Number(d.period) === periodNo &&
-      d.status !== 'rejected'
-    );
-    if (dupBilled) {
-      toast(`งวด ${periodNo} เคยเบิกไปแล้ว (${dupBilled.docNo}) — กรุณาเลือกงวดอื่น`, 'error');
-      return;
+    if (!proj) { toast('ไม่พบโครงการ', 'error'); return; }
+
+    // === NEW: PO-based flow ===
+    // ถ้า _billingFromPo ตั้งไว้ → ใช้ข้อมูล PO + งวดของ PO
+    const fromPo = _billingFromPo;
+    let po = null, period = null, periodNo = 0;
+    if (fromPo) {
+      po = documents.find(d => d.id === fromPo.poId);
+      if (!po || po.type !== 'po' || po.poType !== 'contractor' || po.status !== 'approved') {
+        toast('PO ที่อ้างอิงไม่ถูกต้องหรือยังไม่อนุมัติ', 'error'); return;
+      }
+      period = (po.plannedPeriods || []).find(p => Number(p.no) === Number(fromPo.periodNo));
+      if (!period) { toast('ไม่พบงวดใน PO', 'error'); return; }
+      // ตรวจการเบิกตามลำดับ
+      const next = getNextBillablePoPeriod(po);
+      if (!next || next.no !== period.no) {
+        toast(`ต้องเบิกงวดที่ ${next ? next.no : '?'} ก่อน — บังคับเบิกตามลำดับ`, 'error');
+        return;
+      }
+      periodNo = period.no;
+    } else {
+      // === LEGACY flow: ใช้ project.plannedPeriods ===
+      if (!Array.isArray(proj.plannedPeriods) || proj.plannedPeriods.length === 0) {
+        toast('กรุณาเบิกผ่าน PO (ไปที่ PO → กดปุ่ม "เบิกงวดนี้")', 'error');
+        return;
+      }
+      periodNo = Number(document.getElementById('f-period').value) || 0;
+      if (!periodNo) { toast('กรุณาเลือกงวดงาน', 'error'); return; }
+      const pp = proj.plannedPeriods.find(p => Number(p.no) === periodNo);
+      if (!pp) { toast('งวดที่เลือกไม่ตรงกับแผนของโครงการ', 'error'); return; }
+      period = pp;
+      // Block duplicate billing of the same period (legacy)
+      const dupBilled = documents.find(d =>
+        d.projectId === projectId &&
+        (d.type || 'installment') === 'installment' &&
+        Number(d.period) === periodNo &&
+        d.status !== 'rejected'
+      );
+      if (dupBilled) {
+        toast(`งวด ${periodNo} เคยเบิกไปแล้ว (${dupBilled.docNo}) — กรุณาเลือกงวดอื่น`, 'error');
+        return;
+      }
     }
 
     if (!val('f-contractor')) { toast('กรุณากรอกชื่อผู้รับเหมา', 'error'); return; }
@@ -3608,13 +3615,14 @@
       contractor: val('f-contractor'),
       handoverDate: val('f-date'),
       period: periodNo,
-      periodTotal: proj.plannedPeriods.length,
-      plannedPercent: Number(pp.percent) || 0,
-      plannedDescription: pp.description || '',
-      plannedContractor: pp.contractor || '',
-      // Link to PO (for auto-complete logic)
-      poId: pp.poId || '',
-      poDocNo: pp.poDocNo || '',
+      periodTotal: po ? (po.plannedPeriods || []).length : (proj.plannedPeriods || []).length,
+      plannedPercent: Number(period.percent) || 0,
+      plannedDescription: period.description || '',
+      plannedContractor: po ? po.contractor : (period.contractor || ''),
+      // Link to PO (NEW + legacy)
+      poId: po ? po.id : (period.poId || ''),
+      poDocNo: po ? po.docNo : (period.poDocNo || ''),
+      poPeriodNo: po ? period.no : null,  // NEW: bind period to PO
       description: val('f-desc'),
       contract, prev, curr, retentionPct, retention, advance, material, penalty, net,
       total: prev + curr,
@@ -3624,12 +3632,40 @@
       submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
       approvals: { pm: null, exec1: null, exec2: null },
       status: 'pending',
+      // NEW: list of subWithdraw ids that are being collected by this installment
+      collectedSubWithdrawIds: [],
       createdAt: Date.now()
     };
+
+    // === NEW: Mark uncollected subWithdraws as collected by this installment ===
+    if (po && advance > 0) {
+      const { items } = sumUncollectedSubWithdraws(projectId, po.contractor);
+      // เรียงจากเก่าสุด → ใหม่สุด แล้วหักไปเรื่อยๆ จนครบ advance
+      const sorted = items.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      let remaining = advance;
+      const toCollect = [];
+      for (const s of sorted) {
+        if (remaining <= 0) break;
+        if ((Number(s.amount) || 0) <= remaining + 0.01) {
+          toCollect.push(s);
+          remaining -= Number(s.amount) || 0;
+        }
+      }
+      doc.collectedSubWithdrawIds = toCollect.map(s => s.id);
+      // Update each subWithdraw with collectedAt + collectedByInstallmentId
+      for (const s of toCollect) {
+        s.collectedAt = Date.now();
+        s.collectedByInstallmentId = id;
+        s.collectedByInstallmentDocNo = doc.docNo;
+        await saveDocs(s);
+      }
+    }
 
     documents.unshift(doc);
     const ok = await saveDocs(doc);
     if (ok) {
+      // เคลียร์ _billingFromPo
+      _billingFromPo = null;
       toast(`บันทึกสำเร็จ: ${doc.docNo}`, 'success');
       resetForm();
       switchTab('history');
@@ -3648,6 +3684,10 @@
     if (hint) hint.textContent = '';
     const hintCur = document.getElementById('f-curr-hint');
     if (hintCur) hintCur.textContent = '';
+    const hintAdv = document.getElementById('f-advance-auto-hint');
+    if (hintAdv) hintAdv.textContent = '';
+    const subCard = document.getElementById('f-sub-deduct-card');
+    if (subCard) subCard.style.display = 'none';
     // Reset period dropdown
     const sel = document.getElementById('f-period');
     if (sel) {
@@ -3656,6 +3696,8 @@
     }
     const periodHint = document.getElementById('f-period-hint');
     if (periodHint) periodHint.textContent = '';
+    // Clear PO billing link
+    _billingFromPo = null;
     calc();
   }
 
@@ -3686,6 +3728,16 @@
     const project = getProjectById(projectId);
     if (!project) return [];
     const set = new Map(); // key = trimmed lowercase, value = original case
+    // 0) NEW: Pull from approved contractor POs (latest source of truth)
+    documents.forEach(d => {
+      if (d.type === 'po' && d.poType === 'contractor' && d.projectId === projectId && d.status !== 'rejected') {
+        const name = String(d.contractor || '').trim();
+        if (name) {
+          const key = name.toLowerCase();
+          if (!set.has(key)) set.set(key, name);
+        }
+      }
+    });
     // 1) Primary source: project.contractors[] (new schema)
     if (Array.isArray(project.contractors)) {
       project.contractors.forEach(c => {
@@ -3712,6 +3764,24 @@
       if (name) set.set(name.toLowerCase(), name);
     }
     return Array.from(set.values());
+  }
+
+  // Auto-calc มูลค่าสัญญาของโครงการ = sum ของ PO สัญญาจ้างที่ status=approved
+  // ถ้าไม่มี PO อนุมัติ → fall back to stored project.contractValue (legacy data)
+  function computeProjectContractValue(projectId) {
+    if (!projectId) return 0;
+    const sumFromPo = documents
+      .filter(d =>
+        d.type === 'po' &&
+        d.poType === 'contractor' &&
+        d.projectId === projectId &&
+        d.status === 'approved'
+      )
+      .reduce((s, d) => s + (Number(d.total) || 0), 0);
+    if (sumFromPo > 0) return sumFromPo;
+    // Fall back to legacy stored value
+    const proj = getProjectById(projectId);
+    return proj ? (Number(proj.contractValue) || 0) : 0;
   }
 
   function getNextUnbilledPeriod(projectId, contractor) {
@@ -4011,21 +4081,21 @@
     const projectId = document.getElementById('sw-project').value;
     // reset child fields
     const cSel = document.getElementById('sw-contractor-sel');
-    const pSel = document.getElementById('sw-period');
+    const poHint = document.getElementById('sw-po-hint');
     if (!projectId) {
       cSel.innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
       cSel.disabled = true;
-      pSel.innerHTML = '<option value="">— เลือก ผรม. ก่อน —</option>';
-      pSel.disabled = true;
-      document.getElementById('sw-period-hint').textContent = '';
+      if (poHint) poHint.textContent = '';
       return;
     }
     const contractors = getContractorsInProject(projectId);
     if (contractors.length === 0) {
       cSel.innerHTML = '<option value="">— ไม่พบ ผรม. —</option>';
       cSel.disabled = true;
-      pSel.innerHTML = '<option value="">— ไม่มีงวด —</option>';
-      pSel.disabled = true;
+      if (poHint) {
+        poHint.innerHTML = `<i class="ti ti-alert-triangle"></i> โครงการนี้ยังไม่มี ผรม. — กรุณาสร้าง PO สัญญาจ้างก่อน`;
+        poHint.style.color = 'var(--warning)';
+      }
       return;
     }
     cSel.innerHTML = '<option value="">— เลือก ผรม. —</option>' +
@@ -4035,77 +4105,65 @@
       cSel.value = contractors[0];
       onSubContractorChange();
     } else {
-      pSel.innerHTML = '<option value="">— เลือก ผรม. ก่อน —</option>';
-      pSel.disabled = true;
+      if (poHint) poHint.textContent = '';
     }
   }
 
   function onSubContractorChange() {
     const projectId = document.getElementById('sw-project').value;
     const contractor = document.getElementById('sw-contractor-sel').value;
-    const pSel = document.getElementById('sw-period');
-    const hint = document.getElementById('sw-period-hint');
+    const hint = document.getElementById('sw-po-hint');
     if (!projectId || !contractor) {
-      pSel.innerHTML = '<option value="">— เลือก ผรม. ก่อน —</option>';
-      pSel.disabled = true;
       if (hint) hint.textContent = '';
       return;
     }
-    const project = getProjectById(projectId);
-    if (!project || !Array.isArray(project.plannedPeriods)) {
-      pSel.innerHTML = '<option value="">— ยังไม่มีแผนงวด —</option>';
-      pSel.disabled = true;
-      return;
-    }
     const cKey = contractor.trim().toLowerCase();
-    // หางวดของผรม. คนนี้ — เฉพาะที่ "ยังไม่ถูกเบิกจริง" (installment ของงวดยังไม่ paid)
-    const periods = project.plannedPeriods.filter(p =>
-      String(p.contractor || '').trim().toLowerCase() === cKey
+    // หา active PO (status=approved) ของ ผรม. นี้ในโครงการ
+    const activePo = documents.find(d =>
+      d.type === 'po' && d.poType === 'contractor' &&
+      d.projectId === projectId &&
+      d.status === 'approved' &&
+      (d.contractor || '').trim().toLowerCase() === cKey
     );
-    if (periods.length === 0) {
-      pSel.innerHTML = '<option value="">— ไม่มีงวดของ ผรม. นี้ —</option>';
-      pSel.disabled = true;
+    if (!activePo) {
+      if (hint) {
+        hint.innerHTML = `<i class="ti ti-alert-triangle"></i> ผรม. นี้ยังไม่มี PO ที่อนุมัติ`;
+        hint.style.color = 'var(--warning)';
+      }
       return;
     }
-    pSel.innerHTML = '<option value="">— เลือกงวด —</option>' +
-      periods.map(p => {
-        // เช็คว่างวดนี้ถูกจ่ายเงิน installment ไปแล้วหรือยัง — ถ้าจ่ายแล้วก็เบิกย่อยไม่ได้แล้ว
-        const billedDoc = documents.find(d =>
-          d.type === 'installment' &&
-          d.projectId === projectId &&
-          Number(d.period) === Number(p.no) &&
-          d.paidAt
-        );
-        const dis = billedDoc ? ' disabled' : '';
-        const tag = billedDoc ? ' (จ่ายงวดแล้ว · เบิกย่อยไม่ได้)' : '';
-        return `<option value="${p.no}"${dis}>งวด ${p.no} · ${p.percent}% · ${escapeHtml(p.description || '')}${tag}</option>`;
-      }).join('');
-    pSel.disabled = false;
+    // ยอดที่เหลือ PO
+    const billed = documents
+      .filter(d => (d.type || 'installment') === 'installment' && d.poId === activePo.id && d.status !== 'rejected')
+      .reduce((s, d) => s + (Number(d.curr) || 0), 0);
+    const poRemain = (Number(activePo.total) || 0) - billed;
+    const { total: uncollected } = sumUncollectedSubWithdraws(projectId, contractor);
     if (hint) {
-      hint.innerHTML = `<i class="ti ti-info-circle"></i> ผรม. นี้มี ${periods.length} งวดในแผน`;
+      hint.innerHTML = `<i class="ti ti-link"></i> ผูก PO ${escapeHtml(activePo.docNo)} · เหลือเบิก ${fmt(poRemain)} · เบิกย่อยรอหัก ${fmt(uncollected)}`;
       hint.style.color = 'var(--info)';
     }
   }
 
   function onSubAmountChange() {
-    // แสดงยอดที่เคยเบิกย่อยสำหรับงวด/ผรม.นี้ไปแล้ว (ทุก status รวมที่กำลังรออนุมัติด้วย) เป็น hint
     const hint = document.getElementById('sw-balance-hint');
     if (!hint) return;
     const projectId = document.getElementById('sw-project').value;
-    const periodNo = Number(document.getElementById('sw-period').value) || 0;
     const contractor = document.getElementById('sw-contractor-sel').value;
-    if (!projectId || !periodNo || !contractor) { hint.textContent = ''; return; }
+    if (!projectId || !contractor) { hint.textContent = ''; return; }
+    // แสดงเฉพาะ uncollected (ที่ยังไม่ถูกหัก)
+    const { total, items } = sumUncollectedSubWithdraws(projectId, contractor);
+    // นับรวมที่กำลังรออนุมัติด้วย (ทั้งหมดที่ยัง active)
     const cKey = contractor.trim().toLowerCase();
-    const prior = documents.filter(d =>
+    const pending = documents.filter(d =>
       d.type === 'subWithdraw' &&
       d.projectId === projectId &&
-      Number(d.period) === periodNo &&
       String(d.contractor || '').trim().toLowerCase() === cKey &&
-      d.status !== 'rejected'
+      d.status !== 'rejected' &&
+      !d.collectedAt
     );
-    if (prior.length > 0) {
-      const total = prior.reduce((s, d) => s + (Number(d.amount) || 0), 0);
-      hint.innerHTML = `<i class="ti ti-info-circle"></i> ยอดเบิกย่อยสะสมของงวดนี้แล้ว: <strong>${fmt(total)}</strong> บาท · ${prior.length} รายการ`;
+    if (pending.length > 0) {
+      const totalAll = pending.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+      hint.innerHTML = `<i class="ti ti-info-circle"></i> เบิกย่อยสะสมรอหัก: <strong>${fmt(totalAll)}</strong> บาท · ${pending.length} รายการ${total > 0 ? ` (อนุมัติ+จ่ายแล้ว ${fmt(total)})` : ''}`;
       hint.style.color = 'var(--info)';
     } else {
       hint.textContent = '';
@@ -4148,10 +4206,11 @@
     document.getElementById('sw-date').value = new Date().toISOString().slice(0, 10);
     document.getElementById('sw-contractor-sel').disabled = true;
     document.getElementById('sw-contractor-sel').innerHTML = '<option value="">— เลือกโครงการก่อน —</option>';
-    document.getElementById('sw-period').disabled = true;
-    document.getElementById('sw-period').innerHTML = '<option value="">— เลือก ผรม. ก่อน —</option>';
-    document.getElementById('sw-period-hint').textContent = '';
-    document.getElementById('sw-balance-hint').textContent = '';
+    // sw-period now hidden input
+    const poHint = document.getElementById('sw-po-hint');
+    if (poHint) poHint.textContent = '';
+    const balHint = document.getElementById('sw-balance-hint');
+    if (balHint) balHint.textContent = '';
     pendingSubFiles = [];
     renderSubFilesPreview();
   }
@@ -4165,41 +4224,44 @@
     if (!proj) { toast('ไม่พบโครงการ', 'error'); return; }
     const contractor = document.getElementById('sw-contractor-sel').value;
     if (!contractor) { toast('กรุณาเลือก ผรม.', 'error'); return; }
-    const periodNo = Number(document.getElementById('sw-period').value) || 0;
-    if (!periodNo) { toast('กรุณาเลือกงวดที่จะหัก', 'error'); return; }
-    // เช็คว่างวดนี้ถูกจ่ายไปแล้วหรือยัง
-    const billed = documents.find(d =>
-      d.type === 'installment' &&
-      d.projectId === projectId &&
-      Number(d.period) === periodNo &&
-      d.paidAt
-    );
-    if (billed) {
-      toast(`งวด ${periodNo} ถูกจ่ายเงินไปแล้ว — เบิกย่อยไม่ได้`, 'error');
-      return;
-    }
     const subKind = document.getElementById('sw-kind').value || 'other';
     const desc = document.getElementById('sw-desc').value.trim();
     if (!desc) { toast('กรุณากรอกรายละเอียด', 'error'); return; }
     const amount = Number(document.getElementById('sw-amount').value) || 0;
     if (amount <= 0) { toast('กรุณากรอกจำนวนเงิน', 'error'); return; }
 
-    // คำนวณ planned amount ของงวด เพื่อแจ้งเตือนถ้าเบิกย่อยเกินยอดงวด
-    const pp = (proj.plannedPeriods || []).find(p => Number(p.no) === periodNo);
-    if (pp) {
-      const periodAmount = (Number(proj.contractValue) || 0) * (Number(pp.percent) || 0) / 100;
-      const prior = documents.filter(d =>
-        d.type === 'subWithdraw' &&
-        d.projectId === projectId &&
-        Number(d.period) === periodNo &&
-        String(d.contractor || '').trim().toLowerCase() === contractor.trim().toLowerCase() &&
-        d.status !== 'rejected'
-      ).reduce((s, d) => s + (Number(d.amount) || 0), 0);
-      if ((prior + amount) > periodAmount && periodAmount > 0) {
-        if (!confirm(`รวมเบิกย่อย ${fmt(prior + amount)} บาท จะเกินยอดงวด (${fmt(periodAmount)} บาท) — ยืนยันส่งขออนุมัติหรือไม่?`)) return;
+    // หา active PO ของ ผรม. นี้ในโครงการ (เพื่อเก็บ poId reference)
+    const cKey = contractor.trim().toLowerCase();
+    const activePo = documents.find(d =>
+      d.type === 'po' && d.poType === 'contractor' &&
+      d.projectId === projectId &&
+      d.status === 'approved' &&
+      (d.contractor || '').trim().toLowerCase() === cKey
+    );
+
+    // แจ้งเตือนถ้ารวมเบิกย่อย uncollected เกินยอด PO ที่เหลือ
+    if (activePo) {
+      const { total: uncollectedTotal } = sumUncollectedSubWithdraws(projectId, contractor);
+      // ยอดเหลือ PO = total − (sum ของงวดที่เบิกแล้ว ของ PO นี้)
+      const billed = documents
+        .filter(d => (d.type || 'installment') === 'installment' && d.poId === activePo.id && d.status !== 'rejected')
+        .reduce((s, d) => s + (Number(d.curr) || 0), 0);
+      const poRemain = (Number(activePo.total) || 0) - billed;
+      if ((uncollectedTotal + amount) > poRemain && poRemain > 0) {
+        // ใช้ in-app confirm modal
+        return openSimpleConfirm({
+          title: 'เบิกย่อยเกินยอดที่เหลือใน PO',
+          message: `รวมเบิกย่อยที่ยังไม่หัก ${fmt(uncollectedTotal + amount)} บาท จะเกินยอดที่เหลือใน PO (${fmt(poRemain)} บาท) — ยืนยันส่งหรือไม่?`,
+          okLabel: 'ยืนยันส่ง',
+          okClass: 'btn-warning',
+          onOk: async () => { await _doSubmitSubWithdraw({ projectId, proj, contractor, subKind, desc, amount, activePo }); }
+        });
       }
     }
+    await _doSubmitSubWithdraw({ projectId, proj, contractor, subKind, desc, amount, activePo });
+  }
 
+  async function _doSubmitSubWithdraw({ projectId, proj, contractor, subKind, desc, amount, activePo }) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const doc = {
       id,
@@ -4208,7 +4270,10 @@
       projectId,
       project: proj.name || '',
       contractor,
-      period: periodNo,
+      // NEW: ผูกกับ PO แทนงวด — period ไม่ได้ใช้แล้ว แต่เก็บไว้เพื่อ backward compat
+      poId: activePo ? activePo.id : '',
+      poDocNo: activePo ? activePo.docNo : '',
+      period: 0,  // deprecated — kept for backward compat
       subKind,
       description: desc,
       amount,
@@ -4217,6 +4282,10 @@
       submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
       approvals: { pm: null, exec1: null, exec2: null },
       status: 'pending',
+      // NEW: collection tracking
+      collectedAt: null,
+      collectedByInstallmentId: null,
+      collectedByInstallmentDocNo: null,
       createdAt: Date.now()
     };
 
@@ -5126,12 +5195,38 @@
         delete d.approvedBy;
         return;
       }
+      // Auto-update project's contractValue (sum of approved contractor POs)
+      if (d.poType === 'contractor' && d.projectId) {
+        await refreshProjectContractValue(d.projectId);
+      }
       logActivity('doc-approve', `อนุมัติ ${d.docNo} (PO)`);
       toast(`อนุมัติ PO ${d.docNo} เรียบร้อย`, 'success');
       closeModal();
     } catch (e) {
       console.error('approvePO error:', e);
       toast('อนุมัติไม่สำเร็จ: ' + e.message, 'error');
+    }
+  }
+
+  // Helper: recompute and save project's contractValue based on current approved POs
+  async function refreshProjectContractValue(projectId) {
+    const proj = getProjectById(projectId);
+    if (!proj) return;
+    // Compute only from POs (not fallback) to know if there's *any* PO contributing
+    const sumFromPo = documents
+      .filter(d =>
+        d.type === 'po' &&
+        d.poType === 'contractor' &&
+        d.projectId === projectId &&
+        d.status === 'approved'
+      )
+      .reduce((s, d) => s + (Number(d.total) || 0), 0);
+    // ถ้ามี PO บ้าง → ใช้ค่ารวมจาก PO (override legacy)
+    // ถ้าไม่มี PO เลย → คงค่าเดิม (legacy)
+    if (sumFromPo > 0 && Number(proj.contractValue) !== sumFromPo) {
+      proj.contractValue = sumFromPo;
+      proj.updatedAt = Date.now();
+      await saveProjectToDb(proj);
     }
   }
   async function rejectPO(docId) {
@@ -5154,6 +5249,7 @@
           // ถ้าเป็น PO จ้างผรม. → ลบชื่อ ผรม. ออกจากข้อมูลโครงการถ้าไม่มี PO อื่นใช้
           if (d.poType === 'contractor' && d.projectId && d.contractor) {
             await removeContractorFromProjectIfUnused(d.projectId, d.contractor, d.id);
+            await refreshProjectContractValue(d.projectId);
           }
           logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (PO) — ${reason.trim()}`);
           toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
@@ -5741,7 +5837,19 @@
     const codeEl = document.getElementById('proj-code');
     if (codeEl) codeEl.value = p.code || '';
     document.getElementById('proj-location').value = p.location || '';
-    document.getElementById('proj-contract-value').value = p.contractValue || '';
+    // Show computed contract value (sum of approved contractor POs)
+    const computedCv = computeProjectContractValue(p.id);
+    document.getElementById('proj-contract-value').value = computedCv || p.contractValue || 0;
+    const cvHint = document.getElementById('proj-contract-value-hint');
+    if (cvHint) {
+      const poCount = documents.filter(d =>
+        d.type === 'po' && d.poType === 'contractor' &&
+        d.projectId === p.id && d.status === 'approved'
+      ).length;
+      cvHint.innerHTML = poCount > 0
+        ? `รวมจาก PO สัญญาจ้างที่อนุมัติแล้ว <strong>${poCount} ใบ</strong>`
+        : `ยังไม่มี PO สัญญาจ้างอนุมัติ — กรุณาสร้าง PO ในเมนู "PO สั่งซื้อ"`;
+    }
     document.getElementById('proj-period-total').value = p.periodTotal || '';
     document.getElementById('proj-start-date').value = p.startDate || '';
     document.getElementById('proj-note').value = p.note || '';
@@ -5890,13 +5998,16 @@
       });
     });
 
+    // === Auto-calc contractValue from approved contractor POs ===
+    const calculatedContractValue = computeProjectContractValue(id);
+
     const p = {
       id,
       name,
       code,
       location: val('proj-location'),
       contractor: existing ? (existing.contractor || '') : '',  // legacy field, preserved if exists
-      contractValue: Number(document.getElementById('proj-contract-value').value) || 0,
+      contractValue: calculatedContractValue,
       periodTotal: planned.length,
       startDate: val('proj-start-date'),
       note: val('proj-note'),
@@ -6449,46 +6560,126 @@
           </div>
         </div>
       </div>
-      ${(Array.isArray(p.plannedPeriods) && p.plannedPeriods.length > 0) ? `
-        <div class="card" style="margin-top:14px">
-          <div class="card-head"><i class="ti ti-list-numbers" style="color:var(--accent)"></i><h3>แผนงวดงาน (${p.plannedPeriods.length} งวด)</h3></div>
-          <div class="card-body" style="padding:0">
-            <table class="pp-table" style="border-radius:0">
-              <thead>
-                <tr>
-                  <th style="width:50px;text-align:center">งวด</th>
-                  <th>งาน</th>
-                  <th>ผู้รับเหมา</th>
-                  <th class="right" style="width:80px">%</th>
-                  <th class="right" style="width:120px">มูลค่า</th>
-                  <th style="width:120px">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${p.plannedPeriods.map(pp => {
-                  const inst = installmentDocs.find(d => Number(d.period) === Number(pp.no) && d.status !== 'rejected');
-                  const amount = (Number(p.contractValue) || 0) * (Number(pp.percent) || 0) / 100;
-                  let badge = '<span class="pill pill-draft">ยังไม่เบิก</span>';
-                  if (inst) {
-                    const step = getCurrentStep(inst);
-                    if (inst.paidAt) badge = '<span class="pill pill-reimbursed">จ่ายแล้ว</span>';
-                    else if (step === 'done') badge = '<span class="pill pill-approved">อนุมัติ</span>';
-                    else badge = '<span class="pill pill-pending">รออนุมัติ</span>';
-                  }
-                  return `<tr ${inst ? `onclick="showDetail('${inst.id}')" style="cursor:pointer"` : ''}>
-                    <td class="pp-no">${pp.no}</td>
-                    <td>${escapeHtml(pp.description || '-')}</td>
-                    <td>${escapeHtml(pp.contractor || '-')}</td>
-                    <td style="text-align:right;font-family:'JetBrains Mono',monospace">${pp.percent}%</td>
-                    <td class="pp-amount">${fmt(amount)}</td>
-                    <td>${badge}</td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ` : `<div class="card" style="margin-top:14px"><div class="card-body" style="text-align:center;padding:18px;color:var(--text-3);font-size:13px"><i class="ti ti-alert-triangle" style="color:var(--warning)"></i> โครงการนี้ยังไม่มีแผนงวด — กรุณา ${canManageProjects() ? '<a href="#" onclick="event.preventDefault();editProject(\'' + p.id + '\')" style="color:var(--accent);text-decoration:underline">แก้ไขโครงการ</a>' : 'ติดต่อ Project Manager'} เพื่อเพิ่มแผนงวด</div></div>`}
+      ${(() => {
+        // รวบรวม PO contractor ของโครงการนี้
+        const projectPos = documents.filter(d =>
+          d.type === 'po' && d.poType === 'contractor' &&
+          d.projectId === p.id && d.status !== 'rejected'
+        );
+        const legacyPlanned = Array.isArray(p.plannedPeriods) ? p.plannedPeriods : [];
+
+        if (projectPos.length === 0 && legacyPlanned.length === 0) {
+          return `<div class="card" style="margin-top:14px"><div class="card-body" style="text-align:center;padding:18px;color:var(--text-3);font-size:13px"><i class="ti ti-alert-triangle" style="color:var(--warning)"></i> โครงการนี้ยังไม่มี PO สัญญาจ้าง — กรุณาสร้าง PO ที่เมนู "PO สั่งซื้อ"</div></div>`;
+        }
+
+        // Render: แต่ละ PO เป็น 1 card
+        const poBlocks = projectPos.map(po => {
+          const periods = Array.isArray(po.plannedPeriods) ? po.plannedPeriods : [];
+          const isApproved = po.status === 'approved';
+          const statusBadge = isApproved
+            ? '<span class="pill pill-approved">อนุมัติแล้ว</span>'
+            : '<span class="pill pill-pending">รอ PM อนุมัติ</span>';
+
+          if (periods.length === 0) {
+            return `<div class="card" style="margin-top:14px">
+              <div class="card-head" style="background:#f4f0fa">
+                <i class="ti ti-truck-delivery" style="color:#5b3a8a"></i>
+                <h3 style="flex:1">PO ${escapeHtml(po.docNo)} · ${escapeHtml(po.contractor)} · ${fmt(po.total)}</h3>
+                ${statusBadge}
+              </div>
+              <div class="card-body" style="text-align:center;padding:14px;color:var(--text-3);font-size:13px">
+                <em>ไม่มีแผนงวดใน PO นี้</em>
+              </div>
+            </div>`;
+          }
+
+          const periodRows = periods.map(pp => {
+            const inst = getInstallmentForPoPeriod(po.id, pp.no);
+            const amount = pp.amount || (Number(po.total) || 0) * (Number(pp.percent) || 0) / 100;
+            let badge = '<span class="pill pill-draft">ยังไม่เบิก</span>';
+            if (inst) {
+              const step = getCurrentStep(inst);
+              if (inst.paidAt) badge = '<span class="pill pill-reimbursed">จ่ายแล้ว</span>';
+              else if (step === 'done') badge = '<span class="pill pill-approved">อนุมัติ</span>';
+              else badge = '<span class="pill pill-pending">รออนุมัติ</span>';
+            }
+            return `<tr ${inst ? `onclick="showDetail('${inst.id}')" style="cursor:pointer"` : ''}>
+              <td class="pp-no">${pp.no}</td>
+              <td>${escapeHtml(pp.description || '-')}</td>
+              <td style="text-align:right;font-family:'JetBrains Mono',monospace">${(Number(pp.percent)||0).toFixed(1)}%</td>
+              <td class="pp-amount">${fmt(amount)}</td>
+              <td>${badge}${inst ? ` <small style="color:var(--text-3)">${escapeHtml(inst.docNo)}</small>` : ''}</td>
+            </tr>`;
+          }).join('');
+
+          return `<div class="card" style="margin-top:14px">
+            <div class="card-head" style="background:#f4f0fa;cursor:pointer" onclick="showDetail('${po.id}')">
+              <i class="ti ti-truck-delivery" style="color:#5b3a8a"></i>
+              <h3 style="flex:1">PO ${escapeHtml(po.docNo)} · ${escapeHtml(po.contractor)} · ${fmt(po.total)}</h3>
+              ${statusBadge}
+            </div>
+            <div class="card-body" style="padding:0">
+              <table class="pp-table" style="border-radius:0">
+                <thead>
+                  <tr>
+                    <th style="width:50px;text-align:center">งวด</th>
+                    <th>งาน</th>
+                    <th class="right" style="width:80px">%</th>
+                    <th class="right" style="width:120px">มูลค่า</th>
+                    <th style="width:180px">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>${periodRows}</tbody>
+              </table>
+            </div>
+          </div>`;
+        }).join('');
+
+        // Legacy fall-back: ถ้าโครงการเก่ามี plannedPeriods แต่ไม่มี PO → แสดงแบบเดิม
+        let legacyBlock = '';
+        if (projectPos.length === 0 && legacyPlanned.length > 0) {
+          legacyBlock = `<div class="card" style="margin-top:14px">
+            <div class="card-head"><i class="ti ti-list-numbers" style="color:var(--accent)"></i><h3>แผนงวดงาน (ข้อมูลเก่า · ${legacyPlanned.length} งวด)</h3></div>
+            <div class="card-body" style="padding:0">
+              <table class="pp-table" style="border-radius:0">
+                <thead>
+                  <tr>
+                    <th style="width:50px;text-align:center">งวด</th>
+                    <th>งาน</th>
+                    <th>ผู้รับเหมา</th>
+                    <th class="right" style="width:80px">%</th>
+                    <th class="right" style="width:120px">มูลค่า</th>
+                    <th style="width:120px">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${legacyPlanned.map(pp => {
+                    const inst = installmentDocs.find(d => Number(d.period) === Number(pp.no) && d.status !== 'rejected');
+                    const amount = (Number(p.contractValue) || 0) * (Number(pp.percent) || 0) / 100;
+                    let badge = '<span class="pill pill-draft">ยังไม่เบิก</span>';
+                    if (inst) {
+                      const step = getCurrentStep(inst);
+                      if (inst.paidAt) badge = '<span class="pill pill-reimbursed">จ่ายแล้ว</span>';
+                      else if (step === 'done') badge = '<span class="pill pill-approved">อนุมัติ</span>';
+                      else badge = '<span class="pill pill-pending">รออนุมัติ</span>';
+                    }
+                    return `<tr ${inst ? `onclick="showDetail('${inst.id}')" style="cursor:pointer"` : ''}>
+                      <td class="pp-no">${pp.no}</td>
+                      <td>${escapeHtml(pp.description || '-')}</td>
+                      <td>${escapeHtml(pp.contractor || '-')}</td>
+                      <td style="text-align:right;font-family:'JetBrains Mono',monospace">${pp.percent}%</td>
+                      <td class="pp-amount">${fmt(amount)}</td>
+                      <td>${badge}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+
+        return poBlocks + legacyBlock;
+      })()}
       <h3 style="font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;font-weight:600">เอกสารทั้งหมดในโครงการ (${docsInProj.length})</h3>
       ${docsHtml}
     `;
@@ -6769,7 +6960,9 @@
           <table class="money-tbl">
             <tr><td>โครงการ</td><td>${escapeHtml(d.project || '-')}</td></tr>
             <tr><td>ผู้รับเหมา</td><td>${escapeHtml(d.contractor || '-')}</td></tr>
-            <tr><td>หักเข้างวดที่</td><td>${d.period || '-'}</td></tr>
+            ${d.poDocNo ? `<tr><td>PO ที่ผูก</td><td>${d.poId ? `<span onclick="closeModal();setTimeout(()=>showDetail('${d.poId}'),100)" style="cursor:pointer;color:#5b3a8a;font-weight:600;text-decoration:underline">${escapeHtml(d.poDocNo)}</span>` : escapeHtml(d.poDocNo)}</td></tr>` : ''}
+            ${d.period && Number(d.period) > 0 ? `<tr><td>หักเข้างวดที่ (legacy)</td><td>${d.period}</td></tr>` : ''}
+            ${d.collectedAt ? `<tr><td>สถานะการหัก</td><td><span style="color:var(--success);font-weight:600"><i class="ti ti-check"></i> หักแล้วใน ${d.collectedByInstallmentDocNo ? `<span onclick="closeModal();setTimeout(()=>showDetail('${d.collectedByInstallmentId}'),100)" style="cursor:pointer;color:#0e7c66;text-decoration:underline">${escapeHtml(d.collectedByInstallmentDocNo)}</span>` : 'ใบเบิกงวด'}</span> · ${fmtDateTime(d.collectedAt)}</td></tr>` : (d.paidAt && currStep === 'done' ? `<tr><td>สถานะการหัก</td><td><span style="color:#9a6324;font-weight:500"><i class="ti ti-clock"></i> รอหักในงวดถัดไป</span></td></tr>` : '')}
             <tr><td>ประเภท</td><td>${escapeHtml(SUB_KIND_LABELS[d.subKind] || d.subKind || '-')}</td></tr>
             <tr><td>วันที่ขอเบิก</td><td>${d.handoverDate || '-'}</td></tr>
             <tr><td>รายละเอียด</td><td>${escapeHtml(d.description || '-')}</td></tr>
@@ -8096,6 +8289,7 @@
           // ถ้าเป็น PO จ้างผรม. → ลบชื่อ ผรม. ออกจากข้อมูลโครงการถ้าไม่มี PO อื่นใช้
           if (d && d.type === 'po' && d.poType === 'contractor' && d.projectId && d.contractor) {
             await removeContractorFromProjectIfUnused(d.projectId, d.contractor, d.id);
+            await refreshProjectContractValue(d.projectId);
           }
           toast('ลบเรียบร้อย', 'success');
           closeModal();
@@ -9816,6 +10010,9 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.removeFile = removeFile;
   window.resetForm = resetForm;
   window.submitForm = submitForm;
+  // PO-based billing
+  window.billPoPeriod = billPoPeriod;
+  window.autoFillUncollectedSubWithdraws = autoFillUncollectedSubWithdraws;
   window.exportData = exportData;
   window.importData = importData;
   window.filterList = filterList;
