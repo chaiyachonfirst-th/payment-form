@@ -4717,9 +4717,12 @@
   async function approvePR(docId) {
     if (!canApprovePR()) { toast('เฉพาะ Procurement', 'error'); return; }
     const d = documents.find(x => x.id === docId);
-    if (!d || d.type !== 'pr' || d.status !== 'pending') return;
-    // NEW FLOW: Open price entry modal — Procurement enters prices, then approves
-    openPrPriceModal(d);
+    if (!d) { toast('ไม่พบ PR', 'error'); return; }
+    if (d.type !== 'pr') { toast('เอกสารไม่ใช่ PR', 'error'); return; }
+    if (d.status !== 'pending') { toast(`PR อยู่ในสถานะ ${d.status} ไม่ใช่ pending`, 'info'); return; }
+    // ปิด detail modal ก่อน แล้วเปิด price modal (ไม่ซ้อน → ไม่มีปัญหา click events)
+    closeModal();
+    setTimeout(() => openPrPriceModal(d), 100);
   }
   // Procurement enters prices for PR items, then approves
   let _prPriceTarget = null;
