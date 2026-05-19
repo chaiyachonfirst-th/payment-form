@@ -661,6 +661,10 @@
     .pdf-table thead { display: table-header-group; }
     .pdf-table tfoot { display: table-footer-group; }
     .pdf-page-break { page-break-after: always; break-after: page; }
+    /* Compact layout: reduce line height + paragraph margins inside print area */
+    #print-area p { margin: 0 0 4pt; }
+    #print-area table { line-height: 1.35; }
+    #print-area .pdf-section + .pdf-section { margin-top: 0; }
     /* Signature block — ALL signatures (4 roles + 2 executives) must stay on the same page */
     .pdf-signatures { page-break-inside: avoid; break-inside: avoid; }
     /* GROUP wrapper that keeps all signature blocks + footer together on one page */
@@ -7687,6 +7691,7 @@
             <div class="detail-section-title">ขอบเขตงาน (Scope)</div>
             <div style="white-space:pre-wrap;font-size:14px;background:var(--surface-2);padding:10px;border-radius:var(--radius-sm)">${escapeHtml(d.scope || '-')}</div>
           </div>
+          ${renderPoPlannedPeriodsSection(d)}
         ` : `
           <div class="detail-section">
             <div class="detail-section-title">รายการสั่งซื้อ (${(d.items||[]).length})</div>
@@ -8901,9 +8906,19 @@
       { label: 'Project Manager', name: pmSlot ? pmSlot.name : '', date: pmSlot ? pmSlot.at : null },
       { label: 'จัดซื้อ (ยืนยันโอน)', name: d.execTransferConfirmedBy ? d.execTransferConfirmedBy.name : '', date: d.execTransferConfirmedAt || null }
     ];
+    // หา PO ที่ผูก (ถ้ามี) + งวดของ PO
+    const linkedPo = d.poId ? documents.find(x => x.id === d.poId) : null;
+    const linkedPeriod = (linkedPo && Array.isArray(linkedPo.plannedPeriods))
+      ? linkedPo.plannedPeriods.find(p => Number(p.no) === Number(d.poPeriodNo))
+      : null;
+    // หา sub-withdraw ที่ถูกหักในใบนี้
+    const collectedSubs = Array.isArray(d.collectedSubWithdrawIds) && d.collectedSubWithdrawIds.length > 0
+      ? documents.filter(x => x.type === 'subWithdraw' && d.collectedSubWithdrawIds.includes(x.id))
+      : [];
+
     const html = `
       ${pdfHeader('ใบขอเบิกจ่ายงวดงาน', 'PAYMENT REQUISITION', d.docNo)}
-      <table class="pdf-section" style="width:100%;font-size:9pt;margin-bottom:7pt;border-collapse:collapse">
+      <table class="pdf-section" style="width:100%;font-size:9pt;margin-bottom:6pt;border-collapse:collapse">
         <tr>
           <td style="padding:2pt 0;color:#5c5b54;width:75pt">โครงการ</td>
           <td style="padding:2pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td>
@@ -8916,35 +8931,56 @@
           <td style="padding:2pt 0;color:#5c5b54">งวดงานที่</td>
           <td style="padding:2pt 0">${d.period || '-'} / ${d.periodTotal || '-'}${d.plannedPercent ? ` <span style="color:#c8632c;font-weight:500">(${d.plannedPercent}%)</span>` : ''}</td>
         </tr>
+        ${linkedPo ? `<tr>
+          <td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td>
+          <td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(linkedPo.docNo)}${linkedPo.scope ? ` <span style="font-family:inherit;color:#5c5b54">· ${escapeHtml(linkedPo.scope).slice(0, 80)}${linkedPo.scope.length > 80 ? '…' : ''}</span>` : ''}</td>
+        </tr>` : (d.poDocNo ? `<tr><td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td><td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(d.poDocNo)}</td></tr>` : '')}
         ${d.handoverDate ? `<tr><td style="padding:2pt 0;color:#5c5b54">วันส่งมอบ</td><td colspan="3" style="padding:2pt 0">${d.handoverDate}</td></tr>` : ''}
       </table>
-      ${d.plannedDescription ? `
-        <div class="pdf-section" style="background:#fdf4ec;padding:8pt 10pt;margin-bottom:7pt;border-left:2.5pt solid #c8632c">
-          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">งานตามแผนงวดนี้</div>
-          <div style="font-size:10pt">${escapeHtml(d.plannedDescription)}</div>
+
+      ${(linkedPeriod && linkedPeriod.description) || d.plannedDescription ? `
+        <div class="pdf-section" style="background:#fdf4ec;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #c8632c">
+          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">งานตามแผนงวดนี้ (จาก PO)</div>
+          <div style="font-size:9.5pt;line-height:1.45">${escapeHtml((linkedPeriod && linkedPeriod.description) || d.plannedDescription || '')}</div>
         </div>
       ` : ''}
       ${d.description ? `
-        <div class="pdf-section" style="background:#f5f4ee;padding:8pt 10pt;margin-bottom:7pt;border-left:2.5pt solid #c8632c">
+        <div class="pdf-section" style="background:#f5f4ee;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #c8632c">
           <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">รายละเอียดเนื้องาน</div>
-          <div style="font-size:10pt">${escapeHtml(d.description)}</div>
+          <div style="font-size:9.5pt;line-height:1.45">${escapeHtml(d.description)}</div>
         </div>
       ` : ''}
-      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:7pt">
+
+      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:6pt">
         <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:4pt;text-align:left">รายการ</th><th style="padding:4pt;text-align:right;width:100pt">จำนวนเงิน (บาท)</th></tr></thead>
         <tbody>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">มูลค่างานรวมตามสัญญา</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td></tr>
+          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">มูลค่างานรวมตามสัญญา (PO)</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td></tr>
           <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">ผลงานสะสมยกมา</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td></tr>
           <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">ผลงานงวดนี้</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.curr)}</td></tr>
           <tr style="background:#f5f4ee;border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;font-weight:600">มูลค่างานขอเบิกงวดนี้</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td></tr>
           <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ประกันผลงาน ${d.retentionPct}%</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.retention)}</td></tr>
-          ${d.advance > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก เงินล่วงหน้า</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.advance)}</td></tr>` : ''}
+          ${d.advance > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก เบิกย่อย / เงินล่วงหน้า${collectedSubs.length > 0 ? ` (${collectedSubs.length} รายการ)` : ''}</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.advance)}</td></tr>` : ''}
           ${d.material > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ค่าวัสดุ</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.material)}</td></tr>` : ''}
           ${d.penalty > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ค่าปรับ</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.penalty)}</td></tr>` : ''}
           <tr style="background:#1a1a17;color:#fff"><td style="padding:5pt;font-weight:600">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.net)}</td></tr>
         </tbody>
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.net)})</div>
+
+      ${collectedSubs.length > 0 ? `
+        <div class="pdf-section" style="background:#fdf6e9;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #b8740a;border-radius:3pt">
+          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4pt;font-weight:600">รายการเบิกย่อยที่ถูกหักในงวดนี้</div>
+          <table style="width:100%;font-size:8.5pt;border-collapse:collapse">
+            ${collectedSubs.map(s => `<tr style="border-bottom:0.5pt dotted #d4c8a0">
+              <td style="padding:2pt 0;font-family:'JetBrains Mono',monospace;width:120pt;color:#5c5b54">${escapeHtml(s.docNo)}</td>
+              <td style="padding:2pt 0">${escapeHtml(s.description || '-').slice(0, 80)}${(s.description || '').length > 80 ? '…' : ''}</td>
+              <td style="padding:2pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500;color:#9a6324;width:75pt">−${fmt(s.amount)}</td>
+            </tr>`).join('')}
+            <tr style="background:#fff5dd"><td colspan="2" style="padding:3pt 0;font-weight:600;text-align:right">รวมหักเบิกย่อย</td><td style="padding:3pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:#9a6324">−${fmt(collectedSubs.reduce((s, x) => s + (Number(x.amount) || 0), 0))}</td></tr>
+          </table>
+        </div>
+      ` : ''}
+
       ${(() => {
         // Show attachment checklist
         const items = [];
@@ -8955,10 +8991,10 @@
           if (d.attachments.other) items.push('เอกสารอื่นๆ');
         }
         if (items.length === 0) return '';
-        return `<div class="pdf-section" style="margin-bottom:7pt;padding:8pt 10pt;background:#f5f4ee;border-radius:3pt">
-          <div style="font-size:9pt;color:#5c5b54;font-weight:600;margin-bottom:4pt">เอกสารประกอบการเบิกจ่าย</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8pt;font-size:10pt">
-            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:3pt 9pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
+        return `<div class="pdf-section" style="margin-bottom:6pt;padding:6pt 10pt;background:#f5f4ee;border-radius:3pt">
+          <div style="font-size:8.5pt;color:#5c5b54;font-weight:600;margin-bottom:3pt">เอกสารประกอบ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6pt;font-size:9pt">
+            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:2pt 7pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
           </div>
         </div>`;
       })()}
@@ -9094,27 +9130,45 @@
       { label: 'Project Manager', name: pmSlot ? pmSlot.name : '', date: pmSlot ? pmSlot.at : null },
       { label: 'จัดซื้อ (ยืนยันโอน)', name: d.execTransferConfirmedBy ? d.execTransferConfirmedBy.name : '', date: d.execTransferConfirmedAt || null }
     ];
+
+    // PO link
+    const linkedPo = d.poId ? documents.find(x => x.id === d.poId) : null;
+
+    // Collection status
+    let collectionHtml;
+    if (d.collectedAt) {
+      collectionHtml = `<div style="font-size:9pt;color:#5c5b54;margin-bottom:6pt;background:#d8f0e1;padding:6pt 10pt;border-radius:3pt;border-left:2.5pt solid #2d6a4f">
+        <strong style="color:#2d6a4f">✓ หักแล้ว</strong> · ในใบเบิกงวด <span style="font-family:'JetBrains Mono',monospace;font-weight:500">${escapeHtml(d.collectedByInstallmentDocNo || '-')}</span> เมื่อ ${thaiDate(d.collectedAt)}
+      </div>`;
+    } else if (d.poId) {
+      collectionHtml = `<div style="font-size:9pt;color:#5c5b54;margin-bottom:6pt;background:#fbeed3;padding:6pt 10pt;border-radius:3pt;border-left:2.5pt solid #b8740a">
+        <strong>หมายเหตุ:</strong> ยอดเบิกย่อยนี้จะถูกหักอัตโนมัติเมื่อเบิกงวดถัดไปของ PO ${escapeHtml((linkedPo && linkedPo.docNo) || d.poDocNo || '-')}
+      </div>`;
+    } else {
+      collectionHtml = `<div style="font-size:9pt;color:#5c5b54;margin-bottom:6pt;background:#fbeed3;padding:6pt 10pt;border-radius:3pt;border-left:2.5pt solid #b8740a">
+        <strong>หมายเหตุ:</strong> ยอดเบิกย่อยนี้จะถูกหักออกในการเบิกงวดถัดไปของ ผรม.
+      </div>`;
+    }
+
     const html = `
-      ${pdfHeader('ใบเบิกย่อย (หักท้ายงวด)', 'SUB-WITHDRAW', d.docNo)}
+      ${pdfHeader('ใบเบิกย่อย', 'SUB-WITHDRAW', d.docNo)}
       <table style="width:100%;font-size:9pt;margin-bottom:7pt;border-collapse:collapse">
         <tr><td style="padding:2pt 0;color:#5c5b54;width:90pt">โครงการ</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:2pt 0;color:#5c5b54;width:75pt">วันที่ขอเบิก</td><td style="padding:2pt 0">${d.handoverDate || '-'}</td></tr>
-        <tr><td style="padding:2pt 0;color:#5c5b54">ผู้รับเหมา</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td><td style="padding:2pt 0;color:#5c5b54">หักงวดที่</td><td style="padding:2pt 0;font-weight:500">${d.period || '-'}</td></tr>
-        <tr><td style="padding:2pt 0;color:#5c5b54">ประเภท</td><td colspan="3" style="padding:2pt 0">${escapeHtml(SUB_KIND_LABELS[d.subKind] || d.subKind || '-')}</td></tr>
+        <tr><td style="padding:2pt 0;color:#5c5b54">ผู้รับเหมา</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td><td style="padding:2pt 0;color:#5c5b54">ประเภท</td><td style="padding:2pt 0">${escapeHtml(SUB_KIND_LABELS[d.subKind] || d.subKind || '-')}</td></tr>
+        ${linkedPo ? `<tr><td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td><td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(linkedPo.docNo)} · มูลค่าสัญญา ${fmt(linkedPo.total)}</td></tr>` : (d.poDocNo ? `<tr><td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td><td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(d.poDocNo)}</td></tr>` : '')}
       </table>
-      <div class="pdf-section" style="background:#fdf6e9;padding:8pt 10pt;margin-bottom:7pt;border-left:2.5pt solid #9a6324">
+      <div class="pdf-section" style="background:#fdf6e9;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #9a6324">
         <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">รายละเอียด</div>
-        <div style="font-size:10pt">${escapeHtml(d.description || '-')}</div>
+        <div style="font-size:9.5pt;line-height:1.45;white-space:pre-wrap">${escapeHtml(d.description || '-')}</div>
       </div>
-      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:7pt">
+      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:6pt">
         <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:4pt;text-align:left">รายการ</th><th style="padding:4pt;text-align:right;width:120pt">จำนวนเงิน (บาท)</th></tr></thead>
         <tbody>
           <tr style="background:#1a1a17;color:#fff"><td style="padding:5pt;font-weight:600">จำนวนเงินที่ขอเบิก</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.amount || 0)}</td></tr>
         </tbody>
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.amount || 0)})</div>
-      <div style="font-size:9pt;color:#5c5b54;margin-bottom:9pt;background:#fbeed3;padding:6pt 10pt;border-radius:3pt;border-left:2.5pt solid #b8740a">
-        <strong>หมายเหตุ:</strong> ยอดเบิกย่อยนี้จะถูกหักออกจากยอดเบิกของงวดที่ ${d.period || '-'} โดยอัตโนมัติ
-      </div>
+      ${collectionHtml}
       <div class="pdf-signatures-group">
         ${pdfSignatures(sigs)}
         ${pdfExecutiveSignatures()}
@@ -9183,6 +9237,12 @@
   function exportPoPdf(id) {
     const d = documents.find(x => x.id === id);
     if (!d) return;
+    if (d.poType === 'contractor') return _exportContractorPoPdf(d);
+    return _exportVendorPoPdf(d);
+  }
+
+  // ============ VENDOR PO PDF (จัดซื้อวัสดุ) ============
+  function _exportVendorPoPdf(d) {
     const PAYMENT_LABELS = {
       cod: 'เงินสด ณ จุดส่งของ (COD)', prepaid: 'โอนล่วงหน้า',
       'credit-7': 'เครดิต 7 วัน', 'credit-15': 'เครดิต 15 วัน', 'credit-30': 'เครดิต 30 วัน', other: 'อื่นๆ'
@@ -9222,6 +9282,105 @@
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.total || 0)})</div>
       ${d.note ? `<div style="font-size:10pt;margin-bottom:7pt;color:#5c5b54;background:#f5f4ee;padding:8pt 10pt;border-radius:3pt"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+      <div class="pdf-signatures-group">
+        ${pdfSignatures(sigs)}
+        ${pdfExecutiveSignatures()}
+        ${pdfFooter()}
+      </div>
+      ${pdfAttachmentPages(d)}
+    `;
+    generatePdf(html, `${d.docNo}.pdf`);
+  }
+
+  // ============ CONTRACTOR PO PDF (ใบสั่งจ้าง — HIRE CONTRACT) ============
+  function _exportContractorPoPdf(d) {
+    const PAYMENT_LABELS = {
+      cod: 'เงินสด ณ จุดส่งของ (COD)', prepaid: 'โอนล่วงหน้า',
+      'credit-7': 'เครดิต 7 วัน', 'credit-15': 'เครดิต 15 วัน', 'credit-30': 'เครดิต 30 วัน', other: 'อื่นๆ'
+    };
+    const sigs = [
+      { label: 'ผู้จัดทำ', name: d.submittedBy ? d.submittedBy.name : '', date: d.submittedBy ? d.submittedBy.at : null },
+      { label: 'ผู้อนุมัติ (PM)', name: d.approvedBy ? d.approvedBy.name : '', date: d.approvedBy ? d.approvedBy.at : null }
+    ];
+    const periods = Array.isArray(d.plannedPeriods) ? d.plannedPeriods : [];
+    const total = Number(d.total) || 0;
+
+    const html = `
+      ${pdfHeader('ใบสั่งจ้าง', 'HIRE CONTRACT', d.docNo)}
+
+      <!-- ข้อมูลโครงการ + ผรม. -->
+      <table style="width:100%;font-size:9pt;margin-bottom:7pt;border-collapse:collapse">
+        <tr>
+          <td style="padding:2pt 0;color:#5c5b54;width:90pt">โครงการ</td>
+          <td style="padding:2pt 0;font-weight:500" colspan="3">${escapeHtml(d.project || '-')}</td>
+        </tr>
+        <tr>
+          <td style="padding:2pt 0;color:#5c5b54">ผู้รับเหมา</td>
+          <td style="padding:2pt 0;font-weight:600">${escapeHtml(d.contractor || '-')}</td>
+          <td style="padding:2pt 0;color:#5c5b54;width:75pt">เบอร์ติดต่อ</td>
+          <td style="padding:2pt 0">${escapeHtml(d.contractorPhone || '-')}</td>
+        </tr>
+        <tr>
+          <td style="padding:2pt 0;color:#5c5b54">วันที่สั่งจ้าง</td>
+          <td style="padding:2pt 0">${d.orderDate || '-'}</td>
+          <td style="padding:2pt 0;color:#5c5b54">กำหนดส่งงาน</td>
+          <td style="padding:2pt 0">${d.deliveryDate || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding:2pt 0;color:#5c5b54">เงื่อนไขชำระ</td>
+          <td style="padding:2pt 0" colspan="3">${escapeHtml(PAYMENT_LABELS[d.paymentTerms] || d.paymentTerms || '-')}</td>
+        </tr>
+      </table>
+
+      <!-- ขอบเขตงาน (Scope) -->
+      <div style="margin-bottom:7pt">
+        <div style="font-size:8.5pt;color:#5c5b54;font-weight:600;margin-bottom:3pt;letter-spacing:0.05em">ขอบเขตงาน (SCOPE OF WORK)</div>
+        <div style="font-size:9.5pt;line-height:1.5;background:#f5f4ee;padding:7pt 10pt;border-radius:3pt;border-left:2.5pt solid #1a1a17;white-space:pre-wrap;color:#1a1a17">${escapeHtml(d.scope || '-')}</div>
+      </div>
+
+      <!-- แผนงวดงาน -->
+      ${periods.length > 0 ? `
+      <div style="margin-bottom:7pt">
+        <div style="font-size:8.5pt;color:#5c5b54;font-weight:600;margin-bottom:3pt;letter-spacing:0.05em">แผนงวดงาน (PAYMENT MILESTONES)</div>
+        <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse">
+          <thead><tr style="background:#1a1a17;color:#fff">
+            <th style="padding:4pt;text-align:center;width:32pt">งวด</th>
+            <th style="padding:4pt;text-align:left">รายละเอียดงาน</th>
+            <th style="padding:4pt;text-align:right;width:55pt">% สัญญา</th>
+            <th style="padding:4pt;text-align:right;width:85pt">มูลค่า (บาท)</th>
+          </tr></thead>
+          <tbody>
+            ${periods.map((p, i) => {
+              const amount = Number(p.amount) || (total * (Number(p.percent) || 0) / 100);
+              return `<tr style="border-bottom:0.5pt solid #e3e1d7;${i % 2 === 1 ? 'background:#fafaf7' : ''}">
+                <td style="padding:3pt 5pt;text-align:center;font-weight:600">${p.no}</td>
+                <td style="padding:3pt 5pt">${escapeHtml(p.description || '-')}</td>
+                <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${(Number(p.percent) || 0).toFixed(2)}%</td>
+                <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(amount)}</td>
+              </tr>`;
+            }).join('')}
+            <tr style="background:#1a1a17;color:#fff">
+              <td colspan="2" style="padding:5pt;font-weight:600;text-align:right">ยอดรวมสัญญา</td>
+              <td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">100%</td>
+              <td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt">${fmt(total)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      ` : `
+      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:7pt">
+        <tbody>
+          <tr style="background:#1a1a17;color:#fff">
+            <td style="padding:5pt;font-weight:600">มูลค่าสัญญาจ้าง</td>
+            <td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+      `}
+
+      <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(total)})</div>
+      ${d.note ? `<div style="font-size:9.5pt;margin-bottom:7pt;color:#5c5b54;background:#f5f4ee;padding:6pt 10pt;border-radius:3pt"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+
       <div class="pdf-signatures-group">
         ${pdfSignatures(sigs)}
         ${pdfExecutiveSignatures()}
