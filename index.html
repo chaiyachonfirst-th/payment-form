@@ -626,7 +626,7 @@
   @media print {
     @page {
       size: A4;
-      margin: 12mm 12mm 14mm 12mm;
+      margin: 10mm 12mm 10mm 12mm;
     }
     /* Hide everything except print area */
     body * { visibility: hidden; }
@@ -639,7 +639,7 @@
       color: #1a1a17;
       font-family: 'IBM Plex Sans Thai', sans-serif;
       font-size: 11pt;
-      line-height: 1.55;
+      line-height: 1.45;
     }
     /* CRITICAL: prevent trailing blank pages —
        html/body must not force additional layout pages */
@@ -1890,7 +1890,8 @@
       <div class="stats" id="stats-bar"></div>
       <div class="toolbar">
         <h2><i class="ti ti-files" style="color:var(--accent)"></i> เอกสารทั้งหมด</h2>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="exportInstallmentsCsv()" title="Export รายการงวดงานเป็น CSV (ตามตัวกรอง)" style="background:#0e7c66;color:white;border-color:#0e7c66"><i class="ti ti-table-export"></i> Export งวดงาน (CSV)</button>
           <button class="btn btn-sm" onclick="exportData()"><i class="ti ti-download"></i> สำรอง JSON</button>
           <button class="btn btn-sm" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> นำเข้า</button>
           <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
@@ -2236,12 +2237,53 @@
           </thead>
           <tbody id="pr-price-tbody"></tbody>
           <tfoot>
-            <tr style="background:#1a1a17;color:white">
-              <td colspan="4" style="padding:10px 8px;text-align:right;font-weight:600">ยอดรวมทั้งสิ้น</td>
-              <td id="pr-price-grand" style="padding:10px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px">0.00</td>
+            <tr style="background:var(--surface-2)">
+              <td colspan="4" style="padding:8px;text-align:right;font-weight:500;color:var(--text-2)">รวมค่าสินค้า</td>
+              <td id="pr-price-subtotal" style="padding:8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">0.00</td>
             </tr>
           </tfoot>
         </table>
+
+        <!-- EXTRA CHARGES (ค่าใช้จ่ายเพิ่มเติม — ค่าขนส่ง / VAT / ส่วนลด ฯลฯ) -->
+        <div style="margin-top:14px;padding:12px;background:#fdf6e9;border:1px solid #e9d9b4;border-radius:var(--radius-sm)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#7a5d2e"><i class="ti ti-plus-equal"></i> ค่าใช้จ่ายเพิ่มเติม</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">เช่น ค่าขนส่ง · VAT · ค่าบริการ · ส่วนลด (ใส่ค่าติดลบ)</div>
+            </div>
+            <button type="button" class="btn btn-sm" onclick="addPrExtraCharge()" style="background:#fff;border-color:#d4c8a0">
+              <i class="ti ti-plus"></i> เพิ่มรายการ
+            </button>
+          </div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse" id="pr-extra-table">
+            <thead>
+              <tr style="background:#fff8e6">
+                <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-3);font-weight:500">ชื่อรายการ</th>
+                <th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text-3);font-weight:500;width:140px">จำนวนเงิน (บาท)</th>
+                <th style="padding:6px 8px;width:32px"></th>
+              </tr>
+            </thead>
+            <tbody id="pr-extra-tbody">
+              <tr id="pr-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="border-top:1px dashed #d4c8a0">
+                <td style="padding:6px 8px;text-align:right;font-weight:500;color:var(--text-2)">รวมค่าใช้จ่ายเพิ่มเติม</td>
+                <td id="pr-extra-total" style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- GRAND TOTAL -->
+        <table style="width:100%;margin-top:10px;border-collapse:collapse">
+          <tr style="background:#1a1a17;color:white">
+            <td style="padding:10px 12px;font-weight:600;font-size:14px">ยอดรวมทั้งสิ้น (รวมค่าใช้จ่ายเพิ่ม)</td>
+            <td id="pr-price-grand" style="padding:10px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;width:140px">0.00</td>
+          </tr>
+        </table>
+
         <div class="field" style="margin-top:14px">
           <label>ผู้ขาย (ที่จัดซื้อเลือก)</label>
           <input type="text" class="input" id="pr-price-vendor" placeholder="ชื่อร้านค้าที่จะสั่งซื้อ">
@@ -3189,40 +3231,99 @@
     if (!isAdmin()) { toast('เฉพาะ Admin เท่านั้น', 'error'); return; }
     const count = projects.length;
     if (count === 0) { toast('ไม่มีโครงการที่จะลบ', 'info'); return; }
-    if (!confirm(`ยืนยันลบโครงการทั้งหมด ${count} โครงการ?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้ ระบบจะลบโครงการทั้งหมดจาก Firestore`)) return;
-    if (!confirm(`ยืนยันอีกครั้ง: ลบ ${count} โครงการ จริงหรือไม่?`)) return;
-    try {
-      const tasks = projects.slice().map(p => deleteDoc(doc(db, 'projects', p.id)));
-      await Promise.all(tasks);
-      logActivity('admin-purge', `Admin ลบโครงการทั้งหมด (${count} โครงการ)`);
-      toast(`ลบ ${count} โครงการเรียบร้อย`, 'success');
-    } catch (e) {
-      console.error('purgeAllProjects error:', e);
-      toast('ลบไม่สำเร็จ: ' + e.message, 'error');
-    }
+    openSimpleConfirm({
+      title: '⚠️ ลบโครงการทั้งหมด',
+      message: `ยืนยันลบโครงการทั้งหมด <strong>${count} โครงการ</strong>?<br><br>การกระทำนี้ไม่สามารถย้อนกลับได้ ระบบจะลบโครงการทั้งหมดจาก Firestore`,
+      okLabel: `ลบ ${count} โครงการ`,
+      okClass: 'btn-danger',
+      onOk: () => {
+        setTimeout(() => {
+          openSimpleConfirm({
+            title: 'ยืนยันอีกครั้ง',
+            message: `ลบ <strong>${count} โครงการ</strong> จริงหรือไม่? นี่เป็นการกระทำสุดท้าย`,
+            okLabel: 'ยืนยันลบ',
+            okClass: 'btn-danger',
+            onOk: async () => {
+              try {
+                const tasks = projects.slice().map(p => deleteDoc(doc(db, 'projects', p.id)));
+                await Promise.all(tasks);
+                logActivity('admin-purge', `Admin ลบโครงการทั้งหมด (${count} โครงการ)`);
+                toast(`ลบ ${count} โครงการเรียบร้อย`, 'success');
+              } catch (e) {
+                console.error('purgeAllProjects error:', e);
+                toast('ลบไม่สำเร็จ: ' + e.message, 'error');
+              }
+            }
+          });
+        }, 200);
+      }
+    });
   }
   async function purgeAllDocuments() {
     if (!isAdmin()) { toast('เฉพาะ Admin เท่านั้น', 'error'); return; }
     const count = documents.length;
     if (count === 0) { toast('ไม่มีเอกสารที่จะลบ', 'info'); return; }
-    if (!confirm(`ยืนยันลบเอกสารทั้งหมด ${count} ฉบับ?\n\nรวม: งวดงาน, PR, PO, VO, เบิกย่อย, ซื้อของ, ค่ารถ — ไม่สามารถย้อนกลับได้`)) return;
-    if (!confirm(`ยืนยันอีกครั้ง: ลบ ${count} เอกสาร จริงหรือไม่?`)) return;
-    try {
-      const tasks = documents.slice().map(d => deleteDoc(doc(db, 'documents', d.id)));
-      await Promise.all(tasks);
-      logActivity('admin-purge', `Admin ลบเอกสารทั้งหมด (${count} ฉบับ)`);
-      toast(`ลบ ${count} เอกสารเรียบร้อย`, 'success');
-    } catch (e) {
-      console.error('purgeAllDocuments error:', e);
-      toast('ลบไม่สำเร็จ: ' + e.message, 'error');
-    }
+    openSimpleConfirm({
+      title: '⚠️ ลบเอกสารทั้งหมด',
+      message: `ยืนยันลบเอกสารทั้งหมด <strong>${count} ฉบับ</strong>?<br><br>รวม: งวดงาน, PR, PO, VO, เบิกย่อย, ซื้อของ, ค่ารถ — ไม่สามารถย้อนกลับได้`,
+      okLabel: `ลบ ${count} เอกสาร`,
+      okClass: 'btn-danger',
+      onOk: () => {
+        setTimeout(() => {
+          openSimpleConfirm({
+            title: 'ยืนยันอีกครั้ง',
+            message: `ลบ <strong>${count} เอกสาร</strong> จริงหรือไม่? นี่เป็นการกระทำสุดท้าย`,
+            okLabel: 'ยืนยันลบ',
+            okClass: 'btn-danger',
+            onOk: async () => {
+              try {
+                const tasks = documents.slice().map(d => deleteDoc(doc(db, 'documents', d.id)));
+                await Promise.all(tasks);
+                logActivity('admin-purge', `Admin ลบเอกสารทั้งหมด (${count} ฉบับ)`);
+                toast(`ลบ ${count} เอกสารเรียบร้อย`, 'success');
+              } catch (e) {
+                console.error('purgeAllDocuments error:', e);
+                toast('ลบไม่สำเร็จ: ' + e.message, 'error');
+              }
+            }
+          });
+        }, 200);
+      }
+    });
   }
   async function purgeEverything() {
     if (!isAdmin()) { toast('เฉพาะ Admin เท่านั้น', 'error'); return; }
-    if (!confirm('⚠️ ลบทั้งโครงการและเอกสารทั้งหมด?\n\nนี่เป็นการล้างข้อมูลทั้งระบบ (ยกเว้น users + settings)')) return;
-    if (!confirm('แน่ใจหรือไม่? นี่เป็นการลบสุดท้าย')) return;
-    await purgeAllProjects();
-    await purgeAllDocuments();
+    openSimpleConfirm({
+      title: '⚠️ ลบข้อมูลทั้งระบบ',
+      message: `ลบทั้งโครงการและเอกสารทั้งหมด?<br><br>นี่เป็นการล้างข้อมูลทั้งระบบ (ยกเว้น users + settings)`,
+      okLabel: 'ลบทั้งหมด',
+      okClass: 'btn-danger',
+      onOk: () => {
+        setTimeout(() => {
+          openSimpleConfirm({
+            title: 'ยืนยันสุดท้าย',
+            message: 'แน่ใจหรือไม่? นี่เป็นการลบสุดท้าย',
+            okLabel: 'ลบเลย',
+            okClass: 'btn-danger',
+            onOk: async () => {
+              try {
+                const projCount = projects.length;
+                const docCount = documents.length;
+                const tasks = [
+                  ...projects.slice().map(p => deleteDoc(doc(db, 'projects', p.id))),
+                  ...documents.slice().map(d => deleteDoc(doc(db, 'documents', d.id)))
+                ];
+                await Promise.all(tasks);
+                logActivity('admin-purge', `Admin ลบทุกอย่าง (${projCount} โครงการ + ${docCount} เอกสาร)`);
+                toast(`ลบ ${projCount} โครงการ + ${docCount} เอกสารเรียบร้อย`, 'success');
+              } catch (e) {
+                toast('ลบไม่สำเร็จ: ' + e.message, 'error');
+              }
+            }
+          });
+        }, 200);
+      }
+    });
   }
 
   async function saveCompanySettings() {
@@ -4954,8 +5055,11 @@
   }
   // Procurement enters prices for PR items, then approves
   let _prPriceTarget = null;
+  let _prExtraCharges = []; // [{label, amount}] — working copy in modal
   function openPrPriceModal(d) {
     _prPriceTarget = d;
+    // Restore extra charges if PR was previously edited (otherwise start fresh)
+    _prExtraCharges = Array.isArray(d.extraCharges) ? d.extraCharges.map(x => ({...x})) : [];
     const tbody = document.getElementById('pr-price-tbody');
     tbody.innerHTML = (d.items || []).map((it, i) => `
       <tr>
@@ -4972,51 +5076,122 @@
       <div style="font-size:12px;color:var(--text-3)">PR ${escapeHtml(d.docNo)} · ${escapeHtml(d.project || '-')}</div>
       <div style="font-weight:600;margin-top:2px">${escapeHtml(d.title || (d.items && d.items[0] ? d.items[0].name : ''))}</div>
     `;
+    renderPrExtraCharges();
     updatePrPriceTotal();
     document.getElementById('pr-price-modal').classList.add('show');
   }
+  function renderPrExtraCharges() {
+    const tbody = document.getElementById('pr-extra-tbody');
+    if (!tbody) return;
+    if (_prExtraCharges.length === 0) {
+      tbody.innerHTML = `<tr id="pr-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม — กด "เพิ่มรายการ" เพื่อใส่ค่าขนส่ง/VAT/ส่วนลด</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = _prExtraCharges.map((row, i) => `
+      <tr>
+        <td style="padding:4px 8px">
+          <input type="text" value="${escapeHtml(row.label || '')}" placeholder="เช่น ค่าขนส่ง" oninput="updatePrExtraCharge(${i},'label',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff">
+        </td>
+        <td style="padding:4px 8px">
+          <input type="number" value="${row.amount ?? ''}" placeholder="0.00" step="0.01" oninput="updatePrExtraCharge(${i},'amount',this.value)" style="width:100%;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace;background:#fff">
+        </td>
+        <td style="padding:4px 4px;text-align:center">
+          <button type="button" onclick="removePrExtraCharge(${i})" title="ลบ" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;border-radius:4px;display:inline-flex"><i class="ti ti-trash" style="font-size:15px"></i></button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  function addPrExtraCharge() {
+    _prExtraCharges.push({ label: '', amount: 0 });
+    renderPrExtraCharges();
+    updatePrPriceTotal();
+    // Auto-focus the new label input
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('#pr-extra-tbody input[type="text"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 50);
+  }
+  function updatePrExtraCharge(idx, field, value) {
+    if (!_prExtraCharges[idx]) return;
+    if (field === 'amount') {
+      _prExtraCharges[idx].amount = value === '' ? 0 : Number(value);
+    } else {
+      _prExtraCharges[idx][field] = value;
+    }
+    updatePrPriceTotal();
+  }
+  function removePrExtraCharge(idx) {
+    _prExtraCharges.splice(idx, 1);
+    renderPrExtraCharges();
+    updatePrPriceTotal();
+  }
   function updatePrPriceTotal() {
     if (!_prPriceTarget) return;
-    let total = 0;
+    let subtotal = 0;
     (_prPriceTarget.items || []).forEach((it, i) => {
       const price = Number(document.getElementById(`pr-price-${i}`)?.value) || 0;
       const line = (Number(it.qty) || 0) * price;
-      total += line;
+      subtotal += line;
       const lineEl = document.getElementById(`pr-line-${i}`);
       if (lineEl) lineEl.textContent = fmt(line);
     });
-    document.getElementById('pr-price-grand').textContent = fmt(total);
+    const extraTotal = _prExtraCharges.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+    const subEl = document.getElementById('pr-price-subtotal');
+    if (subEl) subEl.textContent = fmt(subtotal);
+    const extraEl = document.getElementById('pr-extra-total');
+    if (extraEl) {
+      extraEl.textContent = fmt(extraTotal);
+      extraEl.style.color = extraTotal < 0 ? 'var(--danger)' : '';
+    }
+    document.getElementById('pr-price-grand').textContent = fmt(subtotal + extraTotal);
   }
   function closePrPriceModal() {
     document.getElementById('pr-price-modal').classList.remove('show');
     _prPriceTarget = null;
+    _prExtraCharges = [];
   }
   async function submitPrPrices() {
     const d = _prPriceTarget;
     if (!d) { toast('ไม่พบ PR', 'error'); return; }
     try {
-      let totalEst = 0;
+      let subtotal = 0;
       d.items = (d.items || []).map((it, i) => {
         const priceEl = document.getElementById(`pr-price-${i}`);
         const price = priceEl ? (Number(priceEl.value) || 0) : 0;
         const line = (Number(it.qty) || 0) * price;
-        totalEst += line;
+        subtotal += line;
         return { ...it, est: price, total: line };
       });
-      d.totalEst = totalEst;
+      // Clean up extra charges: drop empty rows (no label AND no amount)
+      const cleanExtras = _prExtraCharges
+        .map(x => ({ label: (x.label || '').trim(), amount: Number(x.amount) || 0 }))
+        .filter(x => x.label || x.amount);
+      // Require label for any non-zero amount
+      const missingLabel = cleanExtras.find(x => x.amount !== 0 && !x.label);
+      if (missingLabel) {
+        toast('กรุณาใส่ชื่อรายการสำหรับค่าใช้จ่ายเพิ่มเติมทุกรายการที่มีจำนวนเงิน', 'error');
+        return;
+      }
+      const extraTotal = cleanExtras.reduce((s, x) => s + x.amount, 0);
+      d.itemsSubtotal = subtotal;
+      d.extraCharges = cleanExtras;
+      d.extraChargesTotal = extraTotal;
+      d.totalEst = subtotal + extraTotal;
       const vendorEl = document.getElementById('pr-price-vendor');
       d.suggestedVendor = vendorEl ? (vendorEl.value.trim() || d.suggestedVendor) : d.suggestedVendor;
       const noteEl = document.getElementById('pr-price-note');
       const note = noteEl ? noteEl.value.trim() : '';
       if (note) {
+        d.procurementNote = note; // store separately for clean display
         d.note = (d.note ? d.note + '\n' : '') + '[จัดซื้อ] ' + note;
       }
       d.status = 'approved';
       d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
       d.pricesAddedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
       await saveDocs(d);
-      logActivity('doc-approve', `อนุมัติ ${d.docNo} (PR) · จัดซื้อแนบราคารวม ${fmt(totalEst)} บาท`);
-      toast(`อนุมัติ PR + แนบราคา ${fmt(totalEst)} บาท`, 'success');
+      const extraSummary = cleanExtras.length > 0 ? ` (+ ค่าใช้จ่ายเพิ่ม ${cleanExtras.length} รายการ)` : '';
+      logActivity('doc-approve', `อนุมัติ ${d.docNo} (PR) · จัดซื้อแนบราคารวม ${fmt(d.totalEst)} บาท${extraSummary}`);
+      toast(`อนุมัติ PR + แนบราคา ${fmt(d.totalEst)} บาท`, 'success');
       closePrPriceModal();
       closeModal();
     } catch (e) {
@@ -7585,7 +7760,15 @@
           <table class="items-tbl">
             <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th>หน่วย</th><th class="right">ประมาณการ/หน่วย</th><th class="right">รวม</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
-            <tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ประมาณการรวม</td><td class="row-total">${fmt(d.totalEst)}</td></tr></tfoot>
+            ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
+              <tfoot>
+                <tr style="background:var(--surface-2)"><td colspan="4" style="text-align:right;padding:6px 8px;color:var(--text-2)">รวมค่าสินค้า</td><td class="row-total" style="font-weight:500">${fmt(d.itemsSubtotal != null ? d.itemsSubtotal : (d.totalEst - (d.extraChargesTotal || 0)))}</td></tr>
+                ${d.extraCharges.map(ec => `
+                  <tr style="background:#fdf6e9"><td colspan="4" style="text-align:right;padding:5px 8px;color:#7a5d2e;font-size:13px"><i class="ti ti-plus-equal" style="vertical-align:-2px;font-size:13px"></i> ${escapeHtml(ec.label)}</td><td class="row-total" style="color:${Number(ec.amount) < 0 ? 'var(--danger)' : '#7a5d2e'};font-weight:500">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>
+                `).join('')}
+                <tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวมทั้งสิ้น</td><td class="row-total">${fmt(d.totalEst)}</td></tr>
+              </tfoot>
+            ` : `<tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ประมาณการรวม</td><td class="row-total">${fmt(d.totalEst)}</td></tr></tfoot>`}
           </table>
         </div>
 
@@ -7593,7 +7776,8 @@
           <div class="detail-section-title">เหตุผล</div>
           <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(d.reason || '-')}</div>
           ${d.suggestedVendor ? `<div style="margin-top:8px"><strong>ผู้ขายแนะนำ:</strong> ${escapeHtml(d.suggestedVendor)}</div>` : ''}
-          ${d.note ? `<div style="margin-top:8px;color:var(--text-2)"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+          ${d.procurementNote ? `<div style="margin-top:8px;padding:8px 10px;background:#d8eee7;border-left:3px solid #0e7c66;border-radius:4px;color:var(--text-2);font-size:13px"><strong style="color:#0e7c66">[จัดซื้อ]</strong> ${escapeHtml(d.procurementNote)}</div>` : ''}
+          ${d.note && !d.procurementNote ? `<div style="margin-top:8px;color:var(--text-2)"><strong>หมายเหตุ:</strong> <span style="white-space:pre-wrap">${escapeHtml(d.note)}</span></div>` : ''}
         </div>
 
         ${d.approvedBy ? `<div class="detail-section">
@@ -8796,6 +8980,43 @@
     `;
   }
 
+  // ULTRA-COMPACT signature helpers — for 1-page installment PDF
+  // ทุกลายเซ็น (6 ช่อง = 4 บทบาท + 2 executive) อยู่ในแถวเดียวกัน ขนาดเล็กกว่า
+  function pdfSignaturesCompact(roles) {
+    return `
+      <div class="pdf-signatures" style="display:grid;grid-template-columns:repeat(${roles.length},1fr);gap:6pt;margin-top:6pt">
+        ${roles.map(r => `
+          <div style="text-align:center">
+            <div style="border-top:0.8pt dotted #1a1a17;padding-top:2pt;margin-top:14pt"></div>
+            <div style="font-size:7pt;color:#5c5b54;font-weight:500">${escapeHtml(r.label)}</div>
+            <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">${r.name ? '('+escapeHtml(r.name)+')' : '(...........................)'}</div>
+            <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">${r.date ? thaiDate(r.date) : '......./......./......'}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  function pdfExecutiveSignaturesCompact() {
+    const e1 = (companySettings.exec1Name || '').trim();
+    const e2 = (companySettings.exec2Name || '').trim();
+    return `
+      <div class="pdf-signatures" style="display:grid;grid-template-columns:1fr 1fr;gap:8pt;margin-top:6pt;padding-top:4pt;border-top:0.5pt solid #c8c5b6">
+        <div style="text-align:center">
+          <div style="border-top:0.8pt dotted #1a1a17;padding-top:2pt;margin-top:14pt"></div>
+          <div style="font-size:7pt;color:#5c5b54;font-weight:600">ผู้บริหาร (Executive 1)</div>
+          <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">${e1 ? '('+escapeHtml(e1)+')' : '(...........................)'}</div>
+          <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">วันที่ ......./......./.......</div>
+        </div>
+        <div style="text-align:center">
+          <div style="border-top:0.8pt dotted #1a1a17;padding-top:2pt;margin-top:14pt"></div>
+          <div style="font-size:7pt;color:#5c5b54;font-weight:600">ผู้บริหาร (Executive 2)</div>
+          <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">${e2 ? '('+escapeHtml(e2)+')' : '(...........................)'}</div>
+          <div style="font-size:6.5pt;color:#8b8a82;margin-top:0.5pt">วันที่ ......./......./.......</div>
+        </div>
+      </div>
+    `;
+  }
+
   // NEW: Build attachment pages (1 image per page, full A4) — appended to every PDF
   // Images: rendered full-size. PDFs: shown as placeholder card noting to view online.
   function pdfAttachmentPages(doc) {
@@ -8916,73 +9137,89 @@
       ? documents.filter(x => x.type === 'subWithdraw' && d.collectedSubWithdrawIds.includes(x.id))
       : [];
 
+    // คำนวณมูลค่างานคงเหลือ (Contract − cumulative ถึงงวดนี้)
+    const contractValue = Number(d.contract) || 0;
+    const cumulativeThisDoc = (Number(d.prev) || 0) + (Number(d.curr) || 0);
+    const remainingValue = contractValue - cumulativeThisDoc;
+    const remainPct = contractValue > 0 ? (remainingValue / contractValue) * 100 : 0;
+
+    // Compact description (สำหรับให้ใส่ใน 1 หน้า — ตัดที่ ~180 ตัวอักษร)
+    const truncDesc = (s, n) => {
+      if (!s) return '';
+      const t = String(s).trim();
+      return t.length > n ? t.slice(0, n) + '…' : t;
+    };
+    const plannedDescShort = truncDesc((linkedPeriod && linkedPeriod.description) || d.plannedDescription || '', 180);
+    const workDescShort = truncDesc(d.description || '', 180);
+
     const html = `
       ${pdfHeader('ใบขอเบิกจ่ายงวดงาน', 'PAYMENT REQUISITION', d.docNo)}
-      <table class="pdf-section" style="width:100%;font-size:9pt;margin-bottom:6pt;border-collapse:collapse">
+      <table class="pdf-section" style="width:100%;font-size:8.5pt;margin-bottom:4pt;border-collapse:collapse">
         <tr>
-          <td style="padding:2pt 0;color:#5c5b54;width:75pt">โครงการ</td>
-          <td style="padding:2pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td>
-          <td style="padding:2pt 0;color:#5c5b54;width:65pt">วันที่</td>
-          <td style="padding:2pt 0">${thaiDate(d.createdAt)}</td>
+          <td style="padding:1pt 0;color:#5c5b54;width:70pt">โครงการ</td>
+          <td style="padding:1pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td>
+          <td style="padding:1pt 0;color:#5c5b54;width:60pt">วันที่</td>
+          <td style="padding:1pt 0">${thaiDate(d.createdAt)}</td>
         </tr>
         <tr>
-          <td style="padding:2pt 0;color:#5c5b54">ผู้รับเหมา</td>
-          <td style="padding:2pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td>
-          <td style="padding:2pt 0;color:#5c5b54">งวดงานที่</td>
-          <td style="padding:2pt 0">${d.period || '-'} / ${d.periodTotal || '-'}${d.plannedPercent ? ` <span style="color:#c8632c;font-weight:500">(${d.plannedPercent}%)</span>` : ''}</td>
+          <td style="padding:1pt 0;color:#5c5b54">ผู้รับเหมา</td>
+          <td style="padding:1pt 0;font-weight:500">${escapeHtml(d.contractor || '-')}</td>
+          <td style="padding:1pt 0;color:#5c5b54">งวดงานที่</td>
+          <td style="padding:1pt 0">${d.period || '-'} / ${d.periodTotal || '-'}${d.plannedPercent ? ` <span style="color:#c8632c;font-weight:500">(${d.plannedPercent}%)</span>` : ''}</td>
         </tr>
         ${linkedPo ? `<tr>
-          <td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td>
-          <td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(linkedPo.docNo)}${linkedPo.scope ? ` <span style="font-family:inherit;color:#5c5b54">· ${escapeHtml(linkedPo.scope).slice(0, 80)}${linkedPo.scope.length > 80 ? '…' : ''}</span>` : ''}</td>
-        </tr>` : (d.poDocNo ? `<tr><td style="padding:2pt 0;color:#5c5b54">PO ที่ผูก</td><td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(d.poDocNo)}</td></tr>` : '')}
-        ${d.handoverDate ? `<tr><td style="padding:2pt 0;color:#5c5b54">วันส่งมอบ</td><td colspan="3" style="padding:2pt 0">${d.handoverDate}</td></tr>` : ''}
+          <td style="padding:1pt 0;color:#5c5b54">PO ที่ผูก</td>
+          <td colspan="3" style="padding:1pt 0;font-family:'JetBrains Mono',monospace;font-size:8pt">${escapeHtml(linkedPo.docNo)}${linkedPo.scope ? ` <span style="font-family:inherit;color:#5c5b54">· ${escapeHtml(truncDesc(linkedPo.scope, 70))}</span>` : ''}</td>
+        </tr>` : (d.poDocNo ? `<tr><td style="padding:1pt 0;color:#5c5b54">PO ที่ผูก</td><td colspan="3" style="padding:1pt 0;font-family:'JetBrains Mono',monospace;font-size:8pt">${escapeHtml(d.poDocNo)}</td></tr>` : '')}
+        ${d.handoverDate ? `<tr><td style="padding:1pt 0;color:#5c5b54">วันส่งมอบ</td><td colspan="3" style="padding:1pt 0">${d.handoverDate}</td></tr>` : ''}
       </table>
 
-      ${(linkedPeriod && linkedPeriod.description) || d.plannedDescription ? `
-        <div class="pdf-section" style="background:#fdf4ec;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #c8632c">
-          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">งานตามแผนงวดนี้ (จาก PO)</div>
-          <div style="font-size:9.5pt;line-height:1.45">${escapeHtml((linkedPeriod && linkedPeriod.description) || d.plannedDescription || '')}</div>
+      ${plannedDescShort ? `
+        <div class="pdf-section" style="background:#fdf4ec;padding:4pt 8pt;margin-bottom:4pt;border-left:2pt solid #c8632c">
+          <div style="font-size:7pt;color:#5c5b54;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">งานตามแผนงวดนี้</div>
+          <div style="font-size:8.5pt;line-height:1.3">${escapeHtml(plannedDescShort)}</div>
         </div>
       ` : ''}
-      ${d.description ? `
-        <div class="pdf-section" style="background:#f5f4ee;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #c8632c">
-          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">รายละเอียดเนื้องาน</div>
-          <div style="font-size:9.5pt;line-height:1.45">${escapeHtml(d.description)}</div>
+      ${workDescShort ? `
+        <div class="pdf-section" style="background:#f5f4ee;padding:4pt 8pt;margin-bottom:4pt;border-left:2pt solid #c8632c">
+          <div style="font-size:7pt;color:#5c5b54;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">รายละเอียดเนื้องาน</div>
+          <div style="font-size:8.5pt;line-height:1.3">${escapeHtml(workDescShort)}</div>
         </div>
       ` : ''}
 
-      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:6pt">
-        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:4pt;text-align:left">รายการ</th><th style="padding:4pt;text-align:right;width:100pt">จำนวนเงิน (บาท)</th></tr></thead>
+      <table class="pdf-table" style="width:100%;font-size:8.5pt;border-collapse:collapse;margin-bottom:4pt">
+        <thead><tr style="background:#1a1a17;color:#fff"><th style="padding:3pt 5pt;text-align:left">รายการ</th><th style="padding:3pt 5pt;text-align:right;width:90pt">จำนวนเงิน (บาท)</th></tr></thead>
         <tbody>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">มูลค่างานรวมตามสัญญา (PO)</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">ผลงานสะสมยกมา</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt">ผลงานงวดนี้</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.curr)}</td></tr>
-          <tr style="background:#f5f4ee;border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;font-weight:600">มูลค่างานขอเบิกงวดนี้</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td></tr>
-          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ประกันผลงาน ${d.retentionPct}%</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.retention)}</td></tr>
-          ${d.advance > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก เบิกย่อย / เงินล่วงหน้า${collectedSubs.length > 0 ? ` (${collectedSubs.length} รายการ)` : ''}</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.advance)}</td></tr>` : ''}
-          ${d.material > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ค่าวัสดุ</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.material)}</td></tr>` : ''}
-          ${d.penalty > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:3pt 5pt;color:#b3261e">หัก ค่าปรับ</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.penalty)}</td></tr>` : ''}
-          <tr style="background:#1a1a17;color:#fff"><td style="padding:5pt;font-weight:600">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.net)}</td></tr>
+          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt">มูลค่างานรวมตามสัญญา (PO)</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.contract)}</td></tr>
+          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt">ผลงานสะสมยกมา</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.prev)}</td></tr>
+          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt">ผลงานงวดนี้</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(d.curr)}</td></tr>
+          <tr style="background:#f5f4ee;border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt;font-weight:600">มูลค่างานขอเบิกงวดนี้</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.curr)}</td></tr>
+          <tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt;color:#b3261e">หัก ประกันผลงาน ${d.retentionPct}%</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.retention)}</td></tr>
+          ${d.advance > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt;color:#b3261e">หัก เบิกย่อย / เงินล่วงหน้า${collectedSubs.length > 0 ? ` (${collectedSubs.length} รายการ)` : ''}</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.advance)}</td></tr>` : ''}
+          ${d.material > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt;color:#b3261e">หัก ค่าวัสดุ</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.material)}</td></tr>` : ''}
+          ${d.penalty > 0 ? `<tr style="border-bottom:0.5pt solid #e3e1d7"><td style="padding:2pt 5pt;color:#b3261e">หัก ค่าปรับ</td><td style="padding:2pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:#b3261e">−${fmt(d.penalty)}</td></tr>` : ''}
+          <tr style="background:#1a1a17;color:#fff"><td style="padding:4pt 5pt;font-weight:600">ยอดสุทธิที่ขอเบิกจ่าย</td><td style="padding:4pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11pt">${fmt(d.net)}</td></tr>
+          <tr style="background:#fdf4ec;border-top:0.5pt solid #c8632c"><td style="padding:3pt 5pt;font-weight:600;color:#8b3f15">มูลค่างานคงเหลือตามสัญญา (หลังงวดนี้)</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:#8b3f15">${fmt(remainingValue)}${contractValue > 0 ? ` <span style="font-weight:400;font-size:7.5pt">(${remainPct.toFixed(1)}%)</span>` : ''}</td></tr>
         </tbody>
       </table>
-      <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.net)})</div>
+      <div style="font-size:8.5pt;color:#5c5b54;margin-bottom:3pt">(${bahtText(d.net)})</div>
 
       ${collectedSubs.length > 0 ? `
-        <div class="pdf-section" style="background:#fdf6e9;padding:7pt 10pt;margin-bottom:6pt;border-left:2.5pt solid #b8740a;border-radius:3pt">
-          <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4pt;font-weight:600">รายการเบิกย่อยที่ถูกหักในงวดนี้</div>
-          <table style="width:100%;font-size:8.5pt;border-collapse:collapse">
-            ${collectedSubs.map(s => `<tr style="border-bottom:0.5pt dotted #d4c8a0">
-              <td style="padding:2pt 0;font-family:'JetBrains Mono',monospace;width:120pt;color:#5c5b54">${escapeHtml(s.docNo)}</td>
-              <td style="padding:2pt 0">${escapeHtml(s.description || '-').slice(0, 80)}${(s.description || '').length > 80 ? '…' : ''}</td>
-              <td style="padding:2pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500;color:#9a6324;width:75pt">−${fmt(s.amount)}</td>
+        <div class="pdf-section" style="background:#fdf6e9;padding:4pt 8pt;margin-bottom:4pt;border-left:2pt solid #b8740a;border-radius:2pt">
+          <div style="font-size:7pt;color:#5c5b54;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2pt;font-weight:600">รายการเบิกย่อยที่ถูกหักในงวดนี้</div>
+          <table style="width:100%;font-size:7.5pt;border-collapse:collapse">
+            ${collectedSubs.slice(0, 6).map(s => `<tr style="border-bottom:0.5pt dotted #d4c8a0">
+              <td style="padding:1pt 0;font-family:'JetBrains Mono',monospace;width:90pt;color:#5c5b54">${escapeHtml(s.docNo)}</td>
+              <td style="padding:1pt 0">${escapeHtml(truncDesc(s.description || '-', 60))}</td>
+              <td style="padding:1pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500;color:#9a6324;width:65pt">−${fmt(s.amount)}</td>
             </tr>`).join('')}
-            <tr style="background:#fff5dd"><td colspan="2" style="padding:3pt 0;font-weight:600;text-align:right">รวมหักเบิกย่อย</td><td style="padding:3pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:#9a6324">−${fmt(collectedSubs.reduce((s, x) => s + (Number(x.amount) || 0), 0))}</td></tr>
+            ${collectedSubs.length > 6 ? `<tr><td colspan="3" style="padding:1pt 0;color:#5c5b54;font-style:italic;font-size:7pt">…และอีก ${collectedSubs.length - 6} รายการ</td></tr>` : ''}
+            <tr style="background:#fff5dd"><td colspan="2" style="padding:2pt 0;font-weight:600;text-align:right">รวมหักเบิกย่อย</td><td style="padding:2pt 0;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:#9a6324">−${fmt(collectedSubs.reduce((s, x) => s + (Number(x.amount) || 0), 0))}</td></tr>
           </table>
         </div>
       ` : ''}
 
       ${(() => {
-        // Show attachment checklist
         const items = [];
         if (d.attachments) {
           if (d.attachments.qc) items.push('QC Checklist');
@@ -8991,16 +9228,14 @@
           if (d.attachments.other) items.push('เอกสารอื่นๆ');
         }
         if (items.length === 0) return '';
-        return `<div class="pdf-section" style="margin-bottom:6pt;padding:6pt 10pt;background:#f5f4ee;border-radius:3pt">
-          <div style="font-size:8.5pt;color:#5c5b54;font-weight:600;margin-bottom:3pt">เอกสารประกอบ</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6pt;font-size:9pt">
-            ${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:2pt 7pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
-          </div>
+        return `<div class="pdf-section" style="margin-bottom:4pt;padding:3pt 8pt;background:#f5f4ee;border-radius:2pt">
+          <div style="font-size:7.5pt;color:#5c5b54;font-weight:600;display:inline-block;margin-right:6pt">เอกสารประกอบ:</div>
+          <span style="font-size:8pt">${items.map(t => `<span style="background:#d8f0e1;color:#2d6a4f;padding:1pt 5pt;border-radius:2pt;font-weight:500;margin-right:3pt">✓ ${escapeHtml(t)}</span>`).join('')}</span>
         </div>`;
       })()}
       <div class="pdf-signatures-group">
-        ${pdfSignatures(sigs)}
-        ${pdfExecutiveSignatures()}
+        ${pdfSignaturesCompact(sigs)}
+        ${pdfExecutiveSignaturesCompact()}
         ${pdfFooter()}
       </div>
       ${pdfAttachmentPages(d)}
@@ -9214,7 +9449,11 @@
             <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.est)}</td>
             <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
           </tr>`).join('')}
-          <tr style="background:#1a1a17;color:#fff"><td colspan="5" style="padding:5pt;font-weight:600;text-align:right">ประมาณการรวม</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.totalEst || 0)}</td></tr>
+          ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
+            <tr style="background:#f5f4ee"><td colspan="5" style="padding:3pt 5pt;text-align:right;font-weight:500;color:#5c5b54">รวมค่าสินค้า</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.itemsSubtotal != null ? d.itemsSubtotal : (d.totalEst - (d.extraChargesTotal || 0)))}</td></tr>
+            ${d.extraCharges.map(ec => `<tr style="background:#fdf6e9;border-bottom:0.5pt dotted #e9d9b4"><td colspan="5" style="padding:3pt 5pt;text-align:right;color:#7a5d2e">+ ${escapeHtml(ec.label)}</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:${Number(ec.amount) < 0 ? '#b3261e' : '#7a5d2e'}">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>`).join('')}
+          ` : ''}
+          <tr style="background:#1a1a17;color:#fff"><td colspan="5" style="padding:5pt;font-weight:600;text-align:right">ประมาณการรวมทั้งสิ้น</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.totalEst || 0)}</td></tr>
         </tbody>
       </table>
       ${d.reason ? `<div class="pdf-section" style="background:#d8eee7;padding:8pt 10pt;margin-bottom:7pt;border-left:2.5pt solid #0e7c66">
@@ -9628,21 +9867,187 @@
     toast('สำรองข้อมูลเรียบร้อย', 'success');
   }
 
+  // ===== Export งวดงาน CSV (with running cumulative + remaining contract value) =====
+  function exportInstallmentsCsv() {
+    // เลือก installment docs ตาม project filter (ใช้ filter ปัจจุบันให้ผู้ใช้รู้สึก "WYSIWYG")
+    let docs = documents.filter(d => (d.type || 'installment') === 'installment');
+    if (currentProjectFilter && currentProjectFilter !== 'all') {
+      docs = docs.filter(d => d.projectId === currentProjectFilter);
+    }
+    if (docs.length === 0) {
+      toast('ไม่มีงวดงานให้ export', 'info');
+      return;
+    }
+
+    // จัดกลุ่มตาม PO (หรือ project + contractor ถ้าไม่มี PO) เพื่อคำนวณ running cumulative ตามลำดับงวด
+    const groupKey = d => d.poId || `_proj_${d.projectId || '?'}_${d.contractor || '?'}`;
+    const groups = {};
+    docs.forEach(d => {
+      const k = groupKey(d);
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(d);
+    });
+
+    // เรียงในแต่ละกลุ่ม: ตามเลขงวด (period) แล้วตามวันที่สร้าง
+    Object.keys(groups).forEach(k => {
+      groups[k].sort((a, b) => {
+        const pa = Number(a.period) || 0, pb = Number(b.period) || 0;
+        if (pa !== pb) return pa - pb;
+        return (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0);
+      });
+    });
+
+    // CSV header
+    const headers = [
+      'เลขเอกสาร',
+      'วันที่สร้าง',
+      'โครงการ',
+      'ผู้รับเหมา',
+      'PO ที่ผูก',
+      'งวดที่',
+      'จากทั้งหมด',
+      '% ตามแผน',
+      'มูลค่าสัญญา (PO)',
+      'ผลงานสะสมยกมา',
+      'ผลงานงวดนี้',
+      'ผลงานสะสมรวม',
+      'หักประกันผลงาน',
+      'หักเบิกย่อย/ล่วงหน้า',
+      'หักค่าวัสดุ',
+      'หักค่าปรับ',
+      'ยอดสุทธิที่เบิกจ่าย',
+      'มูลค่างานคงเหลือ',
+      '% คงเหลือ',
+      'สถานะ',
+      'PM อนุมัติ',
+      'Exec1 อนุมัติ',
+      'Exec2 อนุมัติ',
+      'วันที่จ่ายจริง',
+      'หมายเหตุ'
+    ];
+
+    const rows = [];
+    // เรียงกลุ่มตามชื่อโครงการ → ผู้รับเหมา → PO
+    const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
+      const da = groups[a][0], db = groups[b][0];
+      const pa = (da.project || '') + (da.contractor || '');
+      const pb = (db.project || '') + (db.contractor || '');
+      return pa.localeCompare(pb, 'th');
+    });
+
+    sortedGroupKeys.forEach(k => {
+      const groupDocs = groups[k];
+      // running cumulative — บวกเฉพาะงวดที่ "ไม่ rejected" (ใช้ผลงานงวดนี้ d.curr)
+      let cumulative = 0;
+      groupDocs.forEach(d => {
+        const linkedPo = d.poId ? documents.find(x => x.id === d.poId) : null;
+        const contractValue = Number(d.contract) || (linkedPo ? Number(linkedPo.contractValue) || 0 : 0);
+        const curr = Number(d.curr) || 0;
+        // Cumulative: นับเฉพาะ doc ที่ไม่ rejected
+        if (d.status !== 'rejected') cumulative += curr;
+        const remaining = contractValue - cumulative;
+        const remainPct = contractValue > 0 ? (remaining / contractValue) * 100 : 0;
+
+        const pm = getApprovalSlot(d, 'pm');
+        const e1 = getApprovalSlot(d, 'exec1');
+        const e2 = getApprovalSlot(d, 'exec2');
+
+        // status text
+        const step = getCurrentStep(d);
+        let statusText = '-';
+        if (d.status === 'rejected') statusText = 'ไม่อนุมัติ';
+        else if (d.paidAt) statusText = 'จ่ายแล้ว';
+        else if (step === 'done') statusText = 'อนุมัติครบ (รอจ่าย)';
+        else if (d.status === 'pending') statusText = `รอ ${step || 'อนุมัติ'}`;
+        else statusText = d.status || '-';
+
+        rows.push([
+          d.docNo || '',
+          d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '',
+          d.project || '',
+          d.contractor || '',
+          linkedPo ? linkedPo.docNo : (d.poDocNo || ''),
+          d.period || '',
+          d.periodTotal || '',
+          d.plannedPercent != null ? d.plannedPercent : '',
+          contractValue,
+          Number(d.prev) || 0,
+          curr,
+          d.status === 'rejected' ? (cumulative) : cumulative, // running (already excludes rejected)
+          Number(d.retention) || 0,
+          Number(d.advance) || 0,
+          Number(d.material) || 0,
+          Number(d.penalty) || 0,
+          Number(d.net) || 0,
+          d.status === 'rejected' ? '' : remaining,
+          d.status === 'rejected' ? '' : remainPct.toFixed(2),
+          statusText,
+          pm ? `${pm.name}${pm.rejected ? ' (ปฏิเสธ)' : ''}` : '',
+          e1 ? `${e1.name}${e1.rejected ? ' (ปฏิเสธ)' : ''}` : '',
+          e2 ? `${e2.name}${e2.rejected ? ' (ปฏิเสธ)' : ''}` : '',
+          d.paidAt ? new Date(d.paidAt).toISOString().slice(0, 10) : '',
+          (d.description || '').replace(/\s+/g, ' ').slice(0, 200)
+        ]);
+      });
+    });
+
+    // CSV escape — wrap in quotes if contains comma/quote/newline
+    const escapeCsv = (v) => {
+      if (v == null) return '';
+      const s = String(v);
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    const csvLines = [
+      headers.map(escapeCsv).join(','),
+      ...rows.map(r => r.map(escapeCsv).join(','))
+    ];
+    // BOM + CRLF for Excel/Thai compatibility
+    const csv = '\uFEFF' + csvLines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const projectSuffix = currentProjectFilter !== 'all'
+      ? '-' + ((getProjectById(currentProjectFilter) || {}).name || 'project').replace(/[^a-zA-Z0-9ก-๙]/g, '_').slice(0, 30)
+      : '';
+    a.href = url;
+    a.download = `installments${projectSuffix}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`Export งวดงาน ${rows.length} รายการเรียบร้อย`, 'success');
+  }
+
   function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (e) => {
+      let data;
       try {
-        const data = JSON.parse(e.target.result);
-        if (!confirm('การนำเข้าจะแทนที่ข้อมูลทั้งหมด ดำเนินการต่อ?')) return;
-        if (data.documents) {
-          for (const d of data.documents) await saveDocs(d);
-        }
-        toast('นำเข้าข้อมูลเรียบร้อย', 'success');
+        data = JSON.parse(e.target.result);
       } catch (err) {
-        toast('ไฟล์ไม่ถูกต้อง', 'error');
+        toast('ไฟล์ไม่ถูกต้อง — JSON parse ล้มเหลว', 'error');
+        return;
       }
+      const docCount = Array.isArray(data.documents) ? data.documents.length : 0;
+      if (docCount === 0) {
+        toast('ไฟล์ไม่มีเอกสารให้นำเข้า', 'error');
+        return;
+      }
+      openSimpleConfirm({
+        title: 'ยืนยันนำเข้าข้อมูล',
+        message: `ไฟล์มี <strong>${docCount} เอกสาร</strong><br><br>การนำเข้าจะ<strong>เขียนทับ</strong>เอกสารที่มี id ซ้ำ — ดำเนินการต่อ?`,
+        okLabel: 'นำเข้า',
+        okClass: 'btn-primary',
+        onOk: async () => {
+          try {
+            for (const d of data.documents) await saveDocs(d);
+            toast(`นำเข้า ${docCount} เอกสารเรียบร้อย`, 'success');
+          } catch (err) {
+            toast('นำเข้าไม่สำเร็จ: ' + err.message, 'error');
+          }
+        }
+      });
     };
     reader.readAsText(file);
     event.target.value = '';
@@ -10553,6 +10958,7 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.billPoPeriod = billPoPeriod;
   window.autoFillUncollectedSubWithdraws = autoFillUncollectedSubWithdraws;
   window.exportData = exportData;
+  window.exportInstallmentsCsv = exportInstallmentsCsv;
   window.importData = importData;
   window.filterList = filterList;
   window.showAddUser = showAddUser;
@@ -10619,6 +11025,9 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.closePrPriceModal = closePrPriceModal;
   window.updatePrPriceTotal = updatePrPriceTotal;
   window.submitPrPrices = submitPrPrices;
+  window.addPrExtraCharge = addPrExtraCharge;
+  window.updatePrExtraCharge = updatePrExtraCharge;
+  window.removePrExtraCharge = removePrExtraCharge;
 
   // Phase 3: VO (Variation Order) — งานเพิ่ม
   window.onVoProjectChange = onVoProjectChange;
