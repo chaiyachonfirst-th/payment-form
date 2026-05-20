@@ -791,9 +791,6 @@
         <button class="sidebar-item" data-tab="fuel" onclick="switchTab('fuel')">
           <i class="ti ti-gas-station"></i><span>ค่ารถ</span>
         </button>
-        <button class="sidebar-item" data-tab="pr" onclick="switchTab('pr')">
-          <i class="ti ti-clipboard-list"></i><span>PR ขอซื้อ</span>
-        </button>
         <button class="sidebar-item" data-tab="po" onclick="switchTab('po')">
           <i class="ti ti-truck-delivery"></i><span>PO สั่งซื้อ</span>
         </button>
@@ -1425,88 +1422,6 @@
       </div>
     </div>
 
-    <!-- PR (PURCHASE REQUEST) PAGE -->
-    <div class="page" id="page-pr">
-      <div class="card">
-        <div class="card-head"><i class="ti ti-clipboard-list" style="color:#0e7c66"></i><h3>ใบขอซื้อ (Purchase Request)</h3></div>
-        <div class="card-body">
-          <div class="grid">
-            <div class="field">
-              <label>โครงการ <span class="req">*</span></label>
-              <select class="select" id="pr-project"><option value="">— เลือกโครงการ —</option></select>
-            </div>
-            <div class="field">
-              <label>เลขที่ PR</label>
-              <input type="text" class="input mono" id="pr-docno" readonly placeholder="สร้างอัตโนมัติเมื่อบันทึก">
-            </div>
-            <div class="field">
-              <label>วันที่ขอ <span class="req">*</span></label>
-              <input type="date" class="input" id="pr-date">
-            </div>
-            <div class="field">
-              <label>ต้องการภายใน <span class="req">*</span></label>
-              <input type="date" class="input" id="pr-needed-by">
-              <span class="field-hint">วันที่ต้องการของ — เพื่อให้จัดซื้อจัดลำดับงาน</span>
-            </div>
-            <div class="field">
-              <label>ความเร่งด่วน</label>
-              <select class="select" id="pr-urgency">
-                <option value="normal">ปกติ</option>
-                <option value="urgent">เร่งด่วน</option>
-                <option value="critical">วิกฤต — หยุดงาน</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>หมวดหมู่</label>
-              <select class="select" id="pr-category">
-                <option value="material">วัสดุก่อสร้าง</option>
-                <option value="tool">เครื่องมือ/อุปกรณ์</option>
-                <option value="consumable">วัสดุสิ้นเปลือง</option>
-                <option value="service">บริการ/รับเหมาช่วง</option>
-                <option value="other">อื่นๆ</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head" style="justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:8px"><i class="ti ti-list"></i><h3>รายการที่ขอ</h3></div>
-          <button class="btn btn-ghost btn-sm" onclick="addPrItem()"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
-        </div>
-        <div class="card-body">
-          <div id="pr-items"></div>
-          <div id="pr-total-row" style="display:none;justify-content:flex-end;margin-top:12px;font-weight:600;font-size:14px;color:var(--text)">
-            ประมาณการรวม: <span class="mono" id="pr-total" style="margin-left:8px;color:#0e7c66">0.00</span> บาท
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><i class="ti ti-message"></i><h3>เหตุผลและรายละเอียด</h3></div>
-        <div class="card-body">
-          <div class="field">
-            <label>เหตุผลในการขอซื้อ <span class="req">*</span></label>
-            <textarea class="textarea" id="pr-reason" placeholder="เช่น ต้องใช้สำหรับงานเทพื้นชั้น 2 ตามแผนงาน วันที่ ..."></textarea>
-          </div>
-          <div class="field" style="margin-top:12px">
-            <label>ผู้ขายที่แนะนำ (ถ้ามี)</label>
-            <input type="text" class="input" id="pr-suggested-vendor" placeholder="ชื่อร้านค้าที่ Site Eng/PM แนะนำ">
-          </div>
-          <div class="field" style="margin-top:12px">
-            <label>หมายเหตุเพิ่มเติม</label>
-            <textarea class="textarea" id="pr-note" placeholder="ข้อมูลเพิ่มเติม spec, ขนาด, รุ่น..."></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn btn-ghost" onclick="resetPrForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
-        <button class="btn btn-primary" onclick="submitPr()" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-device-floppy"></i> ส่ง PR ให้จัดซื้อ</button>
-      </div>
-    </div>
-
     <!-- PO (PURCHASE ORDER) PAGE -->
     <div class="page" id="page-po">
       <div class="card">
@@ -1530,22 +1445,23 @@
                 <input type="radio" name="po-type" value="vendor" onchange="onPoTypeChange()">
                 <div>
                   <div style="font-size:13px;font-weight:600;color:#5b3a8a"><i class="ti ti-shopping-cart"></i> สั่งซื้อจากร้านค้า</div>
-                  <div style="font-size:11px;color:var(--text-3);margin-top:2px">จัดซื้อสร้างจาก PR ที่อนุมัติ</div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:2px">จัดซื้อสร้าง — บันทึกแล้วใช้ได้ทันที (ไม่ต้องผ่าน PM)</div>
                 </div>
               </label>
             </div>
           </div>
 
-          <!-- VENDOR PO: Choose PR -->
+          <!-- VENDOR PO: Project picker (no PR needed anymore) -->
           <div id="po-vendor-section" style="display:none">
-            <div class="field" style="margin-bottom:12px">
-              <label>เลือก PR ที่อนุมัติแล้ว <span class="req">*</span></label>
-              <select class="select" id="po-from-pr" onchange="prefillPoFromPr()">
-                <option value="">— เลือก PR —</option>
-              </select>
-              <span class="field-hint">เฉพาะ PR ที่จัดซื้ออนุมัติแล้วและยังไม่ได้ออก PO</span>
+            <div class="grid" style="margin-bottom:8px">
+              <div class="field">
+                <label>โครงการ <span class="req">*</span></label>
+                <select class="select" id="po-v-project">
+                  <option value="">— เลือกโครงการ —</option>
+                </select>
+                <span class="field-hint">โครงการที่จะเบิกค่าใช้จ่ายเข้า</span>
+              </div>
             </div>
-            <div id="po-pr-summary" style="display:none;background:var(--accent-soft);padding:12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px"></div>
           </div>
 
           <!-- CONTRACTOR PO: Choose Project + Contractor -->
@@ -1655,23 +1571,80 @@
         </div>
         <div class="card-body">
           <div id="po-items"></div>
-          <div style="display:flex;justify-content:flex-end;margin-top:12px;font-weight:600;font-size:14px;color:var(--text)">
-            ยอดรวม: <span class="mono" id="po-total" style="margin-left:8px;color:#5b3a8a">0.00</span> บาท
+          <div style="display:flex;justify-content:flex-end;margin-top:12px;font-size:13px;color:var(--text-2)">
+            รวมค่าสินค้า: <span class="mono" id="po-subtotal" style="margin-left:8px;font-weight:500">0.00</span> บาท
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบ (ใบเสนอราคา/ใบสั่งซื้อจากร้านค้า)</h3></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text-2);margin-bottom:10px">แนบเอกสารตอบกลับจากร้านค้า เช่น ใบเสนอราคา ใบ PO ของร้าน รูปสินค้า</p>
-          <div class="file-upload">
-            <input type="file" id="po-files" multiple accept="image/*,.pdf" onchange="handleFiles(event)" style="display:none">
-            <button class="btn btn-ghost" onclick="document.getElementById('po-files').click()">
-              <i class="ti ti-upload"></i> เลือกไฟล์
-            </button>
+      <!-- EXTRA CHARGES (ค่าขนส่ง / VAT / ส่วนลด) — Vendor PO only -->
+      <div class="card po-vendor-only" id="po-extra-card">
+        <div class="card-head" style="justify-content:space-between;background:#fdf6e9">
+          <div style="display:flex;align-items:center;gap:8px">
+            <i class="ti ti-plus-equal" style="color:#7a5d2e"></i>
+            <h3>ค่าใช้จ่ายเพิ่มเติม</h3>
           </div>
-          <div id="files-preview" style="margin-top:10px"></div>
+          <button class="btn btn-ghost btn-sm" onclick="addPoExtraCharge()"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
+        </div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:10px">เช่น ค่าขนส่ง · VAT · ค่าบริการ · ส่วนลด (ใส่ค่าติดลบ)</div>
+          <table style="width:100%;font-size:13px;border-collapse:collapse">
+            <thead>
+              <tr style="background:#fff8e6">
+                <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-3);font-weight:500">ชื่อรายการ</th>
+                <th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text-3);font-weight:500;width:140px">จำนวนเงิน (บาท)</th>
+                <th style="padding:6px 8px;width:32px"></th>
+              </tr>
+            </thead>
+            <tbody id="po-extra-tbody">
+              <tr id="po-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="border-top:1px dashed #d4c8a0">
+                <td style="padding:6px 8px;text-align:right;font-weight:500;color:var(--text-2)">รวมค่าใช้จ่ายเพิ่มเติม</td>
+                <td id="po-extra-total" style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+          <div style="margin-top:14px;background:#1a1a17;color:#fff;padding:10px 12px;border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600;font-size:14px">ยอดรวมทั้งสิ้น</span>
+            <span class="mono" id="po-total" style="font-weight:700;font-size:16px">0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- For contractor PO, total shows here -->
+      <div class="card po-contractor-only" id="po-total-card-contractor">
+        <div class="card-body" style="background:#1a1a17;color:#fff;padding:10px 12px;border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:14px">ยอดรวมทั้งสิ้น</span>
+          <span class="mono" id="po-total-contractor" style="font-weight:700;font-size:16px">0.00</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="ti ti-paperclip"></i><h3>เอกสารแนบ</h3></div>
+        <div class="card-body">
+          <!-- Attachment checklist — Vendor PO only -->
+          <div class="po-vendor-only" style="margin-bottom:14px">
+            <div style="font-size:13px;font-weight:500;margin-bottom:8px">ติ๊กประเภทเอกสารที่แนบ:</div>
+            <div class="checks">
+              <label class="check"><input type="checkbox" id="po-att-order"> ใบสั่งซื้อ/PO ของร้าน</label>
+              <label class="check"><input type="checkbox" id="po-att-photo"> รูปสินค้า</label>
+              <label class="check"><input type="checkbox" id="po-att-quotation"> ใบเสนอราคา</label>
+              <label class="check"><input type="checkbox" id="po-att-other"> อื่นๆ</label>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <p style="font-size:13px;color:var(--text-2);margin-bottom:10px">อัพโหลดไฟล์ (PDF / รูปภาพ)</p>
+            <div class="file-upload">
+              <input type="file" id="po-files" multiple accept="image/*,.pdf" onchange="handleFiles(event)" style="display:none">
+              <button class="btn btn-ghost" onclick="document.getElementById('po-files').click()">
+                <i class="ti ti-upload"></i> เลือกไฟล์
+              </button>
+            </div>
+            <div id="files-preview" style="margin-top:10px"></div>
+          </div>
         </div>
       </div>
 
@@ -1684,7 +1657,8 @@
 
       <div class="actions">
         <button class="btn btn-ghost" onclick="resetPoForm()"><i class="ti ti-refresh"></i> ล้างฟอร์ม</button>
-        <button class="btn btn-primary" onclick="submitPo()" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-device-floppy"></i> ส่ง PO ให้ PM อนุมัติ</button>
+        <button class="btn btn-primary po-vendor-only" onclick="submitPo()" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-device-floppy"></i> บันทึก PO สั่งซื้อ</button>
+        <button class="btn btn-primary po-contractor-only" onclick="submitPo()" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-device-floppy"></i> ส่ง PO ให้ PM อนุมัติ</button>
       </div>
     </div>
 
@@ -1904,7 +1878,6 @@
         <button class="filter-btn type-filter-btn" data-type="vo" onclick="filterByType('vo')"><i class="ti ti-plus-equal"></i> VO</button>
         <button class="filter-btn type-filter-btn" data-type="purchase" onclick="filterByType('purchase')"><i class="ti ti-shopping-cart"></i> ซื้อของ</button>
         <button class="filter-btn type-filter-btn" data-type="fuel" onclick="filterByType('fuel')"><i class="ti ti-gas-station"></i> ค่ารถ</button>
-        <button class="filter-btn type-filter-btn" data-type="pr" onclick="filterByType('pr')"><i class="ti ti-clipboard-list"></i> PR</button>
         <button class="filter-btn type-filter-btn" data-type="po" onclick="filterByType('po')"><i class="ti ti-truck-delivery"></i> PO</button>
       </div>
       <div class="filter">
@@ -1947,9 +1920,9 @@
             <strong style="color:var(--info)"><i class="ti ti-info-circle"></i> บทบาทและสิทธิ์ (Phase 2)</strong>
             <ul style="margin:8px 0 0 20px;color:var(--text-2)">
               <li><strong style="color:var(--info)">Foreman</strong> — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</li>
-              <li><strong style="color:#2c5282">Site Engineer</strong> — สร้างงวดงาน + เบิกคืน + ยืนยันเบิกคืน + req PR</li>
-              <li><strong style="color:#7a5d2e">Procurement</strong> — อนุมัติ PR + สร้าง PO + ยืนยันเบิกคืน + จ่าย Pocket Money (น้ำมัน/วัสดุสิ้นเปลือง)</li>
-              <li><strong style="color:var(--accent-dark)">Project Manager</strong> — สร้าง+เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO + สร้าง PR</li>
+              <li><strong style="color:#2c5282">Site Engineer</strong> — สร้างงวดงาน + เบิกคืน + ยืนยันเบิกคืน</li>
+              <li><strong style="color:#7a5d2e">Procurement</strong> — สร้าง PO + ยืนยันเบิกคืน + จ่าย Pocket Money (น้ำมัน/วัสดุสิ้นเปลือง)</li>
+              <li><strong style="color:var(--accent-dark)">Project Manager</strong> — สร้าง+เซ็นงวดงานขั้นแรก + จัดการโครงการ + อนุมัติ PO สัญญาจ้าง</li>
               <li><strong style="color:#6b2d85">Executive</strong> — เซ็นงวดงานขั้นสุดท้าย (ต้อง 2 คนต่างกัน) + จ่ายเงินจริง + ลงสลิป</li>
               <li><strong>PIN 4-6 หลัก</strong> — จำเป็นสำหรับทุก role ยกเว้น Foreman</li>
             </ul>
@@ -2034,8 +2007,9 @@
           <div class="card-body">
             <p style="font-size:13px;color:var(--text-2);margin-bottom:14px"><strong>ระวัง:</strong> การลบข้อมูลในส่วนนี้ <u>ไม่สามารถย้อนกลับได้</u> — ใช้สำหรับล้างข้อมูลเก่าก่อนเริ่มกรอกใหม่</p>
             <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-sm" onclick="purgeOldPRs()" style="align-self:flex-start;background:#fbeed3;border-color:#b8740a;color:#8b3f15"><i class="ti ti-trash"></i> ล้าง PR เก่าออกจาก Firestore (ระบบ PR ยกเลิกแล้ว)</button>
               <button class="btn btn-danger btn-sm" onclick="purgeAllProjects()" style="align-self:flex-start"><i class="ti ti-trash"></i> ลบโครงการทั้งหมด</button>
-              <button class="btn btn-danger btn-sm" onclick="purgeAllDocuments()" style="align-self:flex-start"><i class="ti ti-trash"></i> ลบเอกสารทั้งหมด (งวดงาน/PR/PO/VO/เบิกย่อย/ซื้อของ/ค่ารถ)</button>
+              <button class="btn btn-danger btn-sm" onclick="purgeAllDocuments()" style="align-self:flex-start"><i class="ti ti-trash"></i> ลบเอกสารทั้งหมด (งวดงาน/PO/VO/เบิกย่อย/ซื้อของ/ค่ารถ)</button>
               <button class="btn btn-danger btn-sm" onclick="purgeEverything()" style="align-self:flex-start;background:#7a1d12"><i class="ti ti-flame"></i> ลบทุกอย่าง (โครงการ + เอกสาร)</button>
             </div>
           </div>
@@ -2082,8 +2056,8 @@
           <label>บทบาท <span class="req">*</span></label>
           <select class="select" id="u-role">
             <option value="foreman">Foreman — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</option>
-            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + PR</option>
-            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + จ่าย Pocket Money</option>
+            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน</option>
+            <option value="procurement">Procurement — สร้าง PO + จ่าย Pocket Money</option>
             <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ</option>
             <option value="executive">Executive — เซ็นขั้นสุดท้าย + จ่ายเงิน</option>
             <option value="admin">Admin — ผู้ดูแลระบบ (เต็มสิทธิ์)</option>
@@ -2124,8 +2098,8 @@
           <label>บทบาท <span class="req">*</span></label>
           <select class="select" id="sp-role">
             <option value="foreman">Foreman — สร้างใบเบิกคืน (ซื้อของ/ค่ารถ)</option>
-            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน + PR</option>
-            <option value="procurement">Procurement — อนุมัติ PR + สร้าง PO + จ่าย Pocket Money</option>
+            <option value="siteEng">Site Engineer — สร้างงวดงาน + เบิกคืน</option>
+            <option value="procurement">Procurement — สร้าง PO + จ่าย Pocket Money</option>
             <option value="projectManager">Project Manager — เซ็นงวดงานขั้นแรก + จัดการโครงการ</option>
             <option value="executive">Executive — เซ็นขั้นสุดท้าย + จ่ายเงิน</option>
           </select>
@@ -2209,93 +2183,6 @@
       <div class="modal-foot">
         <button class="btn btn-ghost" onclick="closeProjectModal()">ยกเลิก</button>
         <button class="btn btn-primary" onclick="saveProject()"><i class="ti ti-device-floppy"></i> บันทึก</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PR PRICE ENTRY MODAL (Procurement enters prices when approving PR) -->
-  <div class="modal-bg" id="pr-price-modal" style="z-index:10500" onclick="if(event.target===this)closePrPriceModal()">
-    <div class="modal" onclick="event.stopPropagation()" style="max-width:760px">
-      <div class="modal-head" style="background:#d8eee7">
-        <div>
-          <h3 style="font-size:16px;font-weight:600"><i class="ti ti-receipt" style="color:#0e7c66;vertical-align:-2px"></i> แนบราคาและอนุมัติ PR</h3>
-          <p style="font-size:12px;color:var(--text-3);margin-top:4px">จัดซื้อใส่ราคาให้แต่ละรายการ — เมื่อบันทึก PR จะถูกอนุมัติพร้อมราคา</p>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="closePrPriceModal()"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-body">
-        <div id="pr-price-doc-info" style="background:var(--surface-2);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px"></div>
-        <table style="width:100%;font-size:13px;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--surface-2)">
-              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">รายการ</th>
-              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:60px">จำนวน</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);width:70px">หน่วย</th>
-              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:130px">ราคา/หน่วย <span class="req">*</span></th>
-              <th style="padding:8px;text-align:right;border-bottom:1px solid var(--border);width:110px">รวม</th>
-            </tr>
-          </thead>
-          <tbody id="pr-price-tbody"></tbody>
-          <tfoot>
-            <tr style="background:var(--surface-2)">
-              <td colspan="4" style="padding:8px;text-align:right;font-weight:500;color:var(--text-2)">รวมค่าสินค้า</td>
-              <td id="pr-price-subtotal" style="padding:8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">0.00</td>
-            </tr>
-          </tfoot>
-        </table>
-
-        <!-- EXTRA CHARGES (ค่าใช้จ่ายเพิ่มเติม — ค่าขนส่ง / VAT / ส่วนลด ฯลฯ) -->
-        <div style="margin-top:14px;padding:12px;background:#fdf6e9;border:1px solid #e9d9b4;border-radius:var(--radius-sm)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div>
-              <div style="font-size:13px;font-weight:600;color:#7a5d2e"><i class="ti ti-plus-equal"></i> ค่าใช้จ่ายเพิ่มเติม</div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">เช่น ค่าขนส่ง · VAT · ค่าบริการ · ส่วนลด (ใส่ค่าติดลบ)</div>
-            </div>
-            <button type="button" class="btn btn-sm" onclick="addPrExtraCharge()" style="background:#fff;border-color:#d4c8a0">
-              <i class="ti ti-plus"></i> เพิ่มรายการ
-            </button>
-          </div>
-          <table style="width:100%;font-size:13px;border-collapse:collapse" id="pr-extra-table">
-            <thead>
-              <tr style="background:#fff8e6">
-                <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--text-3);font-weight:500">ชื่อรายการ</th>
-                <th style="padding:6px 8px;text-align:right;font-size:11px;color:var(--text-3);font-weight:500;width:140px">จำนวนเงิน (บาท)</th>
-                <th style="padding:6px 8px;width:32px"></th>
-              </tr>
-            </thead>
-            <tbody id="pr-extra-tbody">
-              <tr id="pr-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม</td></tr>
-            </tbody>
-            <tfoot>
-              <tr style="border-top:1px dashed #d4c8a0">
-                <td style="padding:6px 8px;text-align:right;font-weight:500;color:var(--text-2)">รวมค่าใช้จ่ายเพิ่มเติม</td>
-                <td id="pr-extra-total" style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">0.00</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <!-- GRAND TOTAL -->
-        <table style="width:100%;margin-top:10px;border-collapse:collapse">
-          <tr style="background:#1a1a17;color:white">
-            <td style="padding:10px 12px;font-weight:600;font-size:14px">ยอดรวมทั้งสิ้น (รวมค่าใช้จ่ายเพิ่ม)</td>
-            <td id="pr-price-grand" style="padding:10px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;width:140px">0.00</td>
-          </tr>
-        </table>
-
-        <div class="field" style="margin-top:14px">
-          <label>ผู้ขาย (ที่จัดซื้อเลือก)</label>
-          <input type="text" class="input" id="pr-price-vendor" placeholder="ชื่อร้านค้าที่จะสั่งซื้อ">
-        </div>
-        <div class="field" style="margin-top:10px">
-          <label>หมายเหตุจากจัดซื้อ</label>
-          <textarea class="textarea" id="pr-price-note" placeholder="ข้อมูลเพิ่มเติม เช่น เลือกราคาจากเจ้านี้เพราะ..."></textarea>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" onclick="closePrPriceModal()">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="submitPrPrices()" style="background:#0e7c66;border-color:#0e7c66"><i class="ti ti-check"></i> บันทึกราคา + อนุมัติ PR</button>
       </div>
     </div>
   </div>
@@ -2614,7 +2501,7 @@
   // ============ FIREBASE CONFIG ============
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAmRuAKqVHPe-89UAd-3sIQ5P5WPDOiu7U",
@@ -2675,7 +2562,7 @@
     vo:          { label: 'VO งานเพิ่ม', icon: 'plus-equal', cls: 'type-vo',          color: '#0e7c66' },
     purchase:    { label: 'ซื้อของ', icon: 'shopping-cart', cls: 'type-purchase',    color: '#1f5582' },
     fuel:        { label: 'ค่ารถ',   icon: 'gas-station',   cls: 'type-fuel',        color: '#b8740a' },
-    pr:          { label: 'PR ขอซื้อ', icon: 'clipboard-list', cls: 'type-pr',         color: '#0e7c66' },
+    pr:          { label: 'PR (ยกเลิกแล้ว)', icon: 'clipboard-x', cls: 'type-pr',         color: '#8b8a82' },
     po:          { label: 'PO สั่งซื้อ', icon: 'truck-delivery', cls: 'type-po',       color: '#5b3a8a' }
   };
 
@@ -2701,8 +2588,7 @@
   let selectedProject = null;
   let pendingFiles = [];
   let purchaseItems = [];
-  // Phase 2 Batch 2: PR/PO state
-  let prItems = [];
+  // PO state (PR system removed)
   let poItems = [];
   // Phase 2 Batch 3: pocket money transactions cache
   let pocketTransactions = [];
@@ -2769,12 +2655,11 @@
     if (unsubDocs) unsubDocs();
     const qDocs = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
     unsubDocs = onSnapshot(qDocs, snap => {
-      documents = snap.docs.map(d => d.data());
+      // PR system removed — hide PR docs from view entirely (data preserved in DB if user wants Admin purge later)
+      documents = snap.docs.map(d => d.data()).filter(d => d.type !== 'pr');
       renderHistory();
       updatePendingBadge();
       refreshProjectSelects();
-      // Phase 2 Batch 2: refresh PO from-PR select
-      if (typeof refreshPoFromPrSelect === 'function') refreshPoFromPrSelect();
     });
 
     // Listen to users in real-time
@@ -3148,7 +3033,6 @@
     const tabInstall = document.querySelector('.sidebar-item[data-tab="form"]');
     const tabPurchase = document.querySelector('.sidebar-item[data-tab="purchase"]');
     const tabFuel = document.querySelector('.sidebar-item[data-tab="fuel"]');
-    const tabPr = document.querySelector('.sidebar-item[data-tab="pr"]');
     const tabPo = document.querySelector('.sidebar-item[data-tab="po"]');
     const tabPocket = document.querySelector('.sidebar-item[data-tab="pocket"]');
     // Pocket Money is disabled — always hidden from UI (data preserved in Firestore)
@@ -3159,8 +3043,7 @@
     if (tabInstall) tabInstall.style.display = (canCreateInstallment() || isExec) ? '' : 'none';
     if (tabPurchase) tabPurchase.style.display = (canCreatePurchase() || isExec) ? '' : 'none';
     if (tabFuel) tabFuel.style.display = (canCreateFuel() || isExec) ? '' : 'none';
-    if (tabPr) tabPr.style.display = (canCreatePR() || isExec) ? '' : 'none';
-    if (tabPo) tabPo.style.display = (canCreatePO() || isExec) ? '' : 'none';
+    if (tabPo) tabPo.style.display = (canCreatePO() || canCreateContractorPO() || isExec) ? '' : 'none';
     // Sub-withdraw tab (เบิกย่อย)
     const tabSub = document.querySelector('.sidebar-item[data-tab="sub"]');
     if (tabSub) tabSub.style.display = (canCreateInstallment() || isExec) ? '' : 'none';
@@ -3322,6 +3205,43 @@
             }
           });
         }, 200);
+      }
+    });
+  }
+
+  // ล้างเฉพาะ PR docs ออกจาก Firestore (เพราะระบบ PR ยกเลิกแล้ว ตอนนี้ filter ใน client เท่านั้น)
+  async function purgeOldPRs() {
+    if (!isAdmin()) { toast('เฉพาะ Admin เท่านั้น', 'error'); return; }
+    // อ่าน PR docs จาก Firestore โดยตรง (เพราะ documents[] filter PR ออกไปแล้ว)
+    let prDocs = [];
+    try {
+      const snap = await getDocs(query(collection(db, 'documents'), where('type', '==', 'pr')));
+      prDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+    } catch (e) {
+      // Fallback: ลองอ่านทั้งหมดแล้วกรอง (เผื่อ index ไม่พร้อม)
+      try {
+        const snap = await getDocs(collection(db, 'documents'));
+        prDocs = snap.docs.filter(d => d.data().type === 'pr').map(d => ({ id: d.id, data: d.data() }));
+      } catch (e2) {
+        toast('อ่านข้อมูล PR ไม่สำเร็จ: ' + e2.message, 'error');
+        return;
+      }
+    }
+    if (prDocs.length === 0) { toast('ไม่มี PR เก่าใน Firestore', 'info'); return; }
+    openSimpleConfirm({
+      title: '⚠️ ล้าง PR เก่า',
+      message: `พบ PR เก่า <strong>${prDocs.length} ฉบับ</strong> ใน Firestore<br><br>ลบออกถาวร? ไม่สามารถย้อนกลับได้`,
+      okLabel: `ลบ ${prDocs.length} PR`,
+      okClass: 'btn-danger',
+      onOk: async () => {
+        try {
+          const tasks = prDocs.map(d => deleteDoc(doc(db, 'documents', d.id)));
+          await Promise.all(tasks);
+          logActivity('admin-purge', `Admin ล้าง PR เก่า (${prDocs.length} ฉบับ)`);
+          toast(`ลบ ${prDocs.length} PR เรียบร้อย`, 'success');
+        } catch (e) {
+          toast('ลบไม่สำเร็จ: ' + e.message, 'error');
+        }
       }
     });
   }
@@ -3621,12 +3541,6 @@
       const rateDisplay = document.getElementById('g-rate-display');
       if (rateDisplay) rateDisplay.textContent = (companySettings.mileageRate || 5).toFixed(2);
     }
-    if (tab === 'pr') {
-      if (prItems.length === 0) addPrItem();
-      renderPrItems();
-      const dt = document.getElementById('pr-date');
-      if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
-    }
     if (tab === 'sub') {
       const dt = document.getElementById('sw-date');
       if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
@@ -3657,7 +3571,6 @@
     if (tab === 'po') {
       if (poItems.length === 0) addPoItem();
       renderPoItems();
-      refreshPoFromPrSelect();
       const dt = document.getElementById('po-date');
       if (dt && !dt.value) dt.value = new Date().toISOString().slice(0, 10);
       // Populate contractor project dropdown
@@ -3666,8 +3579,13 @@
         projSel.innerHTML = '<option value="">— เลือกโครงการ —</option>' +
           projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
       }
+      // Populate vendor PO project dropdown
+      refreshPoVendorProjects();
       // Initialize toggle to whatever radio is checked (default: contractor)
       onPoTypeChange();
+      // Ensure extra charges rendered
+      renderPoExtraCharges();
+      calcPoTotal();
     }
     if (tab === 'pocket') {
       renderPocket();
@@ -3705,7 +3623,7 @@
 
     closeModal();
     setTimeout(() => {
-      switchTab('main');
+      switchTab('form');
       _billingFromPo = { poId: po.id, periodNo: period.no };
 
       const projSel = document.getElementById('f-project');
@@ -4932,340 +4850,10 @@
     renderFilesPreview();
   }
 
-  // ============ PR (PURCHASE REQUEST) FORM — Phase 2 Batch 2 ============
-  function addPrItem(name = '', qty = 1, est = 0, unit = '') {
-    prItems.push({ id: 'pri_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name, qty, est, unit });
-    renderPrItems();
-  }
-  function removePrItem(id) {
-    prItems = prItems.filter(it => it.id !== id);
-    if (prItems.length === 0) addPrItem();
-    renderPrItems();
-  }
-  function updatePrItem(id, field, value) {
-    const it = prItems.find(x => x.id === id);
-    if (!it) return;
-    if (field === 'name' || field === 'unit') it[field] = value;
-    else it[field] = Number(value) || 0;
-    calcPrTotal();
-  }
-  function renderPrItems() {
-    const body = document.getElementById('pr-items');
-    if (!body) return;
-    if (prItems.length === 0) addPrItem();
-    body.innerHTML = `
-      <table class="items-tbl">
-        <thead><tr>
-          <th>รายการ</th>
-          <th class="right" style="width:90px">จำนวน</th>
-          <th style="width:80px">หน่วย</th>
-          <th style="width:36px"></th>
-        </tr></thead>
-        <tbody>
-          ${prItems.map(it => {
-            return `<tr>
-              <td><input type="text" value="${escapeHtml(it.name)}" placeholder="ชื่อสินค้า / spec / รายละเอียด" oninput="updatePrItem('${it.id}','name',this.value)"></td>
-              <td><input type="number" value="${it.qty}" min="0" step="0.01" oninput="updatePrItem('${it.id}','qty',this.value)"></td>
-              <td><input type="text" value="${escapeHtml(it.unit||'')}" placeholder="ชิ้น/ลัง/เมตร" oninput="updatePrItem('${it.id}','unit',this.value)"></td>
-              <td><button class="icon-btn-danger" onclick="removePrItem('${it.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-      <div style="background:var(--info-soft);color:var(--info);padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;margin-top:8px">
-        <i class="ti ti-info-circle"></i> <strong>ผู้ขอเบิกไม่ต้องกรอกราคา</strong> — จัดซื้อจะเป็นผู้แนบราคาเองตอนรับ PR
-      </div>`;
-    calcPrTotal();
-  }
-  function calcPrTotal() {
-    // Site Eng/PM doesn't enter prices — total comes from Procurement after they fill prices
-    const total = prItems.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.est) || 0), 0);
-    const el = document.getElementById('pr-total');
-    if (el) el.textContent = fmt(total);
-    return total;
-  }
-  async function submitPr() {
-    if (!canCreatePR()) { toast('เฉพาะ Site Engineer / Project Manager', 'error'); return; }
-    const projectId = val('pr-project');
-    if (!projectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
-    if (!val('pr-date')) { toast('กรุณาเลือกวันที่ขอ', 'error'); return; }
-    if (!val('pr-needed-by')) { toast('กรุณาระบุวันที่ต้องการของ', 'error'); return; }
-    if (!val('pr-reason')) { toast('กรุณาระบุเหตุผลในการขอซื้อ', 'error'); return; }
-    const validItems = prItems.filter(it => it.name && Number(it.qty) > 0);
-    if (validItems.length === 0) { toast('กรุณาเพิ่มอย่างน้อย 1 รายการ', 'error'); return; }
-    const totalEst = validItems.reduce((s, it) => s + Number(it.qty) * (Number(it.est) || 0), 0);
-    const proj = getProjectById(projectId);
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const docObj = {
-      id,
-      type: 'pr',
-      docNo: generateDocNo('pr', projectId),
-      projectId,
-      project: proj ? proj.name : '',
-      requestDate: val('pr-date'),
-      neededBy: val('pr-needed-by'),
-      urgency: val('pr-urgency') || 'normal',
-      category: val('pr-category') || 'material',
-      items: validItems.map(it => ({
-        name: it.name, qty: Number(it.qty), unit: it.unit || '',
-        est: Number(it.est) || 0, total: Number(it.qty) * (Number(it.est) || 0)
-      })),
-      totalEst,
-      reason: val('pr-reason'),
-      suggestedVendor: val('pr-suggested-vendor'),
-      note: val('pr-note'),
-      submittedBy: { id: currentUser.id, name: currentUser.name, role: currentUser.role, at: Date.now() },
-      // Approval state
-      status: 'pending', // pending | approved | rejected
-      approvedBy: null,
-      rejectedBy: null,
-      // Linked PO
-      poDocId: null,
-      createdAt: Date.now()
-    };
-    documents.unshift(docObj);
-    const ok = await saveDocs(docObj);
-    if (ok) {
-      toast(`ส่ง PR ${docObj.docNo} ให้จัดซื้อเรียบร้อย`, 'success');
-      resetPrForm();
-      switchTab('history');
-    }
-  }
-  function resetPrForm() {
-    ['pr-date','pr-needed-by','pr-reason','pr-suggested-vendor','pr-note'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.getElementById('pr-project').value = '';
-    document.getElementById('pr-urgency').value = 'normal';
-    document.getElementById('pr-category').value = 'material';
-    prItems = [];
-    addPrItem();
-  }
-
-  // PR Approval (by Procurement)
-  async function approvePR(docId) {
-    if (!canApprovePR()) { toast('เฉพาะ Procurement', 'error'); return; }
-    const d = documents.find(x => x.id === docId);
-    if (!d) { toast('ไม่พบ PR', 'error'); return; }
-    if (d.type !== 'pr') { toast('เอกสารไม่ใช่ PR', 'error'); return; }
-    if (d.status !== 'pending') { toast(`PR อยู่ในสถานะ ${d.status} ไม่ใช่ pending`, 'info'); return; }
-    // ปิด detail modal ก่อน แล้วเปิด price modal (ไม่ซ้อน → ไม่มีปัญหา click events)
-    closeModal();
-    setTimeout(() => openPrPriceModal(d), 100);
-  }
-  // Procurement enters prices for PR items, then approves
-  let _prPriceTarget = null;
-  let _prExtraCharges = []; // [{label, amount}] — working copy in modal
-  function openPrPriceModal(d) {
-    _prPriceTarget = d;
-    // Restore extra charges if PR was previously edited (otherwise start fresh)
-    _prExtraCharges = Array.isArray(d.extraCharges) ? d.extraCharges.map(x => ({...x})) : [];
-    const tbody = document.getElementById('pr-price-tbody');
-    tbody.innerHTML = (d.items || []).map((it, i) => `
-      <tr>
-        <td style="padding:6px 8px">${escapeHtml(it.name || '')}</td>
-        <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
-        <td style="padding:6px 8px">${escapeHtml(it.unit || '-')}</td>
-        <td style="padding:6px 8px"><input type="number" id="pr-price-${i}" value="${it.est || ''}" placeholder="0.00" min="0" step="0.01" oninput="updatePrPriceTotal()" style="width:100%;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace"></td>
-        <td style="padding:6px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:500" id="pr-line-${i}">0.00</td>
-      </tr>
-    `).join('');
-    document.getElementById('pr-price-vendor').value = d.suggestedVendor || '';
-    document.getElementById('pr-price-note').value = '';
-    document.getElementById('pr-price-doc-info').innerHTML = `
-      <div style="font-size:12px;color:var(--text-3)">PR ${escapeHtml(d.docNo)} · ${escapeHtml(d.project || '-')}</div>
-      <div style="font-weight:600;margin-top:2px">${escapeHtml(d.title || (d.items && d.items[0] ? d.items[0].name : ''))}</div>
-    `;
-    renderPrExtraCharges();
-    updatePrPriceTotal();
-    document.getElementById('pr-price-modal').classList.add('show');
-  }
-  function renderPrExtraCharges() {
-    const tbody = document.getElementById('pr-extra-tbody');
-    if (!tbody) return;
-    if (_prExtraCharges.length === 0) {
-      tbody.innerHTML = `<tr id="pr-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม — กด "เพิ่มรายการ" เพื่อใส่ค่าขนส่ง/VAT/ส่วนลด</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = _prExtraCharges.map((row, i) => `
-      <tr>
-        <td style="padding:4px 8px">
-          <input type="text" value="${escapeHtml(row.label || '')}" placeholder="เช่น ค่าขนส่ง" oninput="updatePrExtraCharge(${i},'label',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff">
-        </td>
-        <td style="padding:4px 8px">
-          <input type="number" value="${row.amount ?? ''}" placeholder="0.00" step="0.01" oninput="updatePrExtraCharge(${i},'amount',this.value)" style="width:100%;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace;background:#fff">
-        </td>
-        <td style="padding:4px 4px;text-align:center">
-          <button type="button" onclick="removePrExtraCharge(${i})" title="ลบ" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;border-radius:4px;display:inline-flex"><i class="ti ti-trash" style="font-size:15px"></i></button>
-        </td>
-      </tr>
-    `).join('');
-  }
-  function addPrExtraCharge() {
-    _prExtraCharges.push({ label: '', amount: 0 });
-    renderPrExtraCharges();
-    updatePrPriceTotal();
-    // Auto-focus the new label input
-    setTimeout(() => {
-      const inputs = document.querySelectorAll('#pr-extra-tbody input[type="text"]');
-      if (inputs.length) inputs[inputs.length - 1].focus();
-    }, 50);
-  }
-  function updatePrExtraCharge(idx, field, value) {
-    if (!_prExtraCharges[idx]) return;
-    if (field === 'amount') {
-      _prExtraCharges[idx].amount = value === '' ? 0 : Number(value);
-    } else {
-      _prExtraCharges[idx][field] = value;
-    }
-    updatePrPriceTotal();
-  }
-  function removePrExtraCharge(idx) {
-    _prExtraCharges.splice(idx, 1);
-    renderPrExtraCharges();
-    updatePrPriceTotal();
-  }
-  function updatePrPriceTotal() {
-    if (!_prPriceTarget) return;
-    let subtotal = 0;
-    (_prPriceTarget.items || []).forEach((it, i) => {
-      const price = Number(document.getElementById(`pr-price-${i}`)?.value) || 0;
-      const line = (Number(it.qty) || 0) * price;
-      subtotal += line;
-      const lineEl = document.getElementById(`pr-line-${i}`);
-      if (lineEl) lineEl.textContent = fmt(line);
-    });
-    const extraTotal = _prExtraCharges.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-    const subEl = document.getElementById('pr-price-subtotal');
-    if (subEl) subEl.textContent = fmt(subtotal);
-    const extraEl = document.getElementById('pr-extra-total');
-    if (extraEl) {
-      extraEl.textContent = fmt(extraTotal);
-      extraEl.style.color = extraTotal < 0 ? 'var(--danger)' : '';
-    }
-    document.getElementById('pr-price-grand').textContent = fmt(subtotal + extraTotal);
-  }
-  function closePrPriceModal() {
-    document.getElementById('pr-price-modal').classList.remove('show');
-    _prPriceTarget = null;
-    _prExtraCharges = [];
-  }
-  async function submitPrPrices() {
-    const d = _prPriceTarget;
-    if (!d) { toast('ไม่พบ PR', 'error'); return; }
-    try {
-      let subtotal = 0;
-      d.items = (d.items || []).map((it, i) => {
-        const priceEl = document.getElementById(`pr-price-${i}`);
-        const price = priceEl ? (Number(priceEl.value) || 0) : 0;
-        const line = (Number(it.qty) || 0) * price;
-        subtotal += line;
-        return { ...it, est: price, total: line };
-      });
-      // Clean up extra charges: drop empty rows (no label AND no amount)
-      const cleanExtras = _prExtraCharges
-        .map(x => ({ label: (x.label || '').trim(), amount: Number(x.amount) || 0 }))
-        .filter(x => x.label || x.amount);
-      // Require label for any non-zero amount
-      const missingLabel = cleanExtras.find(x => x.amount !== 0 && !x.label);
-      if (missingLabel) {
-        toast('กรุณาใส่ชื่อรายการสำหรับค่าใช้จ่ายเพิ่มเติมทุกรายการที่มีจำนวนเงิน', 'error');
-        return;
-      }
-      const extraTotal = cleanExtras.reduce((s, x) => s + x.amount, 0);
-      d.itemsSubtotal = subtotal;
-      d.extraCharges = cleanExtras;
-      d.extraChargesTotal = extraTotal;
-      d.totalEst = subtotal + extraTotal;
-      const vendorEl = document.getElementById('pr-price-vendor');
-      d.suggestedVendor = vendorEl ? (vendorEl.value.trim() || d.suggestedVendor) : d.suggestedVendor;
-      const noteEl = document.getElementById('pr-price-note');
-      const note = noteEl ? noteEl.value.trim() : '';
-      if (note) {
-        d.procurementNote = note; // store separately for clean display
-        d.note = (d.note ? d.note + '\n' : '') + '[จัดซื้อ] ' + note;
-      }
-      d.status = 'approved';
-      d.approvedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
-      d.pricesAddedBy = { id: currentUser.id, name: currentUser.name, at: Date.now() };
-      await saveDocs(d);
-      const extraSummary = cleanExtras.length > 0 ? ` (+ ค่าใช้จ่ายเพิ่ม ${cleanExtras.length} รายการ)` : '';
-      logActivity('doc-approve', `อนุมัติ ${d.docNo} (PR) · จัดซื้อแนบราคารวม ${fmt(d.totalEst)} บาท${extraSummary}`);
-      toast(`อนุมัติ PR + แนบราคา ${fmt(d.totalEst)} บาท`, 'success');
-      closePrPriceModal();
-      closeModal();
-    } catch (e) {
-      console.error('submitPrPrices error:', e);
-      toast('อนุมัติไม่สำเร็จ: ' + e.message, 'error');
-    }
-  }
-  async function rejectPR(docId) {
-    if (!canApprovePR()) { toast('เฉพาะ Procurement', 'error'); return; }
-    const d = documents.find(x => x.id === docId);
-    if (!d || d.type !== 'pr' || d.status !== 'pending') return;
-    // ใช้ modal in-app แทน prompt() (เพราะ prompt() อาจถูกบล็อกใน sandbox/embed)
-    openSimplePrompt({
-      title: 'ไม่อนุมัติ PR',
-      message: `กรอกเหตุผลที่ไม่อนุมัติ PR <strong>${escapeHtml(d.docNo)}</strong>`,
-      placeholder: 'เหตุผลที่ไม่อนุมัติ...',
-      okLabel: 'บันทึกการไม่อนุมัติ',
-      okClass: 'btn-danger',
-      onOk: async (reason) => {
-        if (!reason || !reason.trim()) { toast('กรุณากรอกเหตุผล', 'error'); return false; }
-        try {
-          d.status = 'rejected';
-          d.rejectedBy = { id: currentUser.id, name: currentUser.name, at: Date.now(), reason: reason.trim() };
-          await saveDocs(d);
-          logActivity('doc-reject', `ไม่อนุมัติ ${d.docNo} (PR) — ${reason.trim()}`);
-          toast('บันทึกการไม่อนุมัติเรียบร้อย', 'success');
-          closeModal();
-          return true;
-        } catch (e) {
-          console.error('rejectPR error:', e);
-          toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
-          return false;
-        }
-      }
-    });
-  }
-
   // ============ PO (PURCHASE ORDER) FORM ============
-  function refreshPoFromPrSelect() {
-    const sel = document.getElementById('po-from-pr');
-    if (!sel) return;
-    const approvedPRs = documents.filter(d =>
-      d.type === 'pr' && d.status === 'approved' && !d.poDocId
-    );
-    const current = sel.value;
-    sel.innerHTML = '<option value="">— เลือก PR —</option>' +
-      approvedPRs.map(pr => `<option value="${pr.id}">${pr.docNo} · ${escapeHtml(pr.project || '-')} · ${fmt(pr.totalEst)} บาท</option>`).join('');
-    if (current && approvedPRs.find(p => p.id === current)) sel.value = current;
-  }
-  function prefillPoFromPr() {
-    const prId = document.getElementById('po-from-pr').value;
-    const summary = document.getElementById('po-pr-summary');
-    if (!prId) { summary.style.display = 'none'; return; }
-    const pr = documents.find(d => d.id === prId);
-    if (!pr) return;
-    summary.style.display = 'block';
-    summary.innerHTML = `
-      <strong>PR ที่อ้างอิง:</strong> ${pr.docNo}<br>
-      <strong>โครงการ:</strong> ${escapeHtml(pr.project || '-')}<br>
-      <strong>ผู้ขอ:</strong> ${escapeHtml(pr.submittedBy.name)} · <strong>วันที่ต้องการ:</strong> ${pr.neededBy || '-'}<br>
-      <strong>เหตุผล:</strong> ${escapeHtml(pr.reason || '-')}
-      ${pr.suggestedVendor ? `<br><strong>ผู้ขายแนะนำ:</strong> ${escapeHtml(pr.suggestedVendor)}` : ''}
-    `;
-    // Prefill items from PR
-    poItems = (pr.items || []).map(it => ({
-      id: 'poi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      name: it.name, qty: it.qty, unit: it.unit || '', price: it.est || 0
-    }));
-    if (poItems.length === 0) addPoItem();
-    renderPoItems();
-    if (pr.suggestedVendor && !val('po-vendor')) {
-      document.getElementById('po-vendor').value = pr.suggestedVendor;
-    }
-  }
+  // PR system removed — these stubs kept for any leftover callers (no-op)
+  function refreshPoFromPrSelect() { /* no-op: PR system removed */ }
+  function prefillPoFromPr() { /* no-op: PR system removed */ }
   function addPoItem(name = '', qty = 1, price = 0, unit = '') {
     poItems.push({ id: 'poi_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name, qty, price, unit });
     renderPoItems();
@@ -5312,11 +4900,70 @@
       </table>`;
     calcPoTotal();
   }
+  // Working state for PO extra charges (vendor PO only)
+  let _poExtraCharges = [];
+
   function calcPoTotal() {
-    const total = poItems.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-    const el = document.getElementById('po-total');
-    if (el) el.textContent = fmt(total);
+    const subtotal = poItems.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
+    const extraTotal = _poExtraCharges.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+    const total = subtotal + extraTotal;
+
+    const subEl = document.getElementById('po-subtotal');
+    if (subEl) subEl.textContent = fmt(subtotal);
+    const extraEl = document.getElementById('po-extra-total');
+    if (extraEl) {
+      extraEl.textContent = fmt(extraTotal);
+      extraEl.style.color = extraTotal < 0 ? 'var(--danger)' : '';
+    }
+    const totalEl = document.getElementById('po-total');
+    if (totalEl) totalEl.textContent = fmt(total);
+    const totalElC = document.getElementById('po-total-contractor');
+    if (totalElC) totalElC.textContent = fmt(subtotal); // contractor doesn't use extras
     return total;
+  }
+  function renderPoExtraCharges() {
+    const tbody = document.getElementById('po-extra-tbody');
+    if (!tbody) return;
+    if (_poExtraCharges.length === 0) {
+      tbody.innerHTML = `<tr id="po-extra-empty"><td colspan="3" style="padding:10px 8px;text-align:center;color:var(--text-3);font-style:italic;font-size:12px">ยังไม่มีรายการเพิ่มเติม — กด "เพิ่มรายการ" เพื่อใส่ค่าขนส่ง/VAT/ส่วนลด</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = _poExtraCharges.map((row, i) => `
+      <tr>
+        <td style="padding:4px 8px">
+          <input type="text" value="${escapeHtml(row.label || '')}" placeholder="เช่น ค่าขนส่ง" oninput="updatePoExtraCharge(${i},'label',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff">
+        </td>
+        <td style="padding:4px 8px">
+          <input type="number" value="${row.amount ?? ''}" placeholder="0.00" step="0.01" oninput="updatePoExtraCharge(${i},'amount',this.value)" style="width:100%;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace;background:#fff">
+        </td>
+        <td style="padding:4px 4px;text-align:center">
+          <button type="button" onclick="removePoExtraCharge(${i})" title="ลบ" style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;border-radius:4px;display:inline-flex"><i class="ti ti-trash" style="font-size:15px"></i></button>
+        </td>
+      </tr>
+    `).join('');
+  }
+  function addPoExtraCharge() {
+    _poExtraCharges.push({ label: '', amount: 0 });
+    renderPoExtraCharges();
+    calcPoTotal();
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('#po-extra-tbody input[type="text"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 50);
+  }
+  function updatePoExtraCharge(idx, field, value) {
+    if (!_poExtraCharges[idx]) return;
+    if (field === 'amount') {
+      _poExtraCharges[idx].amount = value === '' ? 0 : Number(value);
+    } else {
+      _poExtraCharges[idx][field] = value;
+    }
+    calcPoTotal();
+  }
+  function removePoExtraCharge(idx) {
+    _poExtraCharges.splice(idx, 1);
+    renderPoExtraCharges();
+    calcPoTotal();
   }
   // PO type helpers (vendor / contractor)
   function getPoType() {
@@ -5333,9 +4980,27 @@
     document.querySelectorAll('.po-vendor-only').forEach(el => {
       el.style.display = type === 'vendor' ? '' : 'none';
     });
+    // Hide contractor-only fields when vendor
+    document.querySelectorAll('.po-contractor-only').forEach(el => {
+      el.style.display = type === 'contractor' ? '' : 'none';
+    });
     // Hide items table when contractor (use single amount instead)
     const itemsCard = document.getElementById('po-items-card');
     if (itemsCard) itemsCard.style.display = type === 'vendor' ? '' : 'none';
+    // Refresh vendor PO project dropdown when switching to vendor
+    if (type === 'vendor') {
+      refreshPoVendorProjects();
+    }
+  }
+
+  // Refresh project list in Vendor PO dropdown
+  function refreshPoVendorProjects() {
+    const sel = document.getElementById('po-v-project');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— เลือกโครงการ —</option>' +
+      projects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}${p.code ? ' [' + escapeHtml(p.code) + ']' : ''}</option>`).join('');
+    if (current && projects.find(p => p.id === current)) sel.value = current;
   }
 
   function onPoContractorProjectChange() {
@@ -5460,30 +5125,48 @@
       return;
     }
 
-    // === VENDOR PO (เดิม) ===
+    // === VENDOR PO — ไม่ผูก PR แล้ว, สร้างแล้ว approved ทันที ===
     if (!canCreatePO()) { toast('เฉพาะ Procurement', 'error'); return; }
-    const prId = val('po-from-pr');
-    if (!prId) { toast('กรุณาเลือก PR ที่อนุมัติแล้ว', 'error'); return; }
-    const pr = documents.find(d => d.id === prId);
-    if (!pr || pr.type !== 'pr' || pr.status !== 'approved') {
-      toast('PR ไม่ถูกต้องหรือยังไม่อนุมัติ', 'error'); return;
-    }
-    if (pr.poDocId) { toast('PR นี้สร้าง PO ไปแล้ว', 'error'); return; }
+    const vProjectId = val('po-v-project');
+    if (!vProjectId) { toast('กรุณาเลือกโครงการ', 'error'); return; }
+    const vProj = getProjectById(vProjectId);
+    if (!vProj) { toast('ไม่พบโครงการ', 'error'); return; }
     if (!val('po-date')) { toast('กรุณาเลือกวันที่สั่งซื้อ', 'error'); return; }
     if (!val('po-vendor')) { toast('กรุณากรอกชื่อร้านค้า', 'error'); return; }
     const validItems = poItems.filter(it => it.name && Number(it.qty) > 0 && Number(it.price) >= 0);
     if (validItems.length === 0) { toast('กรุณาเพิ่มอย่างน้อย 1 รายการ', 'error'); return; }
-    const total = validItems.reduce((s, it) => s + Number(it.qty) * Number(it.price), 0);
+
+    // Validate extra charges (label required if amount != 0)
+    const cleanExtras = _poExtraCharges
+      .map(x => ({ label: (x.label || '').trim(), amount: Number(x.amount) || 0 }))
+      .filter(x => x.label || x.amount);
+    const missingLabel = cleanExtras.find(x => x.amount !== 0 && !x.label);
+    if (missingLabel) {
+      toast('กรุณาใส่ชื่อรายการสำหรับค่าใช้จ่ายเพิ่มเติมทุกรายการที่มีจำนวนเงิน', 'error');
+      return;
+    }
+
+    const itemsSubtotal = validItems.reduce((s, it) => s + Number(it.qty) * Number(it.price), 0);
+    const extraTotal = cleanExtras.reduce((s, x) => s + x.amount, 0);
+    const total = itemsSubtotal + extraTotal;
+
+    // Collect attachment checkboxes
+    const attachments = {
+      orderDoc: !!document.getElementById('po-att-order')?.checked,
+      productPhoto: !!document.getElementById('po-att-photo')?.checked,
+      quotation: !!document.getElementById('po-att-quotation')?.checked,
+      other: !!document.getElementById('po-att-other')?.checked
+    };
+
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const now = Date.now();
     const docObj = {
       id,
       type: 'po',
       poType: 'vendor',
-      docNo: generateDocNo('po', pr.projectId),
-      projectId: pr.projectId,
-      project: pr.project,
-      prDocId: pr.id,
-      prDocNo: pr.docNo,
+      docNo: generateDocNo('po', vProjectId),
+      projectId: vProjectId,
+      project: vProj.name,
       orderDate: val('po-date'),
       vendor: val('po-vendor'),
       vendorContact: val('po-vendor-contact'),
@@ -5493,25 +5176,28 @@
         name: it.name, qty: Number(it.qty), unit: it.unit || '',
         price: Number(it.price), total: Number(it.qty) * Number(it.price)
       })),
+      itemsSubtotal,
+      extraCharges: cleanExtras,
+      extraChargesTotal: extraTotal,
       total,
       note: val('po-note'),
+      attachments,
       files: pendingFiles.slice(),
-      submittedBy: { id: currentUser.id, name: currentUser.name, at: Date.now() },
-      status: 'pending',
-      approvedBy: null,
+      submittedBy: { id: currentUser.id, name: currentUser.name, at: now },
+      // VENDOR PO ไม่ต้องผ่าน PM → approved ทันที
+      status: 'approved',
+      approvedBy: { id: currentUser.id, name: currentUser.name, at: now, auto: true },
       rejectedBy: null,
       vendorDocs: [],
       vendorConfirmedAt: null,
       vendorConfirmedBy: null,
-      createdAt: Date.now()
+      createdAt: now
     };
     documents.unshift(docObj);
-    pr.poDocId = docObj.id;
-    pr.poDocNo = docObj.docNo;
-    await saveDocs(pr);
     const ok = await saveDocs(docObj);
     if (ok) {
-      toast(`สร้าง PO ${docObj.docNo} เรียบร้อย — รอ PM อนุมัติ`, 'success');
+      logActivity('doc-create', `สร้าง PO ${docObj.docNo} (vendor) · ร้าน ${docObj.vendor} · ${fmt(total)} บาท`);
+      toast(`สร้าง PO ${docObj.docNo} เรียบร้อย`, 'success');
       resetPoForm();
       switchTab('history');
     }
@@ -5521,15 +5207,22 @@
      'po-c-amount','po-c-scope','po-c-phone'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    document.getElementById('po-from-pr').value = '';
     document.getElementById('po-payment-terms').value = 'cod';
-    document.getElementById('po-pr-summary').style.display = 'none';
+    const vProj = document.getElementById('po-v-project');
+    if (vProj) vProj.value = '';
     const projSel = document.getElementById('po-c-project');
     if (projSel) projSel.value = '';
     const cInput = document.getElementById('po-c-contractor');
     if (cInput) cInput.value = '';
+    // Reset attachment checkboxes
+    ['po-att-order','po-att-photo','po-att-quotation','po-att-other'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.checked = false;
+    });
     poItems = [];
     addPoItem();
+    // Reset extra charges
+    _poExtraCharges = [];
+    renderPoExtraCharges();
     // Reset PO planned periods
     poPlannedPeriods = [];
     renderPoPlannedPeriods();
@@ -5539,6 +5232,7 @@
     const radio = document.querySelector('input[name="po-type"][value="contractor"]');
     if (radio) radio.checked = true;
     onPoTypeChange();
+    calcPoTotal();
   }
 
   // ========================================================================
@@ -5932,19 +5626,12 @@
     return currentUser && currentUser.role === 'procurement';
   }
 
-  // ============ PR / PO PERMISSIONS (Phase 2 Batch 2) ============
-  function canCreatePR() {
-    // Site Engineer + Project Manager
-    if (isAdmin()) return true;
-    return currentUser && (currentUser.role === 'siteEng' || currentUser.role === 'projectManager');
-  }
-  function canApprovePR() {
-    // Procurement approves PR (Admin too)
-    if (isAdmin()) return true;
-    return currentUser && currentUser.role === 'procurement';
-  }
+  // ============ PO PERMISSIONS ============
+  // PR system removed — keep stubs returning false for any leftover callers
+  function canCreatePR() { return false; }
+  function canApprovePR() { return false; }
   function canCreatePO() {
-    // Procurement creates PO (after PR approved)
+    // Procurement creates PO directly (PR no longer required)
     if (isAdmin()) return true;
     return currentUser && currentUser.role === 'procurement';
   }
@@ -6650,7 +6337,7 @@
       + [...purchaseDocs, ...fuelDocs].reduce((s, d) => s + (Number(d.net) || 0), 0);
 
     document.getElementById('stats-bar').innerHTML = `
-      <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div><div class="stat-sub">งวด ${installmentDocs.length} · ซื้อ ${purchaseDocs.length} · ค่ารถ ${fuelDocs.length} · PR ${prDocs.length} · PO ${poDocs.length}</div></div>
+      <div class="stat info"><div class="stat-label">เอกสารทั้งหมด</div><div class="stat-value">${total}</div><div class="stat-sub">งวด ${installmentDocs.length} · ซื้อ ${purchaseDocs.length} · ค่ารถ ${fuelDocs.length} · PO ${poDocs.length}${prDocs.length > 0 ? ` · PR เก่า ${prDocs.length}` : ''}</div></div>
       <div class="stat warn"><div class="stat-label">รอฉันดำเนินการ</div><div class="stat-value">${myPending}</div><div class="stat-sub">รออนุมัติ ${pending} · รอเบิกคืน ${reimbPending}</div></div>
       <div class="stat ok"><div class="stat-label">งวดงานอนุมัติแล้ว</div><div class="stat-value">${approved}</div></div>
       <div class="stat"><div class="stat-label">ยอดรวมที่จ่าย/อนุมัติ</div><div class="stat-value">${fmt(totalAmount)}</div><div class="stat-sub">บาท</div></div>
@@ -7138,7 +6825,10 @@
     const type = d.type || 'installment';
     if (type === 'purchase') return showPurchaseDetail(d);
     if (type === 'fuel') return showFuelDetail(d);
-    if (type === 'pr') return showPrDetail(d);
+    if (type === 'pr') {
+      toast('ระบบ PR ถูกยกเลิกแล้ว — เอกสารนี้เป็นข้อมูลเก่า', 'info');
+      return;
+    }
     if (type === 'po') return showPoDetail(d);
     if (type === 'subWithdraw') return showSubWithdrawDetail(d);
     if (type === 'vo') return showVoDetail(d);
@@ -7719,102 +7409,6 @@
     document.getElementById('detail-modal').classList.add('show');
   }
 
-  // ============ PR DETAIL ============
-  function showPrDetail(d) {
-    const status = getStatusInfo(d);
-    const URGENCY_LABELS = { normal: 'ปกติ', urgent: 'เร่งด่วน', critical: 'วิกฤต — หยุดงาน' };
-    const URGENCY_COLORS = { normal: 'var(--text-2)', urgent: '#b8740a', critical: 'var(--danger)' };
-    const CATEGORY_LABELS = { material: 'วัสดุก่อสร้าง', tool: 'เครื่องมือ/อุปกรณ์', consumable: 'วัสดุสิ้นเปลือง', service: 'บริการ/รับเหมาช่วง', other: 'อื่นๆ' };
-    const itemsHtml = (d.items || []).map(it => `
-      <tr>
-        <td>${escapeHtml(it.name)}</td>
-        <td class="right">${fmt(it.qty)}</td>
-        <td>${escapeHtml(it.unit || '-')}</td>
-        <td class="right">${fmt(it.est)}</td>
-        <td class="right">${fmt(it.total)}</td>
-      </tr>`).join('');
-    const canAct = canApprovePR() && d.status === 'pending';
-    const canMakePo = canCreatePO() && d.status === 'approved' && !d.poDocId;
-    const linkedPo = d.poDocId ? documents.find(x => x.id === d.poDocId) : null;
-
-    document.getElementById('modal-content').innerHTML = `
-      <div class="modal-head">
-        <h3><i class="ti ti-clipboard-list" style="color:#0e7c66"></i> รายละเอียด PR <span style="color:var(--text-3);font-weight:400;font-family:'JetBrains Mono',monospace;font-size:14px">${d.docNo}</span></h3>
-        <span class="pill ${status.cls}">${status.label}</span>
-      </div>
-      <div class="modal-body">
-        <div class="detail-section">
-          <div class="detail-section-title">ข้อมูลคำขอ</div>
-          <div class="kv-grid">
-            <div><div class="kv-k">โครงการ</div><div class="kv-v">${escapeHtml(d.project || '-')}</div></div>
-            <div><div class="kv-k">วันที่ขอ</div><div class="kv-v">${d.requestDate || '-'}</div></div>
-            <div><div class="kv-k">ต้องการภายใน</div><div class="kv-v"><strong>${d.neededBy || '-'}</strong></div></div>
-            <div><div class="kv-k">ความเร่งด่วน</div><div class="kv-v" style="color:${URGENCY_COLORS[d.urgency]||'var(--text)'};font-weight:600">${URGENCY_LABELS[d.urgency]||d.urgency}</div></div>
-            <div><div class="kv-k">หมวดหมู่</div><div class="kv-v">${CATEGORY_LABELS[d.category]||d.category||'-'}</div></div>
-            <div><div class="kv-k">ผู้ขอ</div><div class="kv-v">${escapeHtml(d.submittedBy.name)}</div></div>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <div class="detail-section-title">รายการที่ขอ (${(d.items||[]).length})</div>
-          <table class="items-tbl">
-            <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th>หน่วย</th><th class="right">ประมาณการ/หน่วย</th><th class="right">รวม</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
-            ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
-              <tfoot>
-                <tr style="background:var(--surface-2)"><td colspan="4" style="text-align:right;padding:6px 8px;color:var(--text-2)">รวมค่าสินค้า</td><td class="row-total" style="font-weight:500">${fmt(d.itemsSubtotal != null ? d.itemsSubtotal : (d.totalEst - (d.extraChargesTotal || 0)))}</td></tr>
-                ${d.extraCharges.map(ec => `
-                  <tr style="background:#fdf6e9"><td colspan="4" style="text-align:right;padding:5px 8px;color:#7a5d2e;font-size:13px"><i class="ti ti-plus-equal" style="vertical-align:-2px;font-size:13px"></i> ${escapeHtml(ec.label)}</td><td class="row-total" style="color:${Number(ec.amount) < 0 ? 'var(--danger)' : '#7a5d2e'};font-weight:500">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>
-                `).join('')}
-                <tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวมทั้งสิ้น</td><td class="row-total">${fmt(d.totalEst)}</td></tr>
-              </tfoot>
-            ` : `<tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ประมาณการรวม</td><td class="row-total">${fmt(d.totalEst)}</td></tr></tfoot>`}
-          </table>
-        </div>
-
-        <div class="detail-section">
-          <div class="detail-section-title">เหตุผล</div>
-          <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(d.reason || '-')}</div>
-          ${d.suggestedVendor ? `<div style="margin-top:8px"><strong>ผู้ขายแนะนำ:</strong> ${escapeHtml(d.suggestedVendor)}</div>` : ''}
-          ${d.procurementNote ? `<div style="margin-top:8px;padding:8px 10px;background:#d8eee7;border-left:3px solid #0e7c66;border-radius:4px;color:var(--text-2);font-size:13px"><strong style="color:#0e7c66">[จัดซื้อ]</strong> ${escapeHtml(d.procurementNote)}</div>` : ''}
-          ${d.note && !d.procurementNote ? `<div style="margin-top:8px;color:var(--text-2)"><strong>หมายเหตุ:</strong> <span style="white-space:pre-wrap">${escapeHtml(d.note)}</span></div>` : ''}
-        </div>
-
-        ${d.approvedBy ? `<div class="detail-section">
-          <div class="detail-section-title">อนุมัติแล้ว</div>
-          <div>${escapeHtml(d.approvedBy.name)} · ${fmtDateTime(d.approvedBy.at)}</div>
-        </div>` : ''}
-        ${d.rejectedBy ? `<div class="detail-section">
-          <div class="detail-section-title" style="color:var(--danger)">ไม่อนุมัติ</div>
-          <div>${escapeHtml(d.rejectedBy.name)} · ${fmtDateTime(d.rejectedBy.at)}</div>
-          <div style="color:var(--danger);margin-top:6px">เหตุผล: ${escapeHtml(d.rejectedBy.reason || '-')}</div>
-        </div>` : ''}
-        ${linkedPo ? `<div class="detail-section">
-          <div class="detail-section-title">PO ที่ออกจาก PR นี้</div>
-          <div onclick="closeModal();setTimeout(()=>showDetail('${linkedPo.id}'),100)" style="cursor:pointer;color:#5b3a8a;font-weight:600;text-decoration:underline">${linkedPo.docNo}</div>
-        </div>` : ''}
-      </div>
-
-      <div class="modal-foot">
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-sm" onclick="exportPrPdf('${d.id}')"><i class="ti ti-file-export"></i> Export PDF</button>
-          ${canAct ? `
-            <button class="btn btn-success btn-sm" onclick="approvePR('${d.id}')"><i class="ti ti-check"></i> อนุมัติ PR</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectPR('${d.id}')"><i class="ti ti-x"></i> ไม่อนุมัติ</button>
-          ` : ''}
-          ${canMakePo ? `
-            <button class="btn btn-primary btn-sm" onclick="closeModal();setTimeout(()=>{switchTab('po');document.getElementById('po-from-pr').value='${d.id}';prefillPoFromPr();},100)" style="background:#5b3a8a;border-color:#5b3a8a"><i class="ti ti-truck-delivery"></i> สร้าง PO จาก PR นี้</button>
-          ` : ''}
-          ${canDeleteAnything() ? `
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${d.id}')"><i class="ti ti-trash"></i> ลบ</button>
-          ` : ''}
-        </div>
-        <button class="btn" onclick="closeModal()">ปิด</button>
-      </div>
-    `;
-    document.getElementById('detail-modal').classList.add('show');
-  }
-
   // ============ PO DETAIL ============
   function showPoDetail(d) {
     const status = getStatusInfo(d);
@@ -7860,7 +7454,6 @@
               <div><div class="kv-k">มูลค่าสัญญา</div><div class="kv-v" style="font-weight:600;color:#0e7c66">${fmt(d.total)}</div></div>
               <div><div class="kv-k">ผู้สร้างสัญญา</div><div class="kv-v">${escapeHtml(d.submittedBy?.name || '-')}</div></div>
             ` : `
-              <div><div class="kv-k">PR ที่อ้างอิง</div><div class="kv-v" onclick="closeModal();setTimeout(()=>showDetail('${d.prDocId}'),100)" style="cursor:pointer;color:#0e7c66;font-weight:600;text-decoration:underline">${d.prDocNo || '-'}</div></div>
               <div><div class="kv-k">วันที่สั่ง</div><div class="kv-v">${d.orderDate || '-'}</div></div>
               <div><div class="kv-k">วันที่จัดส่ง</div><div class="kv-v">${d.deliveryDate || '-'}</div></div>
               <div><div class="kv-k">ผู้ขาย</div><div class="kv-v"><strong>${escapeHtml(d.vendor || '-')}</strong>${d.vendorContact ? `<br><span style="color:var(--text-2);font-size:13px">${escapeHtml(d.vendorContact)}</span>` : ''}</div></div>
@@ -7882,9 +7475,28 @@
             <table class="items-tbl">
               <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th>หน่วย</th><th class="right">ราคา/หน่วย</th><th class="right">รวม</th></tr></thead>
               <tbody>${itemsHtml}</tbody>
-              <tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวม</td><td class="row-total">${fmt(d.total)}</td></tr></tfoot>
+              ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
+                <tfoot>
+                  <tr style="background:var(--surface-2)"><td colspan="4" style="text-align:right;padding:6px 8px;color:var(--text-2)">รวมค่าสินค้า</td><td class="row-total" style="font-weight:500">${fmt(d.itemsSubtotal != null ? d.itemsSubtotal : (d.total - (d.extraChargesTotal || 0)))}</td></tr>
+                  ${d.extraCharges.map(ec => `
+                    <tr style="background:#fdf6e9"><td colspan="4" style="text-align:right;padding:5px 8px;color:#7a5d2e;font-size:13px"><i class="ti ti-plus-equal" style="vertical-align:-2px;font-size:13px"></i> ${escapeHtml(ec.label)}</td><td class="row-total" style="color:${Number(ec.amount) < 0 ? 'var(--danger)' : '#7a5d2e'};font-weight:500">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>
+                  `).join('')}
+                  <tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวมทั้งสิ้น</td><td class="row-total">${fmt(d.total)}</td></tr>
+                </tfoot>
+              ` : `<tfoot><tr class="grand-total"><td colspan="4" style="text-align:right">ยอดรวม</td><td class="row-total">${fmt(d.total)}</td></tr></tfoot>`}
             </table>
           </div>
+          ${d.attachments && (d.attachments.orderDoc || d.attachments.productPhoto || d.attachments.quotation || d.attachments.other) ? `
+            <div class="detail-section">
+              <div class="detail-section-title">เอกสารที่แนบมา (ติ๊กไว้)</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                ${d.attachments.orderDoc ? '<span style="background:#d8eee7;color:#0e7c66;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500">✓ ใบสั่งซื้อ/PO ของร้าน</span>' : ''}
+                ${d.attachments.productPhoto ? '<span style="background:#d8eee7;color:#0e7c66;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500">✓ รูปสินค้า</span>' : ''}
+                ${d.attachments.quotation ? '<span style="background:#d8eee7;color:#0e7c66;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500">✓ ใบเสนอราคา</span>' : ''}
+                ${d.attachments.other ? '<span style="background:#d8eee7;color:#0e7c66;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500">✓ อื่นๆ</span>' : ''}
+              </div>
+            </div>
+          ` : ''}
         `}
 
         ${d.note ? `<div class="detail-section">
@@ -9414,64 +9026,6 @@
     generatePdf(html, `${d.docNo}.pdf`);
   }
 
-  // NEW: PR (Purchase Request) PDF
-  function exportPrPdf(id) {
-    const d = documents.find(x => x.id === id);
-    if (!d) return;
-    const URGENCY_LABELS = { normal: 'ปกติ', urgent: 'เร่งด่วน', critical: 'วิกฤต — หยุดงาน' };
-    const CATEGORY_LABELS = { material: 'วัสดุก่อสร้าง', tool: 'เครื่องมือ/อุปกรณ์', consumable: 'วัสดุสิ้นเปลือง', service: 'บริการ/รับเหมาช่วง', other: 'อื่นๆ' };
-    const sigs = [
-      { label: 'ผู้ขอ (Site Eng/PM)', name: d.submittedBy ? d.submittedBy.name : '', date: d.submittedBy ? d.submittedBy.at : null },
-      { label: 'จัดซื้ออนุมัติ (Procurement)', name: d.approvedBy ? d.approvedBy.name : '', date: d.approvedBy ? d.approvedBy.at : null }
-    ];
-    const html = `
-      ${pdfHeader('ใบขอซื้อ', 'PURCHASE REQUEST', d.docNo)}
-      <table style="width:100%;font-size:9pt;margin-bottom:7pt;border-collapse:collapse">
-        <tr><td style="padding:2pt 0;color:#5c5b54;width:90pt">โครงการ</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:2pt 0;color:#5c5b54;width:75pt">วันที่ขอ</td><td style="padding:2pt 0">${d.requestDate || '-'}</td></tr>
-        <tr><td style="padding:2pt 0;color:#5c5b54">ต้องการภายใน</td><td style="padding:2pt 0;font-weight:500">${d.neededBy || '-'}</td><td style="padding:2pt 0;color:#5c5b54">ความเร่งด่วน</td><td style="padding:2pt 0">${escapeHtml(URGENCY_LABELS[d.urgency] || d.urgency || '-')}</td></tr>
-        <tr><td style="padding:2pt 0;color:#5c5b54">หมวดหมู่</td><td colspan="3" style="padding:2pt 0">${escapeHtml(CATEGORY_LABELS[d.category] || d.category || '-')}</td></tr>
-      </table>
-      <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:7pt">
-        <thead><tr style="background:#1a1a17;color:#fff">
-          <th style="padding:4pt;text-align:left;width:24pt">#</th>
-          <th style="padding:4pt;text-align:left">รายการ</th>
-          <th style="padding:4pt;text-align:right;width:48pt">จำนวน</th>
-          <th style="padding:4pt;text-align:left;width:50pt">หน่วย</th>
-          <th style="padding:4pt;text-align:right;width:75pt">ประมาณการ</th>
-          <th style="padding:4pt;text-align:right;width:75pt">รวม</th>
-        </tr></thead>
-        <tbody>
-          ${(d.items || []).map((it, i) => `<tr style="border-bottom:0.5pt solid #e3e1d7;${i % 2 === 1 ? 'background:#fafaf7' : ''}">
-            <td style="padding:3pt 5pt">${i + 1}</td>
-            <td style="padding:3pt 5pt">${escapeHtml(it.name || '')}</td>
-            <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.qty)}</td>
-            <td style="padding:3pt 5pt">${escapeHtml(it.unit || '-')}</td>
-            <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.est)}</td>
-            <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
-          </tr>`).join('')}
-          ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
-            <tr style="background:#f5f4ee"><td colspan="5" style="padding:3pt 5pt;text-align:right;font-weight:500;color:#5c5b54">รวมค่าสินค้า</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(d.itemsSubtotal != null ? d.itemsSubtotal : (d.totalEst - (d.extraChargesTotal || 0)))}</td></tr>
-            ${d.extraCharges.map(ec => `<tr style="background:#fdf6e9;border-bottom:0.5pt dotted #e9d9b4"><td colspan="5" style="padding:3pt 5pt;text-align:right;color:#7a5d2e">+ ${escapeHtml(ec.label)}</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:${Number(ec.amount) < 0 ? '#b3261e' : '#7a5d2e'}">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>`).join('')}
-          ` : ''}
-          <tr style="background:#1a1a17;color:#fff"><td colspan="5" style="padding:5pt;font-weight:600;text-align:right">ประมาณการรวมทั้งสิ้น</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.totalEst || 0)}</td></tr>
-        </tbody>
-      </table>
-      ${d.reason ? `<div class="pdf-section" style="background:#d8eee7;padding:8pt 10pt;margin-bottom:7pt;border-left:2.5pt solid #0e7c66">
-        <div style="font-size:8pt;color:#5c5b54;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3pt">เหตุผลในการขอซื้อ</div>
-        <div style="font-size:10pt">${escapeHtml(d.reason)}</div>
-      </div>` : ''}
-      ${d.suggestedVendor ? `<div style="font-size:10pt;margin-bottom:6pt"><strong>ผู้ขายที่แนะนำ:</strong> ${escapeHtml(d.suggestedVendor)}</div>` : ''}
-      ${d.note ? `<div style="font-size:10pt;margin-bottom:7pt;color:#5c5b54"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
-      <div class="pdf-signatures-group">
-        ${pdfSignatures(sigs)}
-        ${pdfExecutiveSignatures()}
-        ${pdfFooter()}
-      </div>
-      ${pdfAttachmentPages(d)}
-    `;
-    generatePdf(html, `${d.docNo}.pdf`);
-  }
-
   // NEW: PO (Purchase Order) PDF
   function exportPoPdf(id) {
     const d = documents.find(x => x.id === id);
@@ -9488,15 +9042,25 @@
     };
     const sigs = [
       { label: 'ผู้จัดทำ (จัดซื้อ)', name: d.submittedBy ? d.submittedBy.name : '', date: d.submittedBy ? d.submittedBy.at : null },
-      { label: 'ผู้อนุมัติ (PM)', name: d.approvedBy ? d.approvedBy.name : '', date: d.approvedBy ? d.approvedBy.at : null }
+      { label: 'ผู้ขาย/ร้านค้า', name: d.vendor || '', date: null }
     ];
+    // Attachment chips
+    const attItems = [];
+    if (d.attachments) {
+      if (d.attachments.orderDoc) attItems.push('ใบสั่งซื้อ/PO ของร้าน');
+      if (d.attachments.productPhoto) attItems.push('รูปสินค้า');
+      if (d.attachments.quotation) attItems.push('ใบเสนอราคา');
+      if (d.attachments.other) attItems.push('อื่นๆ');
+    }
+    const itemsSubtotal = d.itemsSubtotal != null
+      ? d.itemsSubtotal
+      : (d.total - (Number(d.extraChargesTotal) || 0));
     const html = `
       ${pdfHeader('ใบสั่งซื้อ', 'PURCHASE ORDER', d.docNo)}
       <table style="width:100%;font-size:9pt;margin-bottom:7pt;border-collapse:collapse">
         <tr><td style="padding:2pt 0;color:#5c5b54;width:90pt">โครงการ</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.project || '-')}</td><td style="padding:2pt 0;color:#5c5b54;width:75pt">วันที่สั่งซื้อ</td><td style="padding:2pt 0">${d.orderDate || '-'}</td></tr>
         <tr><td style="padding:2pt 0;color:#5c5b54">ร้านค้า/ผู้ขาย</td><td style="padding:2pt 0;font-weight:500">${escapeHtml(d.vendor || '-')}</td><td style="padding:2pt 0;color:#5c5b54">ผู้ติดต่อ</td><td style="padding:2pt 0">${escapeHtml(d.vendorContact || '-')}</td></tr>
         <tr><td style="padding:2pt 0;color:#5c5b54">กำหนดส่ง</td><td style="padding:2pt 0">${d.deliveryDate || '-'}</td><td style="padding:2pt 0;color:#5c5b54">เงื่อนไขชำระ</td><td style="padding:2pt 0">${escapeHtml(PAYMENT_LABELS[d.paymentTerms] || d.paymentTerms || '-')}</td></tr>
-        ${d.prDocNo ? `<tr><td style="padding:2pt 0;color:#5c5b54">อ้างอิง PR</td><td colspan="3" style="padding:2pt 0;font-family:'JetBrains Mono',monospace">${escapeHtml(d.prDocNo)}</td></tr>` : ''}
       </table>
       <table class="pdf-table" style="width:100%;font-size:9pt;border-collapse:collapse;margin-bottom:7pt">
         <thead><tr style="background:#1a1a17;color:#fff">
@@ -9516,14 +9080,25 @@
             <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.price)}</td>
             <td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace">${fmt(it.total)}</td>
           </tr>`).join('')}
+          ${(Array.isArray(d.extraCharges) && d.extraCharges.length > 0) ? `
+            <tr style="background:#f5f4ee"><td colspan="5" style="padding:3pt 5pt;text-align:right;font-weight:500;color:#5c5b54">รวมค่าสินค้า</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600">${fmt(itemsSubtotal)}</td></tr>
+            ${d.extraCharges.map(ec => `<tr style="background:#fdf6e9;border-bottom:0.5pt dotted #e9d9b4"><td colspan="5" style="padding:3pt 5pt;text-align:right;color:#7a5d2e">+ ${escapeHtml(ec.label)}</td><td style="padding:3pt 5pt;text-align:right;font-family:'JetBrains Mono',monospace;color:${Number(ec.amount) < 0 ? '#b3261e' : '#7a5d2e'}">${Number(ec.amount) >= 0 ? '+' : ''}${fmt(ec.amount)}</td></tr>`).join('')}
+          ` : ''}
           <tr style="background:#1a1a17;color:#fff"><td colspan="5" style="padding:5pt;font-weight:600;text-align:right">ยอดรวมทั้งสิ้น</td><td style="padding:5pt;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12pt">${fmt(d.total || 0)}</td></tr>
         </tbody>
       </table>
       <div style="font-size:9.5pt;color:#5c5b54;margin-bottom:5pt">(${bahtText(d.total || 0)})</div>
       ${d.note ? `<div style="font-size:10pt;margin-bottom:7pt;color:#5c5b54;background:#f5f4ee;padding:8pt 10pt;border-radius:3pt"><strong>หมายเหตุ:</strong> ${escapeHtml(d.note)}</div>` : ''}
+      ${attItems.length > 0 ? `
+        <div class="pdf-section" style="margin-bottom:6pt;padding:6pt 10pt;background:#f5f4ee;border-radius:3pt">
+          <div style="font-size:8.5pt;color:#5c5b54;font-weight:600;margin-bottom:3pt">เอกสารแนบ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6pt;font-size:9pt">
+            ${attItems.map(t => `<span style="background:#d8eee7;color:#0e7c66;padding:2pt 7pt;border-radius:3pt;font-weight:500">✓ ${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
       <div class="pdf-signatures-group">
         ${pdfSignatures(sigs)}
-        ${pdfExecutiveSignatures()}
         ${pdfFooter()}
       </div>
       ${pdfAttachmentPages(d)}
@@ -10712,16 +10287,9 @@
       }).join('');
     }
 
-    // Consumables by project (PR + Pocket Money "consumable")
+    // Consumables by project (Pocket Money "consumable" only — PR system removed)
     const consEl = document.getElementById('db-consumables-by-project');
     const byProj = new Map();
-    // From PR with category=consumable
-    documents.filter(d => d.type === 'pr' && d.category === 'consumable').forEach(d => {
-      if (!byProj.has(d.projectId)) byProj.set(d.projectId, { project: d.project || '-', items: [], total: 0 });
-      const tot = Number(d.totalEst) || 0;
-      byProj.get(d.projectId).items.push({ source: 'PR', docNo: d.docNo, amount: tot, date: d.requestDate || fmtDate(d.createdAt) });
-      byProj.get(d.projectId).total += tot;
-    });
     // From Pocket Money consumable transactions
     pocketTransactions.filter(t => t.kind === 'spend' && t.category === 'consumable' && t.projectId).forEach(t => {
       if (!byProj.has(t.projectId)) byProj.set(t.projectId, { project: t.project || '-', items: [], total: 0 });
@@ -11016,18 +10584,13 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.exportPurchasePdf = exportPurchasePdf;
   window.exportFuelPdf = exportFuelPdf;
   window.exportSubWithdrawPdf = exportSubWithdrawPdf;
-  window.exportPrPdf = exportPrPdf;
   window.exportPoPdf = exportPoPdf;
   window.exportProjectSummaryPdf = exportProjectSummaryPdf;
 
-  // Phase 3 Batch 4: PR prices flow
-  window.openPrPriceModal = openPrPriceModal;
-  window.closePrPriceModal = closePrPriceModal;
-  window.updatePrPriceTotal = updatePrPriceTotal;
-  window.submitPrPrices = submitPrPrices;
-  window.addPrExtraCharge = addPrExtraCharge;
-  window.updatePrExtraCharge = updatePrExtraCharge;
-  window.removePrExtraCharge = removePrExtraCharge;
+  // PO extra charges (vendor PO)
+  window.addPoExtraCharge = addPoExtraCharge;
+  window.updatePoExtraCharge = updatePoExtraCharge;
+  window.removePoExtraCharge = removePoExtraCharge;
 
   // Phase 3: VO (Variation Order) — งานเพิ่ม
   window.onVoProjectChange = onVoProjectChange;
@@ -11051,6 +10614,7 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.purgeAllProjects = purgeAllProjects;
   window.purgeAllDocuments = purgeAllDocuments;
   window.purgeEverything = purgeEverything;
+  window.purgeOldPRs = purgeOldPRs;
 
   // Phase 3: Confirm Transfer
   window.initiateConfirmTransfer = initiateConfirmTransfer;
@@ -11083,22 +10647,12 @@ ${projectsHtml || '<div class="empty-row">— ไม่มีโครงกา�
   window.resetSubForm = resetSubForm;
   window.submitSubWithdraw = submitSubWithdraw;
 
-  // Phase 2 Batch 2: PR/PO
-  window.addPrItem = addPrItem;
-  window.removePrItem = removePrItem;
-  window.updatePrItem = updatePrItem;
-  window.submitPr = submitPr;
-  window.resetPrForm = resetPrForm;
-  window.approvePR = approvePR;
-  window.rejectPR = rejectPR;
-
+  // PO (PR system removed)
   window.addPoItem = addPoItem;
   window.removePoItem = removePoItem;
   window.updatePoItem = updatePoItem;
   window.submitPo = submitPo;
   window.resetPoForm = resetPoForm;
-  window.prefillPoFromPr = prefillPoFromPr;
-  window.refreshPoFromPrSelect = refreshPoFromPrSelect;
   window.approvePO = approvePO;
   window.rejectPO = rejectPO;
   window.confirmPoVendorDoc = confirmPoVendorDoc;
